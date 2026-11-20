@@ -1,6 +1,6 @@
 // Per-device look of the typing area. Applied as <html data-*> attributes that index.css reads.
 export const THEMES = {
-  dark: 'carbón', light: 'claro', paper: 'papel', ink: 'tinta', contrast: 'alto contraste',
+  dark: 'carbón', light: 'claro', paper: 'papel', ink: 'tinta', contrast: 'contraste',
   lila: 'lila', lavanda: 'lavanda', catppuccin: 'catppuccin', rosepine: 'rosé pine',
   nord: 'nord', gruvbox: 'gruvbox', tokyonight: 'tokyo night', everforest: 'everforest',
 } as const
