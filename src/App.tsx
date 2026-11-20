@@ -15,6 +15,9 @@ import CoachCard from './CoachCard'
 import DailyCard from './DailyCard'
 import CommandPalette, { type Command } from './CommandPalette'
 import { APP_URL } from './config'
+import AuthModal, { type AuthView } from './AuthModal'
+import { supabase } from './supabase'
+import type { Session } from '@supabase/supabase-js'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -108,6 +111,16 @@ export default function App() {
   const [view, setView] = useState<'test' | 'history'>('test')
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
+  const [session, setSession] = useState<Session | null>(null)
+  const [auth, setAuth] = useState<AuthView | null>(null)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+      setSession(next)
+      if (event === 'PASSWORD_RECOVERY') setAuth('newpass') // arrived from the "forgot password" email
+    })
+    return () => data.subscription.unsubscribe()
+  }, [])
 
   const zen = s.mode === 'zen'
   const finite = s.mode !== 'time' && !zen
@@ -201,8 +214,10 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
-      if (palette) return // the palette handles its own keys
-      if (e.target instanceof HTMLTextAreaElement) return
+      if (palette || auth) return // the palette and the login dialog handle their own keys
+      // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
+      const el = e.target
+      if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
       if (e.key === 'Tab' || e.key === 'Escape') { e.preventDefault(); restart(); return }
       if (phase === 'done' || view !== 'test' || editing || e.metaKey || e.altKey) return
       if (zen && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); if (phase === 'running') finish(t.current.typed); return }
@@ -266,7 +281,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, auth, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -337,6 +352,7 @@ export default function App() {
     add('opciones', `${sw(s.numbers)} números`, () => restart({ numbers: !s.numbers }))
     for (const r of Object.keys(RULES) as (keyof Rules)[])
       add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
+    add('cuenta', session ? 'cerrar sesión' : 'iniciar sesión', () => (session ? supabase.auth.signOut() : setAuth('login')))
     add('preferencias', `${sw(s.sound)} sonido`, () => setS({ ...s, sound: !s.sound }))
     add('preferencias', `${sw(s.live)} wpm en vivo`, () => setS({ ...s, live: !s.live }))
     add('preferencias', `${sw(s.ghost)} fantasma`, () => setS({ ...s, ghost: !s.ghost }))
@@ -367,6 +383,9 @@ export default function App() {
             comandos{!COARSE && <kbd>ctrl k</kbd>}
           </button>
           <button className={view === 'test' ? 'on' : ''} onClick={() => restart()}>test</button>
+          <button className="account-btn" onClick={() => setAuth(session ? 'account' : 'login')} title={session ? session.user.email : 'iniciar sesión'}>
+            {session ? <span className="avatar" aria-hidden>{(session.user.email ?? '?')[0]}</span> : 'entrar'}
+          </button>
           <button className={view === 'history' ? 'on' : ''} onClick={() => setView('history')}>historial</button>
         </nav>
       </header>
@@ -426,6 +445,7 @@ export default function App() {
       {view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
+      {auth && <AuthModal view={auth} session={session} onView={setAuth} onClose={() => setAuth(null)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
