@@ -23,6 +23,16 @@ const ES: [RegExp, string][] = [
   [/password should be at least/i, 'la contraseña debe tener al menos 8 caracteres'],
   [/provider is not enabled/i, 'el inicio con Google aún no está activado'],
 ]
+// small line icons, drawn with currentColor so they follow every theme
+const Icon = ({ d }: { d: string }) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
+)
+const ICONS = {
+  edit: 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4zM13.5 6.5l4 4',
+  profile: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  logout: 'M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11',
+}
+
 const es = (msg: string) => ES.find(([re]) => re.test(msg))?.[1] ?? msg
 
 export default function AuthModal({ view, session, syncState, me, onView, onClose, onProfile, onOpenProfile }: Props) {
@@ -62,25 +72,49 @@ export default function AuthModal({ view, session, syncState, me, onView, onClos
     <div className="palette-backdrop" onMouseDown={onClose}>
       <div className="auth card" role="dialog" aria-modal="true" aria-label={titles[view]}
         onMouseDown={e => e.stopPropagation()} onKeyDown={e => e.key === 'Escape' && onClose()}>
-        <h2>{titles[view]}</h2>
+        <h2 className="auth-title">
+          {view === 'profile' && <button onClick={() => go('account')} aria-label="volver a tu cuenta">←</button>}
+          {titles[view]}
+        </h2>
 
         {view === 'profile' && session ? (
           <>
             <ProfileEditor session={session} me={me} onSaved={onProfile} />
-            <div className="auth-links"><button onClick={() => go('account')}>← volver</button></div>
           </>
         ) : view === 'account' && session ? (
           <>
-            <p className="auth-note">conectado como <b>{session.user.email}</b></p>
-            <p className="auth-note">{SYNC[syncState]}</p>
-            {me?.username
-              ? <p className="auth-note">tu perfil: <b>@{me.username}</b> · {me.is_public ? 'público' : 'privado'}</p>
-              : <p className="auth-note">elige un nombre de usuario para tener tu página de perfil</p>}
-            <div className="row">
-              <button className="on" onClick={() => go('profile')}>{me?.username ? 'editar perfil' : 'crear mi perfil'}</button>
-              {me?.username && <button onClick={() => { onClose(); onOpenProfile(me.username!) }}>ver mi perfil</button>}
+            <div className="acct-head">
+              {me?.avatar_url
+                ? <img className="acct-avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
+                : <span className="acct-avatar avatar">{(me?.username ?? session.user.email ?? '?')[0]}</span>}
+              <div className="acct-id">
+                <b>{me?.display_name || (me?.username ? `@${me.username}` : 'tu cuenta')}</b>
+                <span className="acct-handle">
+                  {me?.username ? `@${me.username}` : 'sin usuario todavía'}
+                  {me?.username && <span className="acct-badge">{me.is_public ? 'público' : 'privado'}</span>}
+                </span>
+                <span className="acct-email">{session.user.email}</span>
+              </div>
             </div>
-            <button onClick={() => act(() => supabase.auth.signOut(), '', true)} disabled={busy}>cerrar sesión</button>
+            {SYNC[syncState] && <div className={`acct-sync ${syncState}`} role="status"><span className="dot" />{SYNC[syncState]}</div>}
+            <div className="acct-actions">
+              <button onClick={() => go('profile')}>
+                <Icon d={ICONS.edit} />
+                <span><b>{me?.username ? 'editar perfil' : 'crear mi perfil'}</b><small>usuario, nombre, foto, bio y privacidad</small></span>
+                <span className="chev" aria-hidden>›</span>
+              </button>
+              {me?.username && (
+                <button onClick={() => { onClose(); onOpenProfile(me.username!) }}>
+                  <Icon d={ICONS.profile} />
+                  <span><b>ver mi perfil</b><small>/u/{me.username}</small></span>
+                  <span className="chev" aria-hidden>›</span>
+                </button>
+              )}
+              <button className="danger" onClick={() => act(() => supabase.auth.signOut(), '', true)} disabled={busy}>
+                <Icon d={ICONS.logout} />
+                <span><b>cerrar sesión</b><small>tus tests siguen guardados en la nube</small></span>
+              </button>
+            </div>
           </>
         ) : (
           <>
