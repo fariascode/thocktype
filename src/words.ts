@@ -44,7 +44,16 @@ export function randomQuote(lang: Lang) {
 
 const pick =<T,>(a: T[]) => a[Math.floor(Math.random() * a.length)]
 
-export type WordOpts = { punct?: boolean; numbers?: boolean }
+// Keybr-style drill: words rich in the given weak letters, with some plain words so it still reads naturally
+export function weakWords(lang: Lang, weak: string[], n: number): string[] {
+  const score = (w: string) => [...w.toLowerCase()].filter(c => weak.includes(c)).length
+  const pool = lists[lang].filter(w => score(w) > 0).sort((a, b) => score(b) - score(a))
+  if (!pool.length) return randomWords(lang, n)
+  const top = pool.slice(0, Math.max(20, Math.ceil(pool.length / 2))) // favour words with several weak letters
+  return Array.from({ length: n }, () => (Math.random() < 0.8 ? pick(top) : pick(lists[lang])))
+}
+
+export type WordOpts ={ punct?: boolean; numbers?: boolean }
 
 // punct: capitals + punctuation (ignored for code, which already has symbols); numbers: mixes in numbers
 export function randomWords(lang: Lang, n: number, { punct = false, numbers = false }: WordOpts = {}): string[] {
