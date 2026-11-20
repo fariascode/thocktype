@@ -31,7 +31,7 @@ function charPos(word: HTMLElement, ci: number, sel = '.c') {
 export default function App() {
   const [s, setS] = useState(loadSettings)
   const [history, setHistory] = useState(loadHistory)
-  const [words, setWords] = useState(() => randomWords(s.lang, 300, s.punct))
+  const [words, setWords] = useState(() => randomWords(s.lang, 300, { punct: s.punct }))
   const [typed, setTyped] = useState<string[]>([''])
   const [timeLeft, setTimeLeft] = useState(s.duration)
   const [liveWpm, setLiveWpm] = useState(0)
@@ -53,7 +53,7 @@ export default function App() {
   const restart = useCallback((next: Partial<Settings> = {}) => {
     const ns = { ...s, ...next }
     setS(ns)
-    setWords(randomWords(ns.lang, 300, ns.punct))
+    setWords(randomWords(ns.lang, 300, { punct: ns.punct }))
     setTyped([''])
     setTimeLeft(ns.duration)
     setLiveWpm(0)
@@ -122,7 +122,7 @@ export default function App() {
         if (cur === target) c.good++
         if (s.sound) thock(cur !== target)
         setTyped([...typed, ''])
-        if (i > words.length - 50) setWords([...words, ...randomWords(s.lang, 200, s.punct)])
+        if (i > words.length - 50) setWords([...words, ...randomWords(s.lang, 200, { punct: s.punct })])
         return
       }
       const expected = target[cur.length]
