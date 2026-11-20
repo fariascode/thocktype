@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { LANGS, randomQuote, randomWords, weakWords, type Lang } from './words'
+import { LANGS, bigramWords, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
   loadKeys, mergeKeys, saveKeys, weakKeys, longestStreak, type KeyStats, type Mode, type Result,
@@ -11,6 +11,7 @@ import Calendar from './Calendar'
 import { inputDiff } from './inputDiff'
 import { renderCard } from './shareCard'
 import { copyText, shareImage } from './share'
+import CoachCard from './CoachCard'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
 // phones/tablets: no physical keyboard, so typing goes through a hidden input
@@ -24,10 +25,11 @@ const PRACTICE_WORDS = 40
 type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
   theme: 'dark' | 'light'; sound: boolean; live: boolean; ghost: boolean
+  drill: string[] // coach letter pairs to practice; empty = practice weak keys
 }
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', sound: false, live: true, ghost: true,
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', sound: false, live: true, ghost: true, drill: [],
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
@@ -45,7 +47,9 @@ const testKey = (s: Settings) => modeKey({
 function buildTest(s: Settings, keys: KeyStats): { words: string[]; by?: string } {
   const opts = { punct: s.punct, numbers: s.numbers }
   switch (s.mode) {
-    case 'practice': return { words: weakWords(s.lang, weakKeys(keys), PRACTICE_WORDS) }
+    case 'practice': return {
+      words: s.drill.length ? bigramWords(s.lang, s.drill, PRACTICE_WORDS) : weakWords(s.lang, weakKeys(keys), PRACTICE_WORDS),
+    }
     case 'time': return { words: randomWords(s.lang, 300, opts) }
     case 'words': return { words: randomWords(s.lang, s.count, opts) }
     case 'quote': return randomQuote(s.lang)
@@ -287,8 +291,8 @@ export default function App() {
         </nav>
       </header>
 
-      {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} /> : phase === 'done' && result ? (
-        <ResultView r={result} theme={s.theme} onNext={() => restart()} />
+      {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} onDrill={drill => restart({ mode: 'practice', drill })} /> : phase === 'done' && result ? (
+        <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
       ) : (
@@ -365,7 +369,13 @@ function StatusBar({ s, set, restart, edit, weak }: {
         {s.mode === 'quote' && opt(false, 'otra cita', () => restart())}
         {s.mode === 'custom' && opt(false, 'editar texto', edit)}
         {s.mode === 'zen' && <span className="note">sin límite</span>}
-        {s.mode === 'practice' && (weak.length
+        {s.mode === 'practice' && s.drill.length > 0 && (
+          <span className="note" title="combinaciones lentas que detectó el coach">
+            combinaciones <b className="weak">{s.drill.join(' ')}</b>
+            <button onClick={() => restart({ drill: [] })} title="volver a teclas débiles" aria-label="quitar combinaciones">✕</button>
+          </span>
+        )}
+        {s.mode === 'practice' && !s.drill.length && (weak.length
           ? <span className="note" title="tus teclas con más errores en todos tus tests">teclas <b className="weak">{weak.join(' ')}</b></span>
           : <span className="note">haz unos tests para detectar tus teclas débiles</span>)}
       </div>
@@ -405,7 +415,7 @@ function CustomEditor({ initial, onUse, onCancel }: { initial: string; onUse: (t
   )
 }
 
-function ResultView({ r, theme, onNext }: { r: FullResult; theme: string; onNext: () => void }) {
+function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void }) {
   const labels = useMemo(() => r.samples.map((_, i) => i + 1), [r])
   const series = useMemo(() => [
     { label: 'wpm', data: r.samples.map(x => x.wpm) },
@@ -430,6 +440,7 @@ function ResultView({ r, theme, onNext }: { r: FullResult; theme: string; onNext
       </div>
       <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
       {r.by && <p className="by">— {r.by}</p>}
+      {mode !== 'zen' && <CoachCard bigrams={r.bigrams} title="coach · este test" onDrill={onDrill} />}
       {mode !== 'zen' && <div className="card"><small>teclas de este test</small><Heatmap hits={r.hits} errs={r.errs} /></div>}
       <p className="hint">{COARSE ? <button onClick={onNext}>↻ siguiente test</button> : <><kbd>tab</kbd> siguiente test</>}</p>
     </section>
@@ -463,7 +474,8 @@ function ShareBar({ r, modeLabel }: { r: FullResult; modeLabel: string }) {
   )
 }
 
-function History({ h, theme, keys }: { h: Result[]; theme: string; keys: KeyStats }) {
+function History({ h, theme, keys, onDrill }: { h: Result[]; theme: string; keys: KeyStats; onDrill: (pairs: string[]) => void }) {
+  const lifetime = useMemo(loadBigrams, [h])
   const last = useMemo(() => h.slice(-50), [h])
   const labels = useMemo(() => last.map(r => new Date(r.date).toLocaleDateString()), [last])
   const series = useMemo(() => [{ label: 'wpm', data: last.map(r => r.wpm) }, { label: 'precisión', data: last.map(r => r.acc), dim: true }], [last])
@@ -484,6 +496,7 @@ function History({ h, theme, keys }: { h: Result[]; theme: string; keys: KeyStat
       </div>
       <div className="card"><small>actividad · últimos 6 meses</small><Calendar h={h} /></div>
       <div className="card"><small>últimos 50 tests · wpm y precisión</small><Chart key={theme} labels={labels} series={series} /></div>
+      <CoachCard bigrams={lifetime} title="coach · todos tus tests" minN={8} onDrill={onDrill} />
       <div className="card"><small>todas tus teclas</small><Heatmap hits={keys.hits} errs={keys.errs} /></div>
     </section>
   )
