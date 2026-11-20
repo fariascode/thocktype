@@ -20,3 +20,9 @@ for (let i = 0; i < 50; i++) {
   assert.ok(q.words.length > 2 && q.words.every(w => w.length > 0) && q.by, 'quotes split into words with an author')
 }
 console.log('quotes ok')
+
+import { bigramWords } from './words.ts'
+const bw = bigramWords('es', ['qu', 'ci'], 200)
+assert.equal(bw.length, 200)
+assert.ok(bw.filter(w => /qu|ci/i.test(w)).length > 120, 'mostly words with the slow pairs')
+console.log('bigramWords ok')
