@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { LANGS, bigramWords, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
-  loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, type KeyStats, type Mode, type Result,
+  loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, dayKey, type KeyStats, type Mode, type Result,
 } from './stats'
 import { thock } from './sound'
 import Chart from './Chart'
@@ -12,7 +12,8 @@ import { inputDiff } from './inputDiff'
 import { renderCard } from './shareCard'
 import { copyText, shareImage } from './share'
 import CoachCard from './CoachCard'
-import DailyCard from './DailyCard'
+import DailyCard, { type RankProps } from './DailyCard'
+import DailyRanking from './DailyRanking'
 import CommandPalette, { type Command } from './CommandPalette'
 import { APP_URL } from './config'
 import AuthModal, { type AuthView } from './AuthModal'
@@ -397,6 +398,7 @@ export default function App() {
     add('test', `reto del día #${challengeNumber()}`, () => restart({ mode: 'daily' }))
     add('test', 'practicar teclas débiles', () => restart({ mode: 'practice', drill: [] }))
     add('ver', 'historial', () => { go('/'); setView('history') })
+    add('ver', 'ranking del reto', () => { go('/'); setView('history') })
     if (me?.username) add('ver', 'mi perfil', () => go(`/u/${me.username}`))
     add('ver', 'test', () => restart())
     for (const m of Object.keys(MODES) as Mode[]) add('modo', MODES[m], () => restart({ mode: m }))
@@ -418,6 +420,8 @@ export default function App() {
     return cmds
   }
 
+  // ranking props: refresh after each sync so a just-uploaded official attempt appears
+  const rank: RankProps = { uid, hasUsername: !!me?.username, refresh: syncState, onOpenProfile: name => go(`/u/${name}`) }
   const days = streak(history)
   const todayDaily = officialFor(daily, s.lang)
   const on = (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k])
@@ -452,8 +456,14 @@ export default function App() {
       </header>
 
       {profileName ? <ProfilePage username={profileName} theme={s.theme} isMe={me?.username === profileName} />
-        : view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} /> : phase === 'done' && result ? (
-        <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} />
+        : view === 'history' ? <>
+          <div className="card">
+            <small>reto #{challengeNumber()} · ranking de hoy · {LANGS[s.lang]}</small>
+            <DailyRanking day={dayKey(new Date())} lang={s.lang} {...rank} />
+          </div>
+          <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} />
+        </> : phase === 'done' && result ? (
+        <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} rank={rank} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
       ) : (
@@ -591,7 +601,7 @@ function CustomEditor({ initial, onUse, onCancel }: { initial: string; onUse: (t
   )
 }
 
-function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void }) {
+function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void; rank: RankProps }) {
   const labels = useMemo(() => r.samples.map((_, i) => i + 1), [r])
   const series = useMemo(() => [
     { label: 'wpm', data: r.samples.map(x => x.wpm) },
@@ -620,7 +630,7 @@ function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: strin
         <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}{r.rules?.length ? ` · ${r.rules.map(k => RULES[k as keyof Rules][0]).join(', ')}` : ''}</div>
       </div>
       <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
-      {r.daily && <DailyCard n={r.daily.n} lang={r.lang as Lang} official={r.daily.official} entry={r.daily.entry} />}
+      {r.daily && <DailyCard n={r.daily.n} lang={r.lang as Lang} official={r.daily.official} entry={r.daily.entry} rank={rank} />}
       {r.by && <p className="by">— {r.by}</p>}
       {mode !== 'zen' && <CoachCard bigrams={r.bigrams} title="coach · este test" onDrill={onDrill} />}
       {mode !== 'zen' && <div className="card"><small>teclas de este test</small><Heatmap hits={r.hits} errs={r.errs} /></div>}

@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { dailyStreak, loadDaily, shareText, type DailyEntry } from './daily'
 import { copyText } from './share'
 import type { Lang } from './words'
+import DailyRanking from './DailyRanking'
+import { dayKey } from './stats'
 
-type Props = { n: number; lang: Lang; official: boolean; entry: DailyEntry }
+export type RankProps = { uid?: string; hasUsername: boolean; refresh?: unknown; onOpenProfile: (username: string) => void }
+type Props = { n: number; lang: Lang; official: boolean; entry: DailyEntry; rank: RankProps }
 
-export default function DailyCard({ n, lang, official, entry }: Props) {
+export default function DailyCard({ n, lang, official, entry, rank }: Props) {
   const [copied, setCopied] = useState('')
   const streak = dailyStreak(loadDaily())
   return (
@@ -27,6 +30,8 @@ export default function DailyCard({ n, lang, official, entry }: Props) {
         <button onClick={async () => setCopied((await copyText(shareText(n, lang, entry))) ? 'copiado: pégalo donde quieras' : 'no se pudo copiar')}>⧉ copiar resultado del reto</button>
         <span className="share-status" role="status">{copied}</span>
       </div>
+      <small>ranking de hoy</small>
+      <DailyRanking day={dayKey(new Date())} lang={lang} {...rank} />
       <p className="hint" style={{ textAlign: 'left' }}>vuelve mañana para el reto #{n + 1}</p>
     </div>
   )
