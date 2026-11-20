@@ -8,11 +8,11 @@ const W = 1200, H = 630
 const C = { bg: '#101113', surface: '#1a1b1e', border: '#343538', text1: '#ededed', text2: '#b6b7ba', text3: '#696b70' }
 
 export async function renderCard(d: CardData): Promise<Blob> {
-  await document.fonts?.ready // use Inter / JetBrains Mono once loaded
+  await document.fonts?.ready // use Inter / Cascadia Code once loaded
   const cv = document.createElement('canvas')
   cv.width = W; cv.height = H
   const g = cv.getContext('2d')!
-  const sans = 'Inter, system-ui, sans-serif', mono = '"JetBrains Mono", ui-monospace, monospace'
+  const sans = 'Inter, system-ui, sans-serif', mono = '"Cascadia Code", ui-monospace, monospace'
 
   g.fillStyle = C.bg
   g.fillRect(0, 0, W, H)

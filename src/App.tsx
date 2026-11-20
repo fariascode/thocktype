@@ -39,6 +39,7 @@ type Settings = {
   theme: Theme; size: Size; font: Font; caret: Caret; sound: boolean; live: boolean; ghost: boolean
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
+  v: number // settings format version, for one-time migrations
 }
 type Rules = { noBack: boolean; blind: boolean; brake: boolean; sudden: boolean }
 const NO_RULES: Rules = { noBack: false, blind: false, brake: false, sudden: false }
@@ -52,13 +53,15 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'jetbrains', caret: 'line', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES, v: 2,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
   try {
     const saved = JSON.parse(localStorage.getItem(SKEY) || '{}')
-    return { ...DEFAULTS, ...saved, rules: { ...NO_RULES, ...saved.rules } }
+    // v1 saved JetBrains Mono as the default, not as a choice: move those to the new signature font
+    if ((saved.v ?? 1) < 2 && saved.font === 'jetbrains') saved.font = 'cascadia'
+    return { ...DEFAULTS, ...saved, rules: { ...NO_RULES, ...saved.rules }, v: 2 }
   } catch { return DEFAULTS }
 }
 

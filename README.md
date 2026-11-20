@@ -21,7 +21,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Cuentas:** Google, enlace por correo o correo y contraseña (Supabase)
 - **Perfiles públicos** en `/u/usuario`: foto, bio, récords, calendario, progreso, coach y teclado; se pueden hacer privados
 - **Instalable (PWA)** y funciona sin internet después de la primera visita
-- **Ajustes ⚙** por dispositivo: tamaño del texto, 5 fuentes, 4 estilos de cursor y 5 temas monocromáticos (carbón, claro, papel, tinta, alto contraste)
+- **Ajustes ⚙** por dispositivo: tamaño del texto, 6 fuentes (Cascadia Code es la insignia), 4 estilos de cursor y 5 temas monocromáticos (carbón, claro, papel, tinta, alto contraste)
 - Cursor suave, sonido *thock* sintetizado, WPM en vivo
 - Métricas: WPM, raw, precisión, consistencia, y caracteres correctos, incorrectos, extra y faltantes
 

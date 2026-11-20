@@ -2,7 +2,7 @@
 export const THEMES = { dark: 'carbón', light: 'claro', paper: 'papel', ink: 'tinta', contrast: 'alto contraste' } as const
 export const SIZES = { s: 'chico', m: 'normal', l: 'grande', xl: 'enorme' } as const
 export const FONTS = {
-  jetbrains: 'JetBrains Mono', plex: 'IBM Plex Mono', space: 'Space Mono', fira: 'Fira Code', source: 'Source Code Pro',
+  cascadia: 'Cascadia Code', jetbrains: 'JetBrains Mono', plex: 'IBM Plex Mono', space: 'Space Mono', fira: 'Fira Code', source: 'Source Code Pro',
 } as const
 export const CARETS = { line: 'línea', block: 'bloque', underline: 'subrayado', outline: 'contorno' } as const
 
@@ -14,9 +14,9 @@ export type Appearance = { theme: Theme; size: Size; font: Font; caret: Caret }
 
 export const isLight = (t: Theme) => t === 'light' || t === 'paper'
 
-// Google Fonts families, downloaded only when chosen (JetBrains Mono ships with the page)
+// Google Fonts families, downloaded only when chosen (Cascadia Code, the signature font, ships with the page)
 const FONT_QUERY: Partial<Record<Font, string>> = {
-  plex: 'IBM+Plex+Mono:wght@400;500', space: 'Space+Mono:wght@400;700',
+  jetbrains: 'JetBrains+Mono:wght@400;500', plex: 'IBM+Plex+Mono:wght@400;500', space: 'Space+Mono:wght@400;700',
   fira: 'Fira+Code:wght@400;500', source: 'Source+Code+Pro:wght@400;500',
 }
 
@@ -39,6 +39,6 @@ export const SWATCH: Record<Theme, [string, string]> = {
   ink: ['#000000', '#f4f4f4'], contrast: ['#000000', '#ffffff'],
 }
 export const FONT_FAMILY: Record<Font, string> = {
-  jetbrains: "'JetBrains Mono', monospace", plex: "'IBM Plex Mono', monospace", space: "'Space Mono', monospace",
+  cascadia: "'Cascadia Code', monospace", jetbrains: "'JetBrains Mono', monospace", plex: "'IBM Plex Mono', monospace", space: "'Space Mono', monospace",
   fira: "'Fira Code', monospace", source: "'Source Code Pro', monospace",
 }

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cascadia+Code:wght@400;500;700&display=swap');
 
 /* ── Design tokens · Editorial Black + Soft Monochrome ───────────────── */
 :root {
@@ -13,7 +13,7 @@
   --dim: #696b70;
 
   --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --mono: 'Cascadia Code', 'Cascadia Mono', ui-monospace, monospace; /* signature font */
 
   --r-sm: 8px; --r-md: 12px; --r-lg: 16px;
   --shadow: 0 1px 2px rgb(0 0 0 / .25), 0 8px 24px rgb(0 0 0 / .18);
@@ -40,6 +40,7 @@
 :root[data-size='s'] { --type-size: clamp(16px, 1.8vw, 20px); }
 :root[data-size='l'] { --type-size: clamp(24px, 3.1vw, 34px); }
 :root[data-size='xl'] { --type-size: clamp(28px, 4vw, 44px); }
+:root[data-font='jetbrains'] { --type-font: 'JetBrains Mono', var(--mono); }
 :root[data-font='plex'] { --type-font: 'IBM Plex Mono', var(--mono); }
 :root[data-font='space'] { --type-font: 'Space Mono', var(--mono); }
 :root[data-font='fira'] { --type-font: 'Fira Code', var(--mono); }
