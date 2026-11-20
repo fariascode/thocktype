@@ -15,7 +15,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Coach:** mide el tiempo entre cada par de letras, te dice cuáles te frenan (p. ej. «qu» 2.1× más lenta) y genera práctica con ellas
 - **Modo práctica:** genera palabras cargadas de tus teclas débiles para que las entrenes
 - **Racha** de días seguidos practicando, con racha más larga y un **calendario de actividad** de 6 meses
-- **Historial** con gráficas (guardado en tu navegador)
+- **Historial** con gráficas, guardado en tu navegador y sincronizado en la nube entre tus dispositivos al iniciar sesión (funciona sin conexión y sube lo pendiente después)
 - Funciona en celular y tablet con el teclado táctil
 - **Compartir** tu resultado como imagen en blanco y negro (menú nativo en celular, descarga en PC) o como texto
 - **Cuentas:** Google, enlace por correo o correo y contraseña (Supabase)
