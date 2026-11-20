@@ -13,3 +13,10 @@ for (const lang of ['es', 'en'] as const) {
   assert.ok(sample.every(w => w.length > 0 && !/\s/.test(w)), `${lang}: no empty or spaced words`)
 }
 console.log('words ok')
+
+import { randomQuote } from './words.ts'
+for (let i = 0; i < 50; i++) {
+  const q = randomQuote((['es', 'en', 'code'] as const)[i % 3])
+  assert.ok(q.words.length > 2 && q.words.every(w => w.length > 0) && q.by, 'quotes split into words with an author')
+}
+console.log('quotes ok')
