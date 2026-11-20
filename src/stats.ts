@@ -113,3 +113,6 @@ export function loadHistory(): Result[] {
 export function saveResult(r: Result) {
   try { localStorage.setItem(KEY, JSON.stringify([...loadHistory(), r])) } catch { /* storage blocked: skip */ }
 }
+export function saveHistory(h: Result[]) {
+  try { localStorage.setItem(KEY, JSON.stringify(h)) } catch { /* storage blocked: skip */ }
+}
