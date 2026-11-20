@@ -3,7 +3,11 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 
 export type AuthView = 'login' | 'signup' | 'magic' | 'reset' | 'newpass' | 'account'
-type Props = { view: AuthView; session: Session | null; onView: (v: AuthView) => void; onClose: () => void }
+type Props = { view: AuthView; session: Session | null; syncState: string; onView: (v: AuthView) => void; onClose: () => void }
+const SYNC: Record<string, string> = {
+  syncing: 'sincronizando tus tests…', ok: 'tus tests están guardados en la nube',
+  error: 'sin conexión con la nube: tus tests se guardan aquí y se subirán después', idle: '',
+}
 
 // Supabase returns English errors; translate the ones people actually hit
 const ES: [RegExp, string][] = [
@@ -16,7 +20,7 @@ const ES: [RegExp, string][] = [
 ]
 const es = (msg: string) => ES.find(([re]) => re.test(msg))?.[1] ?? msg
 
-export default function AuthModal({ view, session, onView, onClose }: Props) {
+export default function AuthModal({ view, session, syncState, onView, onClose }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
@@ -58,6 +62,7 @@ export default function AuthModal({ view, session, onView, onClose }: Props) {
         {view === 'account' && session ? (
           <>
             <p className="auth-note">conectado como <b>{session.user.email}</b></p>
+            <p className="auth-note">{SYNC[syncState]}</p>
             <button onClick={() => act(() => supabase.auth.signOut(), '', true)} disabled={busy}>cerrar sesión</button>
           </>
         ) : (

@@ -53,10 +53,10 @@ async function pushUp(uid: string) {
 
   // today's/yesterday's official daily attempts; the server keeps the first one it gets
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1)
-  const daily = toDailyRows(uid, loadDaily(), dayKey(yesterday))
-  if (daily.length) {
-    const { error } = await supabase.from('daily').upsert(daily, { onConflict: 'user_id,day,lang', ignoreDuplicates: true })
-    if (error) throw error
+  // one by one: near midnight the server (UTC) may reject a local "yesterday", which must not block today's
+  for (const row of toDailyRows(uid, loadDaily(), dayKey(yesterday))) {
+    const { error } = await supabase.from('daily').upsert(row, { onConflict: 'user_id,day,lang', ignoreDuplicates: true })
+    if (error && error.code !== '42501') throw error // 42501 = outside the allowed days: skip that one
   }
 
   // stats: cloud totals + what this device added since last time

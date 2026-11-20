@@ -18,6 +18,7 @@ import { APP_URL } from './config'
 import AuthModal, { type AuthView } from './AuthModal'
 import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
+import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -122,6 +123,22 @@ export default function App() {
     return () => data.subscription.unsubscribe()
   }, [])
 
+  // cloud sync: everything on sign-in/app start, pending uploads when the connection returns
+  const uid = session?.user.id
+  const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
+  const applySync = useCallback((p: Promise<Synced>) => {
+    setSyncState('syncing')
+    p.then(d => { setHistory(d.history); setDaily(d.daily); setKeyStats(d.keys); setSyncState('ok') })
+      .catch(() => setSyncState('error')) // data stays local and is retried on the next sync
+  }, [])
+  useEffect(() => {
+    if (!uid) { setSyncState('idle'); return }
+    applySync(syncAll(uid))
+    const online = () => applySync(syncUp(uid))
+    window.addEventListener('online', online)
+    return () => window.removeEventListener('online', online)
+  }, [uid, applySync])
+
   const zen = s.mode === 'zen'
   const finite = s.mode !== 'time' && !zen
 
@@ -181,6 +198,8 @@ export default function App() {
     saveKeys(merged)
     setKeyStats(merged)
     saveBigrams(mergeBigrams(loadBigrams(), bigrams))
+    addPendingStats({ keys: { hits, errs }, bigrams })
+    if (uid) applySync(syncUp(uid))
     // daily challenge: only the first attempt of the day counts; later ones are practice
     let dailyInfo: FullResult['daily']
     if (s.mode === 'daily') {
@@ -191,7 +210,7 @@ export default function App() {
     }
     setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo })
     setPhase('done')
-  }, [s, pb, words, zen, test.by, keyStats, daily])
+  }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync])
 
   // 1s tick: sample speed, count the clock
   useEffect(() => {
@@ -445,7 +464,7 @@ export default function App() {
       {view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
-      {auth && <AuthModal view={auth} session={session} onView={setAuth} onClose={() => setAuth(null)} />}
+      {auth && <AuthModal view={auth} session={session} syncState={syncState} onView={setAuth} onClose={() => setAuth(null)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
