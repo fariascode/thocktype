@@ -2,12 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { LANGS, bigramWords, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
-  loadKeys, mergeKeys, saveKeys, weakKeys, longestStreak, type KeyStats, type Mode, type Result,
+  loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, type KeyStats, type Mode, type Result,
 } from './stats'
 import { thock } from './sound'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
-import Calendar from './Calendar'
+import History from './History'
 import { inputDiff } from './inputDiff'
 import { renderCard } from './shareCard'
 import { copyText, shareImage } from './share'
@@ -25,7 +25,6 @@ import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from 
 // phones/tablets: no physical keyboard, so typing goes through a hidden input
 const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
 
-const DURATIONS = [15, 30, 60, 120]
 const COUNTS = [10, 25, 50, 100]
 const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica', daily: 'reto' }
 const PRACTICE_WORDS = 40
@@ -409,7 +408,7 @@ export default function App() {
         </nav>
       </header>
 
-      {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} onDrill={drill => restart({ mode: 'practice', drill })} /> : phase === 'done' && result ? (
+      {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} /> : phase === 'done' && result ? (
         <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
@@ -609,30 +608,3 @@ function ShareBar({ r, modeLabel }: { r: FullResult; modeLabel: string }) {
   )
 }
 
-function History({ h, theme, keys, onDrill }: { h: Result[]; theme: string; keys: KeyStats; onDrill: (pairs: string[]) => void }) {
-  const lifetime = useMemo(loadBigrams, [h])
-  const last = useMemo(() => h.slice(-50), [h])
-  const labels = useMemo(() => last.map(r => new Date(r.date).toLocaleDateString()), [last])
-  const series = useMemo(() => [{ label: 'wpm', data: last.map(r => r.wpm) }, { label: 'precisión', data: last.map(r => r.acc), dim: true }], [last])
-  if (!h.length) return <p className="hint">aún no hay tests. ¡a escribir!</p>
-  const avg = Math.round(h.reduce((a, r) => a + r.wpm, 0) / h.length)
-  const timed = h.filter(r => (r.mode ?? 'time') === 'time')
-  return (
-    <section className="result">
-      <div className="small">
-        <div><small>tests</small>{h.length}</div>
-        <div><small>promedio</small>{avg} wpm</div>
-        <div><small>racha</small>{streak(h)} días</div>
-        <div><small>racha más larga</small>{longestStreak(h)} días</div>
-        {DURATIONS.map(d => {
-          const best = Math.max(0, ...timed.filter(r => r.duration === d).map(r => r.wpm))
-          return <div key={d}><small>mejor {d}s</small>{best || '-'}</div>
-        })}
-      </div>
-      <div className="card"><small>actividad · últimos 6 meses</small><Calendar h={h} /></div>
-      <div className="card"><small>últimos 50 tests · wpm y precisión</small><Chart key={theme} labels={labels} series={series} /></div>
-      <CoachCard bigrams={lifetime} title="coach · todos tus tests" minN={8} onDrill={onDrill} />
-      <div className="card"><small>todas tus teclas</small><Heatmap hits={keys.hits} errs={keys.errs} /></div>
-    </section>
-  )
-}
