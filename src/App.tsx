@@ -12,6 +12,8 @@ import { inputDiff } from './inputDiff'
 import { renderCard } from './shareCard'
 import { copyText, shareImage } from './share'
 import CoachCard from './CoachCard'
+import DailyCard from './DailyCard'
+import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
 // phones/tablets: no physical keyboard, so typing goes through a hidden input
@@ -19,7 +21,7 @@ const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
 
 const DURATIONS = [15, 30, 60, 120]
 const COUNTS = [10, 25, 50, 100]
-const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica' }
+const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica', daily: 'reto' }
 const PRACTICE_WORDS = 40
 
 type Settings = {
@@ -55,6 +57,7 @@ function buildTest(s: Settings, keys: KeyStats): { words: string[]; by?: string 
     case 'quote': return randomQuote(s.lang)
     case 'custom': return { words: s.custom.trim().split(/\s+/).filter(Boolean) }
     case 'zen': return { words: [] }
+    case 'daily': return { words: dailyWords(s.lang) }
   }
 }
 
@@ -62,6 +65,7 @@ type Sample = { wpm: number; raw: number }
 type FullResult = Result & {
   samples: Sample[]; chars: ReturnType<typeof charStats>; by?: string
   hits: Record<string, number>; errs: Record<string, number>; prevPb: number; bigrams: Bigrams
+  daily?: { n: number; official: boolean; entry: DailyEntry } // set for the daily challenge
 }
 
 // pixel position of character `ci` inside a word element (after the last char if past the end)
@@ -76,6 +80,7 @@ export default function App() {
   const [s, setS] = useState(loadSettings)
   const [history, setHistory] = useState(loadHistory)
   const [keyStats, setKeyStats] = useState(loadKeys)
+  const [daily, setDaily] = useState(loadDaily)
   const [test, setTest] = useState(() => buildTest(s, keyStats))
   const words = test.words
   const [typed, setTyped] = useState<string[]>([''])
@@ -139,9 +144,17 @@ export default function App() {
     saveKeys(merged)
     setKeyStats(merged)
     saveBigrams(mergeBigrams(loadBigrams(), bigrams))
-    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams })
+    // daily challenge: only the first attempt of the day counts; later ones are practice
+    let dailyInfo: FullResult['daily']
+    if (s.mode === 'daily') {
+      const prev = officialFor(daily, s.lang)
+      const entry = prev ?? { wpm: r.wpm, acc: r.acc, grid: grid(words, done) }
+      if (!prev) setDaily(saveOfficial(daily, s.lang, entry))
+      dailyInfo = { n: challengeNumber(), official: !prev, entry }
+    }
+    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo })
     setPhase('done')
-  }, [s, pb, words, zen, test.by, keyStats])
+  }, [s, pb, words, zen, test.by, keyStats, daily])
 
   // 1s tick: sample speed, count the clock
   useEffect(() => {
@@ -274,6 +287,7 @@ export default function App() {
   }, [phase, s.ghost, pb, zen])
 
   const days = streak(history)
+  const todayDaily = officialFor(daily, s.lang)
   const shown = zen ? typed : words.slice(0, typed.length + 80)
   const progress =
     s.mode === 'time' ? s.duration - clock
@@ -285,6 +299,9 @@ export default function App() {
       <header>
         <h1 onClick={() => restart()}>thock<span>type</span></h1>
         <nav>
+          {!todayDaily && s.mode !== 'daily' && (
+            <button className="daily-pill" onClick={() => restart({ mode: 'daily' })} title="el mismo texto para todos hoy">reto #{challengeNumber()}</button>
+          )}
           {days > 0 && <span className="streak" title="días seguidos practicando">racha {days}d</span>}
           <button className={view === 'test' ? 'on' : ''} onClick={() => restart()}>test</button>
           <button className={view === 'history' ? 'on' : ''} onClick={() => setView('history')}>historial</button>
@@ -344,15 +361,16 @@ export default function App() {
       )}
 
       {view === 'test' && phase !== 'done' && !editing && (
-        <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} />
+        <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
     </main>
   )
 }
 
 // Editor-style status line: mode block on the left, options as segments, preferences on the right
-function StatusBar({ s, set, restart, edit, weak }: {
+function StatusBar({ s, set, restart, edit, weak, today }: {
   s: Settings; set: (s: Settings) => void; restart: (n?: Partial<Settings>) => void; edit: () => void; weak: string[]
+  today?: DailyEntry
 }) {
   const opt = (on: boolean, label: string, onClick: () => void, title?: string) =>
     <button className={on ? 'on' : ''} onClick={onClick} title={title}>{label}</button>
@@ -369,6 +387,9 @@ function StatusBar({ s, set, restart, edit, weak }: {
         {s.mode === 'quote' && opt(false, 'otra cita', () => restart())}
         {s.mode === 'custom' && opt(false, 'editar texto', edit)}
         {s.mode === 'zen' && <span className="note">sin límite</span>}
+        {s.mode === 'daily' && (
+          <span className="note">reto #{challengeNumber()} · {today ? `hecho · ${today.wpm} wpm · los siguientes intentos son práctica` : 'tu primer intento de hoy es el oficial'}</span>
+        )}
         {s.mode === 'practice' && s.drill.length > 0 && (
           <span className="note" title="combinaciones lentas que detectó el coach">
             combinaciones <b className="weak">{s.drill.join(' ')}</b>
@@ -439,6 +460,7 @@ function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: strin
         <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}</div>
       </div>
       <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
+      {r.daily && <DailyCard n={r.daily.n} lang={r.lang as Lang} official={r.daily.official} entry={r.daily.entry} />}
       {r.by && <p className="by">— {r.by}</p>}
       {mode !== 'zen' && <CoachCard bigrams={r.bigrams} title="coach · este test" onDrill={onDrill} />}
       {mode !== 'zen' && <div className="card"><small>teclas de este test</small><Heatmap hits={r.hits} errs={r.errs} /></div>}

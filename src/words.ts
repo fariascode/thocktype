@@ -16,7 +16,7 @@ export function randomQuote(lang: Lang) {
   return { words: q.text.split(' '), by: q.by }
 }
 
-const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)]
+const pick = <T,>(a: T[], rng = Math.random) => a[Math.floor(rng() * a.length)]
 
 // Keybr-style drill: words rich in the given weak letters, with some plain words so it still reads naturally
 export function weakWords(lang: Lang, weak: string[], n: number): string[] {
@@ -38,12 +38,13 @@ function drill(lang: Lang, score: (w: string) => number, n: number): string[] {
 export type WordOpts ={ punct?: boolean; numbers?: boolean }
 
 // punct: capitals + punctuation (ignored for code, which already has symbols); numbers: mixes in numbers
-export function randomWords(lang: Lang, n: number, { punct = false, numbers = false }: WordOpts = {}): string[] {
+// rng: pass a seeded generator to get the same words for everyone (daily challenge)
+export function randomWords(lang: Lang, n: number, { punct = false, numbers = false }: WordOpts = {}, rng = Math.random): string[] {
   const list = lists[lang]
   const out: string[] = []
   let capNext = true
   for (let i = 0; i < n; i++) {
-    let w = pick(list)
+    let w = pick(list, rng)
     if (numbers && Math.random() < 0.12) w = String(Math.floor(Math.random() * 10 ** (1 + Math.floor(Math.random() * 4))))
     if (punct && lang !== 'code') {
       if (capNext) w = w[0].toUpperCase() + w.slice(1)
