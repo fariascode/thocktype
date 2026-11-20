@@ -11,6 +11,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Racha** de días seguidos practicando, con racha más larga y un **calendario de actividad** de 6 meses
 - **Historial** con gráficas (guardado en tu navegador)
 - Funciona en celular y tablet con el teclado táctil
+- **Instalable (PWA)** y funciona sin internet después de la primera visita
 - Cursor suave, sonido *thock* sintetizado, tema claro u oscuro, WPM en vivo
 - Métricas: WPM, raw, precisión, consistencia, y caracteres correctos, incorrectos, extra y faltantes
 
