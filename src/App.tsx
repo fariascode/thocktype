@@ -19,6 +19,7 @@ import AuthModal, { type AuthView } from './AuthModal'
 import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
+import { getMyProfile, type Profile } from './profile'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -124,6 +125,11 @@ export default function App() {
 
   // cloud sync: everything on sign-in/app start, pending uploads when the connection returns
   const uid = session?.user.id
+  const [me, setMe] = useState<Profile | null>(null)
+  useEffect(() => {
+    setMe(null)
+    if (uid) getMyProfile(uid).then(setMe)
+  }, [uid])
   const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
   const applySync = useCallback((p: Promise<Synced>) => {
     setSyncState('syncing')
@@ -402,7 +408,9 @@ export default function App() {
           </button>
           <button className={view === 'test' ? 'on' : ''} onClick={() => restart()}>test</button>
           <button className="account-btn" onClick={() => setAuth(session ? 'account' : 'login')} title={session ? session.user.email : 'iniciar sesión'}>
-            {session ? <span className="avatar" aria-hidden>{(session.user.email ?? '?')[0]}</span> : 'entrar'}
+            {!session ? 'entrar'
+              : me?.avatar_url ? <img className="avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
+              : <span className="avatar" aria-hidden>{(me?.username ?? session.user.email ?? '?')[0]}</span>}
           </button>
           <button className={view === 'history' ? 'on' : ''} onClick={() => setView('history')}>historial</button>
         </nav>
@@ -463,7 +471,8 @@ export default function App() {
       {view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
-      {auth && <AuthModal view={auth} session={session} syncState={syncState} onView={setAuth} onClose={() => setAuth(null)} />}
+      {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
+        onProfile={setMe} onOpenProfile={name => { location.href = `/u/${name}` }} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )

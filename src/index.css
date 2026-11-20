@@ -290,6 +290,29 @@ kbd {
 .auth-msg { min-height: 1.2em; font-size: 13px; color: var(--text-2); }
 .account-btn { padding: 4px 10px; }
 .avatar {
-  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; object-fit: cover;
   background: var(--text-1); color: var(--bg); font-size: 13px; font-weight: 600; text-transform: uppercase;
 }
+
+/* ── Profile editor ───────────────────────────────────────────────────── */
+.auth .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.profile-form { display: flex; flex-direction: column; gap: 12px; }
+.profile-form label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-3); }
+.profile-form textarea {
+  background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); border-radius: var(--r-sm);
+  font: inherit; font-size: 15px; padding: 10px 12px; resize: vertical;
+}
+.profile-form .check { flex-direction: row; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); }
+.profile-form .check input { width: 16px; height: 16px; accent-color: var(--text-1); }
+.prefixed { display: flex; align-items: center; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); }
+.prefixed span { padding-left: 12px; color: var(--text-3); font-size: 16px; }
+.auth .prefixed input { border: 0; background: transparent; flex: 1; padding-left: 2px; }
+.avatar-row { display: flex; align-items: center; gap: 16px; }
+.avatar-lg { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; font-size: 26px; border: 1px solid var(--border); }
+.avatar-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.file-btn {
+  position: relative; display: inline-flex; align-items: center; cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--text-1); border: 1px solid var(--border); background: var(--surface-2); border-radius: var(--r-sm); padding: 6px 12px;
+}
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.file-btn:focus-within { outline: 2px solid var(--text-2); outline-offset: 2px; }

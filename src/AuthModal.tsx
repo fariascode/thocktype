@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import ProfileEditor from './ProfileEditor'
+import type { Profile } from './profile'
 
-export type AuthView = 'login' | 'signup' | 'magic' | 'reset' | 'newpass' | 'account'
-type Props = { view: AuthView; session: Session | null; syncState: string; onView: (v: AuthView) => void; onClose: () => void }
+export type AuthView = 'login' | 'signup' | 'magic' | 'reset' | 'newpass' | 'account' | 'profile'
+type Props = {
+  view: AuthView; session: Session | null; syncState: string; me: Profile | null
+  onView: (v: AuthView) => void; onClose: () => void; onProfile: (p: Profile) => void; onOpenProfile: (username: string) => void
+}
 const SYNC: Record<string, string> = {
   syncing: 'sincronizando tus tests…', ok: 'tus tests están guardados en la nube',
   error: 'sin conexión con la nube: tus tests se guardan aquí y se subirán después', idle: '',
@@ -20,7 +25,7 @@ const ES: [RegExp, string][] = [
 ]
 const es = (msg: string) => ES.find(([re]) => re.test(msg))?.[1] ?? msg
 
-export default function AuthModal({ view, session, syncState, onView, onClose }: Props) {
+export default function AuthModal({ view, session, syncState, me, onView, onClose, onProfile, onOpenProfile }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
@@ -48,9 +53,9 @@ export default function AuthModal({ view, session, syncState, onView, onClose }:
 
   const titles: Record<AuthView, string> = {
     login: 'inicia sesión', signup: 'crea tu cuenta', magic: 'entra con un enlace', reset: 'recupera tu contraseña',
-    newpass: 'elige una contraseña nueva', account: 'tu cuenta',
+    newpass: 'elige una contraseña nueva', account: 'tu cuenta', profile: 'tu perfil',
   }
-  const needsEmail = view !== 'newpass' && view !== 'account'
+  const needsEmail = view !== 'newpass' && view !== 'account' && view !== 'profile'
   const needsPass = view === 'login' || view === 'signup' || view === 'newpass'
 
   return (
@@ -59,10 +64,22 @@ export default function AuthModal({ view, session, syncState, onView, onClose }:
         onMouseDown={e => e.stopPropagation()} onKeyDown={e => e.key === 'Escape' && onClose()}>
         <h2>{titles[view]}</h2>
 
-        {view === 'account' && session ? (
+        {view === 'profile' && session ? (
+          <>
+            <ProfileEditor session={session} me={me} onSaved={onProfile} />
+            <div className="auth-links"><button onClick={() => go('account')}>← volver</button></div>
+          </>
+        ) : view === 'account' && session ? (
           <>
             <p className="auth-note">conectado como <b>{session.user.email}</b></p>
             <p className="auth-note">{SYNC[syncState]}</p>
+            {me?.username
+              ? <p className="auth-note">tu perfil: <b>@{me.username}</b> · {me.is_public ? 'público' : 'privado'}</p>
+              : <p className="auth-note">elige un nombre de usuario para tener tu página de perfil</p>}
+            <div className="row">
+              <button className="on" onClick={() => go('profile')}>{me?.username ? 'editar perfil' : 'crear mi perfil'}</button>
+              {me?.username && <button onClick={() => { onClose(); onOpenProfile(me.username!) }}>ver mi perfil</button>}
+            </div>
             <button onClick={() => act(() => supabase.auth.signOut(), '', true)} disabled={busy}>cerrar sesión</button>
           </>
         ) : (
@@ -87,7 +104,7 @@ export default function AuthModal({ view, session, syncState, onView, onClose }:
                 </label>
               )}
               <button className="on" type="submit" disabled={busy}>
-                {busy ? '…' : { login: 'entrar', signup: 'crear cuenta', magic: 'enviar enlace', reset: 'enviar enlace', newpass: 'guardar', account: '' }[view]}
+                {busy ? '…' : { login: 'entrar', signup: 'crear cuenta', magic: 'enviar enlace', reset: 'enviar enlace', newpass: 'guardar', account: '', profile: '' }[view]}
               </button>
             </form>
             <div className="auth-links">
