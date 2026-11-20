@@ -12,6 +12,7 @@ import { inputDiff } from './inputDiff'
 import { renderCard } from './shareCard'
 import { copyText, shareImage } from './share'
 import CoachCard from './CoachCard'
+import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
 // phones/tablets: no physical keyboard, so typing goes through a hidden input
@@ -19,7 +20,7 @@ const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
 
 const DURATIONS = [15, 30, 60, 120]
 const COUNTS = [10, 25, 50, 100]
-const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica' }
+const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica', daily: 'reto' }
 const PRACTICE_WORDS = 40
 
 type Settings = {
@@ -55,6 +56,7 @@ function buildTest(s: Settings, keys: KeyStats): { words: string[]; by?: string 
     case 'quote': return randomQuote(s.lang)
     case 'custom': return { words: s.custom.trim().split(/\s+/).filter(Boolean) }
     case 'zen': return { words: [] }
+    case 'daily': return { words: dailyWords(s.lang) }
   }
 }
 
@@ -62,6 +64,7 @@ type Sample = { wpm: number; raw: number }
 type FullResult = Result & {
   samples: Sample[]; chars: ReturnType<typeof charStats>; by?: string
   hits: Record<string, number>; errs: Record<string, number>; prevPb: number; bigrams: Bigrams
+  daily?: { n: number; official: boolean; entry: DailyEntry } // set for the daily challenge
 }
 
 // pixel position of character `ci` inside a word element (after the last char if past the end)
@@ -76,6 +79,7 @@ export default function App() {
   const [s, setS] = useState(loadSettings)
   const [history, setHistory] = useState(loadHistory)
   const [keyStats, setKeyStats] = useState(loadKeys)
+  const [daily, setDaily] = useState(loadDaily)
   const [test, setTest] = useState(() => buildTest(s, keyStats))
   const words = test.words
   const [typed, setTyped] = useState<string[]>([''])
@@ -139,9 +143,17 @@ export default function App() {
     saveKeys(merged)
     setKeyStats(merged)
     saveBigrams(mergeBigrams(loadBigrams(), bigrams))
-    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams })
+    // daily challenge: only the first attempt of the day counts; later ones are practice
+    let dailyInfo: FullResult['daily']
+    if (s.mode === 'daily') {
+      const prev = officialFor(daily, s.lang)
+      const entry = prev ?? { wpm: r.wpm, acc: r.acc, grid: grid(words, done) }
+      if (!prev) setDaily(saveOfficial(daily, s.lang, entry))
+      dailyInfo = { n: challengeNumber(), official: !prev, entry }
+    }
+    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo })
     setPhase('done')
-  }, [s, pb, words, zen, test.by, keyStats])
+  }, [s, pb, words, zen, test.by, keyStats, daily])
 
   // 1s tick: sample speed, count the clock
   useEffect(() => {
