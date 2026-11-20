@@ -45,6 +45,31 @@ export function charStats(targets: string[], typed: string[]) {
 
 export const bestWpm = (h: Result[], key: string) => Math.max(0, ...h.filter(r => modeKey(r) === key).map(r => r.wpm))
 
+// local-time day key, e.g. "2026-11-19"
+export const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+export function dailyCounts(h: Result[]): Map<string, number> {
+  const m = new Map<string, number>()
+  for (const r of h) {
+    const k = dayKey(new Date(r.date))
+    m.set(k, (m.get(k) ?? 0) + 1)
+  }
+  return m
+}
+
+export function longestStreak(h: Result[]): number {
+  const days = [...dailyCounts(h).keys()].sort()
+  let best = 0, run = 0, prev = ''
+  for (const k of days) {
+    const d = new Date(k + 'T12:00')
+    d.setDate(d.getDate() - 1)
+    run = prev === dayKey(d) ? run + 1 : 1
+    best = Math.max(best, run)
+    prev = k
+  }
+  return best
+}
+
 // consecutive days (ending today or yesterday) with at least one test
 export function streak(h: Result[], now = Date.now()): number {
   const days = new Set(h.map(r => new Date(r.date).toDateString()))
