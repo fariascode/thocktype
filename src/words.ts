@@ -20,7 +20,15 @@ const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)]
 
 // Keybr-style drill: words rich in the given weak letters, with some plain words so it still reads naturally
 export function weakWords(lang: Lang, weak: string[], n: number): string[] {
-  const score = (w: string) => [...w.toLowerCase()].filter(c => weak.includes(c)).length
+  return drill(lang, w => [...w.toLowerCase()].filter(c => weak.includes(c)).length, n)
+}
+
+// coach drill: words containing the slow letter pairs (e.g. "qu", "ci")
+export function bigramWords(lang: Lang, pairs: string[], n: number): string[] {
+  return drill(lang, w => pairs.reduce((s, p) => s + w.toLowerCase().split(p).length - 1, 0), n)
+}
+
+function drill(lang: Lang, score: (w: string) => number, n: number): string[] {
   const pool = lists[lang].filter(w => score(w) > 0).sort((a, b) => score(b) - score(a))
   if (!pool.length) return randomWords(lang, n)
   const top = pool.slice(0, Math.max(20, Math.ceil(pool.length / 2))) // favour words with several weak letters
