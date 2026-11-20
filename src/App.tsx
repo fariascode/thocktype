@@ -153,8 +153,11 @@ export default function App() {
       if (e.target instanceof HTMLTextAreaElement) return
       if (e.key === 'Tab' || e.key === 'Escape') { e.preventDefault(); restart(); return }
       if (phase === 'done' || view !== 'test' || editing || e.metaKey || e.altKey) return
-      if (zen && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); if (phase === 'running') finish(typed); return }
+      if (zen && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); if (phase === 'running') finish(t.current.typed); return }
       const c = t.current
+      // read/write through the ref so several keys in one tick (mobile autocorrect) don't overwrite each other
+      const typed = c.typed
+      const type = (next: string[]) => { c.typed = next; setTyped(next) }
       const i = typed.length - 1
       const cur = typed[i]
       const target = zen ? undefined : words[i]
@@ -162,8 +165,8 @@ export default function App() {
 
       if (e.key === 'Backspace') {
         e.preventDefault()
-        if (cur === '' && i > 0 && (zen || typed[i - 1] !== words[i - 1])) setTyped(typed.slice(0, -1)) // back into a wrong word
-        else setTyped([...typed.slice(0, i), e.ctrlKey ? '' : cur.slice(0, -1)])
+        if (cur === '' && i > 0 && (zen || typed[i - 1] !== words[i - 1])) type(typed.slice(0, -1)) // back into a wrong word
+        else type([...typed.slice(0, i), e.ctrlKey ? '' : cur.slice(0, -1)])
         return
       }
       // dead keys (´ ¨ ^) arrive as 'Dead' and are ignored; the composed letter (á) comes next
@@ -177,7 +180,7 @@ export default function App() {
         if (ok) c.good++
         if (s.sound) thock(!ok)
         if (finite && i === words.length - 1) { finish(typed); return } // space on the last word ends the test
-        setTyped([...typed, ''])
+        type([...typed, ''])
         if (s.mode === 'time' && i > words.length - 50) setTest({ words: [...words, ...randomWords(s.lang, 200, s)] })
         return
       }
@@ -192,7 +195,7 @@ export default function App() {
       }
       if (s.sound) thock(!ok)
       const next = [...typed.slice(0, i), cur + e.key]
-      setTyped(next)
+      type(next)
       if (finite && i === words.length - 1 && cur + e.key === target) finish(next) // last word typed correctly ends the test
     }
     window.addEventListener('keydown', onKey)
