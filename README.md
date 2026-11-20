@@ -2,6 +2,8 @@
 
 Test de mecanografía minimalista en blanco y negro.
 
+**Pruébala:** https://thocktype-alpha.vercel.app
+
 - **Modos:** tiempo (15/30/60/120 s), palabras (10/25/50/100), citas con autor, zen (escritura libre, `shift+enter` termina) y texto libre (pega el tuyo)
 - **Idiomas:** español e inglés (~1,100 palabras cada uno) y código (JS, Python, SQL, CSS, shell), con `@ puntuación` y `# números` opcionales
 - **Barra de estado** inferior, estilo editor de código, con toda la configuración
