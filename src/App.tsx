@@ -9,6 +9,8 @@ import Chart from './Chart'
 import Heatmap from './Heatmap'
 import Calendar from './Calendar'
 import { inputDiff } from './inputDiff'
+import { renderCard } from './shareCard'
+import { copyText, shareImage } from './share'
 
 // phones/tablets: no physical keyboard, so typing goes through a hidden input
 const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
@@ -416,10 +418,38 @@ function ResultView({ r, theme, onNext }: { r: FullResult; theme: string; onNext
         <div title="correctos / incorrectos / extra / faltantes"><small>caracteres</small>{r.chars.correct}/{r.chars.incorrect}/{r.chars.extra}/{r.chars.missed}</div>
         <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}</div>
       </div>
+      <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
       {r.by && <p className="by">— {r.by}</p>}
       {mode !== 'zen' && <div className="card"><small>teclas de este test</small><Heatmap hits={r.hits} errs={r.errs} /></div>}
       <p className="hint">{COARSE ? <button onClick={onNext}>↻ siguiente test</button> : <><kbd>tab</kbd> siguiente test</>}</p>
     </section>
+  )
+}
+
+function ShareBar({ r, modeLabel }: { r: FullResult; modeLabel: string }) {
+  const [status, setStatus] = useState('')
+  const [busy, setBusy] = useState(false)
+  // shortcut: no link in the text until the app has a public URL, add it after publishing
+  const text = `ThockType · ${r.wpm} wpm · ${r.acc}% precisión · ${modeLabel}`
+  const flash = (msg: string) => { setStatus(msg); setTimeout(() => setStatus(''), 2500) }
+  const onImage = async () => {
+    setBusy(true)
+    try {
+      const blob = await renderCard({
+        wpm: r.wpm, acc: r.acc, raw: r.raw, cons: r.cons, modeLabel,
+        samples: r.samples.map(x => x.wpm), date: r.date, pb: r.wpm > r.prevPb,
+      })
+      const how = await shareImage(blob, text)
+      if (how === 'downloaded') flash('imagen descargada')
+    } catch { flash('no se pudo crear la imagen') }
+    setBusy(false)
+  }
+  return (
+    <div className="share">
+      <button onClick={onImage} disabled={busy}>{busy ? 'creando…' : '↗ compartir imagen'}</button>
+      <button onClick={async () => flash((await copyText(text)) ? 'texto copiado' : 'no se pudo copiar')}>⧉ copiar texto</button>
+      <span className="share-status" role="status">{status}</span>
+    </div>
   )
 }
 

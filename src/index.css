@@ -161,6 +161,10 @@ kbd {
 }
 @keyframes pop { from { transform: scale(.92); opacity: 0; } }
 .chart { height: 220px; }
+.share { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.share button { border-color: var(--border); background: var(--surface); }
+.share button:hover { border-color: var(--text-3); }
+.share-status { font-size: 13px; color: var(--text-2); }
 
 /* ── Custom text editor ───────────────────────────────────────────────── */
 .editor { display: flex; flex-direction: column; gap: 12px; }
