@@ -357,7 +357,7 @@ kbd {
 .palette-btn kbd { font-size: 10px; padding: 0 5px; }
 
 /* ── Auth ─────────────────────────────────────────────────────────────── */
-.auth { width: min(400px, 100%); margin-top: 4vh; animation: enter 160ms var(--ease); }
+.auth { width: min(400px, 100%); margin-top: 4vh; overflow-y: auto; animation: enter 160ms var(--ease); } /* scroll only as a last resort on tiny screens, never cut */
 .auth h2 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
 .auth form { display: flex; flex-direction: column; gap: 12px; }
 .auth label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-3); }
