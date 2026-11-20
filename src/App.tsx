@@ -28,14 +28,28 @@ type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
   theme: 'dark' | 'light'; sound: boolean; live: boolean; ghost: boolean
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
+  rules: Rules
 }
+type Rules = { noBack: boolean; blind: boolean; brake: boolean; sudden: boolean }
+const NO_RULES: Rules = { noBack: false, blind: false, brake: false, sudden: false }
+const RULES: Record<keyof Rules, [label: string, help: string]> = {
+  noBack: ['sin borrar', 'backspace desactivado'],
+  blind: ['ciego', 'no ves tus errores hasta el final'],
+  brake: ['frenar', 'no avanzas hasta teclear la letra correcta'],
+  sudden: ['súbita', 'un error y se acaba el test'],
+}
+// the daily challenge is the same fair test for everyone, and zen has nothing to be wrong about
+const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', sound: false, live: true, ghost: true, drill: [],
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
-  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SKEY) || '{}') } } catch { return DEFAULTS }
+  try {
+    const saved = JSON.parse(localStorage.getItem(SKEY) || '{}')
+    return { ...DEFAULTS, ...saved, rules: { ...NO_RULES, ...saved.rules } }
+  } catch { return DEFAULTS }
 }
 
 // punctuation/numbers only apply to generated words
@@ -66,6 +80,7 @@ type FullResult = Result & {
   samples: Sample[]; chars: ReturnType<typeof charStats>; by?: string
   hits: Record<string, number>; errs: Record<string, number>; prevPb: number; bigrams: Bigrams
   daily?: { n: number; official: boolean; entry: DailyEntry } // set for the daily challenge
+  failed?: number // sudden death: index of the word where the test was lost
 }
 
 // pixel position of character `ci` inside a word element (after the last char if past the end)
@@ -122,7 +137,7 @@ export default function App() {
   const key = testKey(s)
   const pb = useMemo(() => bestWpm(history, key), [history, key])
 
-  const finish = useCallback((typed: string[]) => {
+  const finish = useCallback((typed: string[], failed?: number) => {
     const { keys, good, samples, hits, errs, start, bigrams } = t.current
     const done = typed[typed.length - 1] === '' ? typed.slice(0, -1) : typed
     const targets = zen ? done : words
@@ -136,8 +151,14 @@ export default function App() {
       lang: s.lang, duration: Math.round(secs), mode: s.mode,
       value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0,
       punct: usesOpts(s.mode) && s.punct, numbers: usesOpts(s.mode) && s.numbers,
+      rules: (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k]),
     }
     if (!done.length) { setPhase('idle'); return } // nothing typed (zen): don't record
+    if (failed !== undefined) { // sudden death: show what happened, keep it out of history and records
+      setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, failed })
+      setPhase('done')
+      return
+    }
     saveResult(r)
     setHistory(h => [...h, r])
     const merged = mergeKeys(keyStats, { hits, errs })
@@ -187,9 +208,11 @@ export default function App() {
       const cur = typed[i]
       const target = zen ? undefined : words[i]
       if (!zen && target === undefined) return // empty custom text
+      const rules = activeRules(s)
 
       if (e.key === 'Backspace') {
         e.preventDefault()
+        if (rules.noBack) return
         if (cur === '' && i > 0 && (zen || typed[i - 1] !== words[i - 1])) type(typed.slice(0, -1)) // back into a wrong word
         else type([...typed.slice(0, i), e.ctrlKey ? '' : cur.slice(0, -1)])
         return
@@ -200,8 +223,10 @@ export default function App() {
       if (phase === 'idle') { c.start = performance.now(); setPhase('running') }
       if (e.key === ' ') {
         if (cur === '') return
+        if (rules.brake && cur !== target) { if (s.sound) thock(true); return } // must finish the word correctly first
         c.keys++; c.secKeys++
         const ok = zen || cur === target
+        if (!ok && rules.sudden) { finish(typed, i); return }
         if (ok) c.good++
         c.lastAt = performance.now()
         if (s.sound) thock(!ok)
@@ -227,6 +252,8 @@ export default function App() {
       }
       c.lastAt = now
       if (s.sound) thock(!ok)
+      if (!ok && rules.sudden) { finish(typed, i); return }
+      if (!ok && rules.brake) return // the mistake counts, but the caret stays until the right key
       const next = [...typed.slice(0, i), cur + e.key]
       type(next)
       if (finite && i === words.length - 1 && cur + e.key === target) finish(next) // last word typed correctly ends the test

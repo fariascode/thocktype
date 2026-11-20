@@ -22,7 +22,7 @@ export type Mode = 'time' | 'words' | 'quote' | 'zen' | 'custom' | 'practice' | 
 // duration = seconds the test lasted; value = 30 (s) in time mode or 50 (words) in words mode
 export type Result = {
   date: number; wpm: number; raw: number; acc: number; cons: number; lang: string; duration: number
-  punct?: boolean; numbers?: boolean; mode?: Mode; value?: number
+  punct?: boolean; numbers?: boolean; mode?: Mode; value?: number; rules?: string[]
 }
 
 // identifies "the same kind of test" for personal bests; old results (no mode) were time tests
