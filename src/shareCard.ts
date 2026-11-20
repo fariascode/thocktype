@@ -43,6 +43,7 @@ export async function renderCard(d: CardData): Promise<Blob> {
   g.fillText(String(d.wpm), 88, 372)
   label('precisión', 560, 220)
   g.font = `500 96px ${mono}`
+  g.fillStyle = C.text1
   g.fillText(`${d.acc}%`, 556, 316)
 
   // secondary stats
@@ -53,14 +54,16 @@ export async function renderCard(d: CardData): Promise<Blob> {
   // sparkline of wpm per second
   if (d.samples.length > 1) {
     const x0 = 96, x1 = W - 96, y0 = 430, y1 = 520
-    const max = Math.max(...d.samples, 1)
+    // scale to the run's own range so the rhythm is visible, not a flat line near the top
+    const max = Math.max(...d.samples), min = Math.min(...d.samples)
+    const span = Math.max(max - min, 10)
     g.strokeStyle = C.text1
     g.lineWidth = 3
     g.lineJoin = 'round'
     g.beginPath()
     d.samples.forEach((v, i) => {
       const x = x0 + ((x1 - x0) * i) / (d.samples.length - 1)
-      const y = y1 - ((y1 - y0) * v) / max
+      const y = y1 - ((y1 - y0) * (v - min)) / span
       if (i) g.lineTo(x, y); else g.moveTo(x, y)
     })
     g.stroke()
