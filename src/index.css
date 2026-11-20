@@ -517,3 +517,20 @@ kbd {
 .rk-wpm small { display: inline; font-size: 11px; color: var(--text-3); }
 .rk-acc { font-family: var(--mono); font-size: 13px; color: var(--text-2); text-align: right; }
 .rk-note { text-align: left; margin-top: 6px; }
+
+/* ── Personal bests ───────────────────────────────────────────────────── */
+.pb-groups { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 820px) { .pb-groups { grid-template-columns: 1fr 1fr; } }
+.pb-group { margin-bottom: 8px; color: var(--text-2); }
+.pb-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 480px) { .pb-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pb-slot {
+  display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--border); font-variant-numeric: tabular-nums; min-width: 0;
+}
+.pb-slot b { font-family: var(--mono); font-size: 28px; font-weight: 500; line-height: 1.1; color: var(--accent); }
+.pb-slot b span { font-size: 12px; color: var(--text-3); }
+.pb-slot .pb-none { color: var(--text-3); }
+.pb-slot.empty { opacity: .6; }
+.pb-acc { font-family: var(--mono); font-size: 14px; color: var(--text-1); }
+.pb-meta { font-size: 11px; color: var(--text-3); line-height: 1.35; }

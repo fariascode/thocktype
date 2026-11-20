@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { dailyCounts, dayKey, type Result } from './stats'
 
 const WEEKS = 26
@@ -7,6 +8,9 @@ const DAYS = ['l', '', 'x', '', 'v', '', 'd']
 
 // GitHub-style activity grid, one column per week (monday first), ink = tests that day
 export default function Calendar({ h }: { h: Result[] }) {
+  // on narrow screens the grid scrolls sideways: start at the current week, not six months ago
+  const wrap = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (wrap.current) wrap.current.scrollLeft = wrap.current.scrollWidth }, [])
   const counts = dailyCounts(h)
   const today = new Date()
   const start = new Date(today)
@@ -17,7 +21,7 @@ export default function Calendar({ h }: { h: Result[] }) {
     return d
   })
   return (
-    <div className="cal-wrap">
+    <div className="cal-wrap" ref={wrap}>
       <div className="cal">
         {DAYS.map((d, i) => <span key={'d' + i} className="cal-day">{d}</span>)}
         {cells.map(d => {

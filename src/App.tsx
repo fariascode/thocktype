@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { LANGS, bigramWords, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
-  loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, dayKey, type KeyStats, type Mode, type Result,
+  loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, COUNTS, dayKey, type KeyStats, type Mode, type Result,
 } from './stats'
 import { thock } from './sound'
 import Chart from './Chart'
@@ -31,7 +31,6 @@ import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from 
 const PROFILE_RE = /^\/u\/([a-z0-9_]{3,20})\/?$/
 const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
 
-const COUNTS = [10, 25, 50, 100]
 const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica', daily: 'reto' }
 const PRACTICE_WORDS = 40
 

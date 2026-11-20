@@ -117,3 +117,34 @@ export function saveHistory(h: Result[]) {
   try { localStorage.setItem(KEY, JSON.stringify(h)) } catch { /* storage blocked: skip */ }
 }
 export const DURATIONS = [15, 30, 60, 120]
+export const COUNTS = [10, 25, 50, 100]
+
+// best run per mode slot; ties go to the more accurate run. Only time/words tests count, like typing-test PBs.
+const better = (a: Result | undefined, b: Result) => (!a || b.wpm > a.wpm || (b.wpm === a.wpm && b.acc > a.acc) ? b : a)
+export function personalBests(h: Result[]) {
+  const time: Record<number, Result | undefined> = {}, words: Record<number, Result | undefined> = {}
+  for (const r of h) {
+    const mode = r.mode ?? 'time'
+    if (mode === 'time') { const d = r.value ?? r.duration; if (DURATIONS.includes(d)) time[d] = better(time[d], r) }
+    if (mode === 'words' && r.value && COUNTS.includes(r.value)) words[r.value] = better(words[r.value], r)
+  }
+  return { time, words }
+}
+
+export function lifetime(h: Result[]) {
+  const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0)
+  return {
+    tests: h.length,
+    seconds: h.reduce((a, r) => a + r.duration, 0),
+    top: Math.max(0, ...h.map(r => r.wpm)),
+    avg: avg(h.map(r => r.wpm)),
+    last10: avg(h.slice(-10).map(r => r.wpm)),
+    acc: avg(h.map(r => r.acc)),
+  }
+}
+
+// 4510 s -> "1 h 15 min", 95 s -> "1 min 35 s"
+export function formatDuration(s: number) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+  return h ? `${h} h ${m} min` : m ? `${m} min ${s % 60} s` : `${s} s`
+}

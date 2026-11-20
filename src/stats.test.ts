@@ -32,3 +32,21 @@ assert.equal(wpm(50, 60), 10)
 assert.equal(consistency([60, 60, 60]), 100)
 assert.equal(consistency([0, 0]), 0)
 console.log('stats ok')
+
+import { personalBests, lifetime, formatDuration } from './stats.ts'
+const PR = (o: Partial<Result>) => ({ date: 0, wpm: 50, raw: 55, acc: 95, cons: 80, lang: 'es', duration: 30, ...o }) as Result
+const pbHist = [
+  PR({ wpm: 80 }), PR({ wpm: 90, acc: 92 }), PR({ wpm: 90, acc: 97 }),     // old time results (no mode/value), tie broken by accuracy
+  PR({ mode: 'time', value: 60, duration: 60, wpm: 70 }),
+  PR({ mode: 'words', value: 25, duration: 20, wpm: 100 }),
+  PR({ mode: 'quote', wpm: 200 }), PR({ mode: 'daily', wpm: 150 }),        // not personal-best slots
+]
+const pbs = personalBests(pbHist)
+assert.equal(pbs.time[30]!.acc, 97)
+assert.equal(pbs.time[60]!.wpm, 70)
+assert.equal(pbs.words[25]!.wpm, 100)
+assert.equal(pbs.time[15], undefined)
+const life = lifetime(pbHist)
+assert.equal(life.tests, 7); assert.equal(life.top, 200); assert.equal(life.seconds, 30 * 6 + 20 + 60 - 30)
+assert.equal(formatDuration(4510), '1 h 15 min'); assert.equal(formatDuration(95), '1 min 35 s'); assert.equal(formatDuration(42), '42 s')
+console.log('personal bests ok')
