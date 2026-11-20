@@ -8,7 +8,8 @@ Test de mecanografía minimalista en blanco y negro.
 - **Fantasma:** un cursor que corre a la velocidad de tu récord en ese modo
 - **Mapa de teclas débiles:** muestra en qué teclas fallas más, tanto en cada test como en todo tu historial
 - **Modo práctica:** genera palabras cargadas de tus teclas débiles para que las entrenes
-- **Racha** de días seguidos practicando, e **historial** con gráficas (guardado en tu navegador)
+- **Racha** de días seguidos practicando, con racha más larga y un **calendario de actividad** de 6 meses
+- **Historial** con gráficas (guardado en tu navegador)
 - Cursor suave, sonido *thock* sintetizado, tema claro u oscuro, WPM en vivo
 - Métricas: WPM, raw, precisión, consistencia, y caracteres correctos, incorrectos, extra y faltantes
 

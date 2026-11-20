@@ -1,0 +1,35 @@
+import { dailyCounts, dayKey, type Result } from './stats'
+
+const WEEKS = 26
+const LEVELS = [0, 1, 3, 6, 10] // tests per day for each ink level
+const level = (n: number) => LEVELS.filter(l => n >= l).length - 1
+const DAYS = ['l', '', 'x', '', 'v', '', 'd']
+
+// GitHub-style activity grid, one column per week (monday first), ink = tests that day
+export default function Calendar({ h }: { h: Result[] }) {
+  const counts = dailyCounts(h)
+  const today = new Date()
+  const start = new Date(today)
+  start.setDate(today.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7) // monday, 25 weeks ago
+  const cells = Array.from({ length: WEEKS * 7 }, (_, i) => {
+    const d = new Date(start)
+    d.setDate(start.getDate() + i)
+    return d
+  })
+  return (
+    <div className="cal-wrap">
+      <div className="cal">
+        {DAYS.map((d, i) => <span key={'d' + i} className="cal-day">{d}</span>)}
+        {cells.map(d => {
+          const n = counts.get(dayKey(d)) ?? 0
+          const future = d > today
+          return (
+            <span key={dayKey(d)} className={`cell l${level(n)} ${future ? 'future' : ''}`}
+              title={future ? '' : `${d.toLocaleDateString()}: ${n} test${n === 1 ? '' : 's'}`} />
+          )
+        })}
+      </div>
+      <div className="cal-legend">menos {LEVELS.map((_, i) => <span key={i} className={`cell l${i}`} />)} más</div>
+    </div>
+  )
+}
