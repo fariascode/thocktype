@@ -52,7 +52,7 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'jetbrains', caret: 'line', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
