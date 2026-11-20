@@ -11,6 +11,7 @@ import Calendar from './Calendar'
 import { inputDiff } from './inputDiff'
 import { renderCard } from './shareCard'
 import { copyText, shareImage } from './share'
+import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
 // phones/tablets: no physical keyboard, so typing goes through a hidden input
 const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
@@ -56,7 +57,7 @@ function buildTest(s: Settings, keys: KeyStats): { words: string[]; by?: string 
 type Sample = { wpm: number; raw: number }
 type FullResult = Result & {
   samples: Sample[]; chars: ReturnType<typeof charStats>; by?: string
-  hits: Record<string, number>; errs: Record<string, number>; prevPb: number
+  hits: Record<string, number>; errs: Record<string, number>; prevPb: number; bigrams: Bigrams
 }
 
 // pixel position of character `ci` inside a word element (after the last char if past the end)
@@ -89,7 +90,7 @@ export default function App() {
     try { localStorage.setItem(SKEY, JSON.stringify(s)) } catch { /* storage blocked */ }
   }, [s])
 
-  const fresh = () => ({ start: 0, keys: 0, good: 0, secKeys: 0, samples: [] as Sample[], hits: {} as Record<string, number>, errs: {} as Record<string, number> })
+  const fresh = () => ({ start: 0, keys: 0, good: 0, secKeys: 0, samples: [] as Sample[], hits: {} as Record<string, number>, errs: {} as Record<string, number>, bigrams: {} as Bigrams, lastAt: 0 })
   // mutable test data read inside the timer and animation loop
   const t = useRef({ ...fresh(), typed, words })
   t.current.typed = typed
@@ -113,7 +114,7 @@ export default function App() {
   const pb = useMemo(() => bestWpm(history, key), [history, key])
 
   const finish = useCallback((typed: string[]) => {
-    const { keys, good, samples, hits, errs, start } = t.current
+    const { keys, good, samples, hits, errs, start, bigrams } = t.current
     const done = typed[typed.length - 1] === '' ? typed.slice(0, -1) : typed
     const targets = zen ? done : words
     const secs = s.mode === 'time' ? s.duration : Math.max(1, (performance.now() - start) / 1000)
@@ -133,7 +134,8 @@ export default function App() {
     const merged = mergeKeys(keyStats, { hits, errs })
     saveKeys(merged)
     setKeyStats(merged)
-    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by })
+    saveBigrams(mergeBigrams(loadBigrams(), bigrams))
+    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams })
     setPhase('done')
   }, [s, pb, words, zen, test.by, keyStats])
 
@@ -184,6 +186,7 @@ export default function App() {
         c.keys++; c.secKeys++
         const ok = zen || cur === target
         if (ok) c.good++
+        c.lastAt = performance.now()
         if (s.sound) thock(!ok)
         if (finite && i === words.length - 1) { finish(typed); return } // space on the last word ends the test
         type([...typed, ''])
@@ -199,6 +202,13 @@ export default function App() {
         c.hits[k] = (c.hits[k] ?? 0) + 1
         if (!ok) c.errs[k] = (c.errs[k] ?? 0) + 1
       }
+      // coach: time between two correct letters inside a word = cost of that letter pair
+      const now = performance.now()
+      if (ok && target && cur.length > 0 && cur[cur.length - 1] === target[cur.length - 1] && c.lastAt) {
+        const dt = now - c.lastAt
+        if (dt > 15 && dt < 2000) addBigram(c.bigrams, (target[cur.length - 1] + e.key).toLowerCase(), dt) // skip bursts and pauses
+      }
+      c.lastAt = now
       if (s.sound) thock(!ok)
       const next = [...typed.slice(0, i), cur + e.key]
       type(next)
