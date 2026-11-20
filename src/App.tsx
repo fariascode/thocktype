@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { LANGS, randomQuote, randomWords, type Lang } from './words'
-import { bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm, type Mode, type Result } from './stats'
+import { LANGS, randomQuote, randomWords, weakWords, type Lang } from './words'
+import {
+  bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
+  loadKeys, mergeKeys, saveKeys, weakKeys, type KeyStats, type Mode, type Result,
+} from './stats'
 import { thock } from './sound'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
 
 const DURATIONS = [15, 30, 60, 120]
 const COUNTS = [10, 25, 50, 100]
-const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre' }
+const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica' }
+const PRACTICE_WORDS = 40
 
 type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
@@ -30,9 +34,10 @@ const testKey = (s: Settings) => modeKey({
   punct: usesOpts(s.mode) && s.punct, numbers: usesOpts(s.mode) && s.numbers,
 })
 
-function buildTest(s: Settings): { words: string[]; by?: string } {
+function buildTest(s: Settings, keys: KeyStats): { words: string[]; by?: string } {
   const opts = { punct: s.punct, numbers: s.numbers }
   switch (s.mode) {
+    case 'practice': return { words: weakWords(s.lang, weakKeys(keys), PRACTICE_WORDS) }
     case 'time': return { words: randomWords(s.lang, 300, opts) }
     case 'words': return { words: randomWords(s.lang, s.count, opts) }
     case 'quote': return randomQuote(s.lang)
@@ -58,7 +63,8 @@ function charPos(word: HTMLElement, ci: number, sel = '.c') {
 export default function App() {
   const [s, setS] = useState(loadSettings)
   const [history, setHistory] = useState(loadHistory)
-  const [test, setTest] = useState(() => buildTest(s))
+  const [keyStats, setKeyStats] = useState(loadKeys)
+  const [test, setTest] = useState(() => buildTest(s, keyStats))
   const words = test.words
   const [typed, setTyped] = useState<string[]>([''])
   const [clock, setClock] = useState(0) // seconds elapsed
@@ -85,7 +91,7 @@ export default function App() {
   const restart = useCallback((next: Partial<Settings> = {}) => {
     const ns = { ...s, ...next }
     setS(ns)
-    setTest(buildTest(ns))
+    setTest(buildTest(ns, keyStats))
     setTyped([''])
     setClock(0)
     setLiveWpm(0)
@@ -94,7 +100,7 @@ export default function App() {
     setView('test')
     setEditing(false)
     t.current = { ...t.current, ...fresh() }
-  }, [s])
+  }, [s, keyStats])
 
   const key = testKey(s)
   const pb = useMemo(() => bestWpm(history, key), [history, key])
@@ -117,9 +123,12 @@ export default function App() {
     if (!done.length) { setPhase('idle'); return } // nothing typed (zen): don't record
     saveResult(r)
     setHistory(h => [...h, r])
+    const merged = mergeKeys(keyStats, { hits, errs })
+    saveKeys(merged)
+    setKeyStats(merged)
     setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by })
     setPhase('done')
-  }, [s, pb, words, zen, test.by])
+  }, [s, pb, words, zen, test.by, keyStats])
 
   // 1s tick: sample speed, count the clock
   useEffect(() => {
@@ -245,7 +254,7 @@ export default function App() {
         </nav>
       </header>
 
-      {view === 'history' ? <History h={history} theme={s.theme} /> : phase === 'done' && result ? (
+      {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} /> : phase === 'done' && result ? (
         <ResultView r={result} theme={s.theme} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
@@ -280,15 +289,15 @@ export default function App() {
       )}
 
       {view === 'test' && phase !== 'done' && !editing && (
-        <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} />
+        <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} />
       )}
     </main>
   )
 }
 
 // Editor-style status line: mode block on the left, options as segments, preferences on the right
-function StatusBar({ s, set, restart, edit }: {
-  s: Settings; set: (s: Settings) => void; restart: (n?: Partial<Settings>) => void; edit: () => void
+function StatusBar({ s, set, restart, edit, weak }: {
+  s: Settings; set: (s: Settings) => void; restart: (n?: Partial<Settings>) => void; edit: () => void; weak: string[]
 }) {
   const opt = (on: boolean, label: string, onClick: () => void, title?: string) =>
     <button className={on ? 'on' : ''} onClick={onClick} title={title}>{label}</button>
@@ -305,6 +314,9 @@ function StatusBar({ s, set, restart, edit }: {
         {s.mode === 'quote' && opt(false, 'otra cita', () => restart())}
         {s.mode === 'custom' && opt(false, 'editar texto', edit)}
         {s.mode === 'zen' && <span className="note">sin límite</span>}
+        {s.mode === 'practice' && (weak.length
+          ? <span className="note" title="tus teclas con más errores en todos tus tests">teclas <b className="weak">{weak.join(' ')}</b></span>
+          : <span className="note">haz unos tests para detectar tus teclas débiles</span>)}
       </div>
       {s.mode !== 'custom' && (
         <div className="seg">
@@ -372,7 +384,7 @@ function ResultView({ r, theme }: { r: FullResult; theme: string }) {
   )
 }
 
-function History({ h, theme }: { h: Result[]; theme: string }) {
+function History({ h, theme, keys }: { h: Result[]; theme: string; keys: KeyStats }) {
   const last = useMemo(() => h.slice(-50), [h])
   const labels = useMemo(() => last.map(r => new Date(r.date).toLocaleDateString()), [last])
   const series = useMemo(() => [{ label: 'wpm', data: last.map(r => r.wpm) }, { label: 'precisión', data: last.map(r => r.acc), dim: true }], [last])
@@ -391,6 +403,8 @@ function History({ h, theme }: { h: Result[]; theme: string }) {
         })}
       </div>
       <Chart key={theme} labels={labels} series={series} />
+      <small>todas tus teclas</small>
+      <Heatmap hits={keys.hits} errs={keys.errs} />
     </section>
   )
 }

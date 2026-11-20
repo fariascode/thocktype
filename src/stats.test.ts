@@ -1,6 +1,10 @@
 // Self-check: run with `npm run check`
 import assert from 'node:assert'
-import { correctChars, wpm, consistency, charStats, streak, modeKey, bestWpm, type Result } from './stats.ts'
+import { correctChars, wpm, consistency, charStats, streak, modeKey, bestWpm, mergeKeys, weakKeys, type Result } from './stats.ts'
+
+const ks = mergeKeys({ hits: { a: 10, b: 20 }, errs: { a: 1 } }, { hits: { a: 10, c: 20, ',': 20 }, errs: { b: 10, c: 2, ',': 15 } })
+assert.deepEqual(ks.hits, { a: 20, b: 20, c: 20, ',': 20 })
+assert.deepEqual(weakKeys(ks), ['b', 'c', 'a']) // ',' is not a letter; worst rate first
 
 const old = { date: 0, wpm: 80, raw: 0, acc: 0, cons: 0, lang: 'es', duration: 30 } as Result
 assert.equal(modeKey(old), modeKey({ ...old, mode: 'time', value: 30, punct: false }))
