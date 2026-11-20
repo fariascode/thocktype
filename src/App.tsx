@@ -13,6 +13,7 @@ import { renderCard } from './shareCard'
 import { copyText, shareImage } from './share'
 import CoachCard from './CoachCard'
 import DailyCard from './DailyCard'
+import CommandPalette, { type Command } from './CommandPalette'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -105,6 +106,7 @@ export default function App() {
   const [result, setResult] = useState<FullResult | null>(null)
   const [view, setView] = useState<'test' | 'history'>('test')
   const [editing, setEditing] = useState(false)
+  const [palette, setPalette] = useState(false)
 
   const zen = s.mode === 'zen'
   const finite = s.mode !== 'time' && !zen
@@ -196,6 +198,9 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase()
+      if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
+      if (palette) return // the palette handles its own keys
       if (e.target instanceof HTMLTextAreaElement) return
       if (e.key === 'Tab' || e.key === 'Escape') { e.preventDefault(); restart(); return }
       if (phase === 'done' || view !== 'test' || editing || e.metaKey || e.altKey) return
@@ -260,7 +265,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -313,6 +318,31 @@ export default function App() {
     return () => cancelAnimationFrame(raf)
   }, [phase, s.ghost, pb, zen])
 
+  const commands = (): Command[] => {
+    const cmds: Command[] = []
+    const add = (group: string, label: string, run: () => void) => cmds.push({ id: `${group}-${label}`, group, label, run })
+    add('test', 'reiniciar', () => restart())
+    add('test', `reto del día #${challengeNumber()}`, () => restart({ mode: 'daily' }))
+    add('test', 'practicar teclas débiles', () => restart({ mode: 'practice', drill: [] }))
+    add('ver', 'historial', () => setView('history'))
+    add('ver', 'test', () => restart())
+    for (const m of Object.keys(MODES) as Mode[]) add('modo', MODES[m], () => restart({ mode: m }))
+    for (const d of DURATIONS) add('tiempo', `${d} segundos`, () => restart({ mode: 'time', duration: d }))
+    for (const c of COUNTS) add('palabras', `${c} palabras`, () => restart({ mode: 'words', count: c }))
+    for (const l of Object.keys(LANGS) as Lang[]) add('idioma', LANGS[l], () => restart({ lang: l }))
+    add('texto libre', 'editar mi texto', () => { restart({ mode: 'custom' }); setEditing(true) })
+    const sw = (on: boolean) => (on ? 'desactivar' : 'activar')
+    add('opciones', `${sw(s.punct)} puntuación`, () => restart({ punct: !s.punct }))
+    add('opciones', `${sw(s.numbers)} números`, () => restart({ numbers: !s.numbers }))
+    for (const r of Object.keys(RULES) as (keyof Rules)[])
+      add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
+    add('preferencias', `${sw(s.sound)} sonido`, () => setS({ ...s, sound: !s.sound }))
+    add('preferencias', `${sw(s.live)} wpm en vivo`, () => setS({ ...s, live: !s.live }))
+    add('preferencias', `${sw(s.ghost)} fantasma`, () => setS({ ...s, ghost: !s.ghost }))
+    add('preferencias', `tema ${s.theme === 'dark' ? 'claro' : 'oscuro'}`, () => setS({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
+    return cmds
+  }
+
   const days = streak(history)
   const todayDaily = officialFor(daily, s.lang)
   const on = (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k])
@@ -332,6 +362,9 @@ export default function App() {
             <button className="daily-pill" onClick={() => restart({ mode: 'daily' })} title="el mismo texto para todos hoy">reto #{challengeNumber()}</button>
           )}
           {days > 0 && <span className="streak" title="días seguidos practicando">racha {days}d</span>}
+          <button className="palette-btn" onClick={() => setPalette(true)} title="paleta de comandos (ctrl+k)">
+            comandos{!COARSE && <kbd>ctrl k</kbd>}
+          </button>
           <button className={view === 'test' ? 'on' : ''} onClick={() => restart()}>test</button>
           <button className={view === 'history' ? 'on' : ''} onClick={() => setView('history')}>historial</button>
         </nav>
@@ -392,6 +425,7 @@ export default function App() {
       {view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
+      {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
 }

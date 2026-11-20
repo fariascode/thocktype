@@ -8,6 +8,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Fantasma:** un cursor que corre a la velocidad de tu récord en ese modo
 - **Mapa de teclas débiles:** muestra en qué teclas fallas más, tanto en cada test como en todo tu historial
 - **Reto diario:** el mismo texto para todos cada día, un intento oficial, racha de retos y resultado en cuadrícula ■□ para compartir
+- **Paleta de comandos** (`ctrl+k`): todo se controla desde el teclado con búsqueda que ignora acentos
 - **Reglas** combinables: sin borrar, ciego, frenar en error y muerte súbita
 - **Coach:** mide el tiempo entre cada par de letras, te dice cuáles te frenan (p. ej. «qu» 2.1× más lenta) y genera práctica con ellas
 - **Modo práctica:** genera palabras cargadas de tus teclas débiles para que las entrenes
@@ -28,4 +29,4 @@ npm run check   # pruebas de los cálculos
 npm run build
 ```
 
-Atajos: `tab` o `esc` reinician, `ctrl+backspace` borra la palabra.
+Atajos: `tab` o `esc` reinician, `ctrl+backspace` borra la palabra, `ctrl+k` abre la paleta de comandos.
