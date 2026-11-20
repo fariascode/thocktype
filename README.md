@@ -3,7 +3,7 @@
 Test de mecanografía minimalista en blanco y negro.
 
 - **Modos:** tiempo (15/30/60/120 s), palabras (10/25/50/100), citas con autor, zen (escritura libre, `shift+enter` termina) y texto libre (pega el tuyo)
-- **Idiomas:** español, inglés y código, con `@ puntuación` y `# números` opcionales
+- **Idiomas:** español e inglés (~1,100 palabras cada uno) y código (JS, Python, SQL, CSS, shell), con `@ puntuación` y `# números` opcionales
 - **Barra de estado** inferior, estilo editor de código, con toda la configuración
 - **Fantasma:** un cursor que corre a la velocidad de tu récord en ese modo
 - **Mapa de teclas débiles:** muestra en qué teclas fallas más, tanto en cada test como en todo tu historial
