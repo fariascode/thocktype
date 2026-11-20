@@ -269,3 +269,5 @@ kbd {
 .palette-foot { display: flex; gap: 6px; align-items: center; padding: 8px 14px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-3); }
 .palette-foot kbd { margin-left: 6px; }
 .palette-foot kbd:first-child { margin-left: 0; }
+.palette-btn { display: inline-flex; align-items: center; gap: 8px; }
+.palette-btn kbd { font-size: 10px; padding: 0 5px; }
