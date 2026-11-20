@@ -242,3 +242,30 @@ kbd {
 .words.blind .word.wrong { text-decoration: none; }
 .failed { align-self: flex-start; font-size: 14px; color: var(--text-2); border: 1px solid var(--border); background: var(--surface); padding: 8px 14px; border-radius: var(--r-md); }
 .failed b { color: var(--text-1); }
+
+/* ── Command palette ──────────────────────────────────────────────────── */
+.palette-backdrop {
+  position: fixed; inset: 0; z-index: 50; display: flex; justify-content: center; align-items: flex-start;
+  padding: 12vh 16px 16px; background: color-mix(in srgb, var(--bg) 60%, transparent); animation: fadein 120ms var(--ease);
+}
+@keyframes fadein { from { opacity: 0; } }
+.palette {
+  width: min(560px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: 0 24px 64px rgb(0 0 0 / .4); overflow: hidden; animation: enter 160ms var(--ease);
+}
+.palette input {
+  width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--border); color: var(--text-1);
+  font: inherit; font-size: 16px; padding: 16px 18px; outline: none;
+}
+.palette input::placeholder { color: var(--text-3); }
+.palette ul { list-style: none; padding: 6px; margin: 0; max-height: min(50vh, 380px); overflow-y: auto; }
+.palette li {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 12px;
+  border-radius: var(--r-sm); color: var(--text-2); font-size: 14px; cursor: pointer;
+}
+.palette li[aria-selected='true'] { background: var(--surface-2); color: var(--text-1); }
+.palette li small { font-size: 11px; }
+.palette li.empty { color: var(--text-3); cursor: default; }
+.palette-foot { display: flex; gap: 6px; align-items: center; padding: 8px 14px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-3); }
+.palette-foot kbd { margin-left: 6px; }
+.palette-foot kbd:first-child { margin-left: 0; }
