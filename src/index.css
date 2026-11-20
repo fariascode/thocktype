@@ -240,3 +240,5 @@ kbd {
 .words.blind .bad { color: var(--text-1); background: none; }
 .words.blind .extra { color: var(--text-1); text-decoration: none; opacity: 1; }
 .words.blind .word.wrong { text-decoration: none; }
+.failed { align-self: flex-start; font-size: 14px; color: var(--text-2); border: 1px solid var(--border); background: var(--surface); padding: 8px 14px; border-radius: var(--r-md); }
+.failed b { color: var(--text-1); }

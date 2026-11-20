@@ -477,11 +477,16 @@ function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: strin
     { label: 'wpm', data: r.samples.map(x => x.wpm) },
     { label: 'raw', data: r.samples.map(x => x.raw), dim: true },
   ], [r])
-  const newPb = r.wpm > r.prevPb
+  const newPb = r.failed === undefined && r.wpm > r.prevPb
   const mode = r.mode ?? 'time'
   const detail = mode === 'time' ? `${r.duration}s` : mode === 'words' ? `${r.value} palabras · ${r.duration}s` : `${r.duration}s`
   return (
     <section className="result">
+      {r.failed !== undefined && (
+        <div className="failed" role="alert">
+          <b>muerte súbita</b> · fallaste en la palabra {r.failed + 1}. Este intento no cuenta para tu historial ni tus récords.
+        </div>
+      )}
       {newPb && <div className="pb">{r.prevPb ? `nuevo récord · +${r.wpm - r.prevPb} wpm` : 'primer récord en este modo'}</div>}
       <div className="big">
         <div><small>wpm</small><b>{r.wpm}</b></div>
@@ -492,7 +497,7 @@ function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: strin
         <div><small>raw</small>{r.raw}</div>
         <div><small>consistencia</small>{r.cons}%</div>
         <div title="correctos / incorrectos / extra / faltantes"><small>caracteres</small>{r.chars.correct}/{r.chars.incorrect}/{r.chars.extra}/{r.chars.missed}</div>
-        <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}</div>
+        <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}{r.rules?.length ? ` · ${r.rules.map(k => RULES[k as keyof Rules][0]).join(', ')}` : ''}</div>
       </div>
       <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
       {r.daily && <DailyCard n={r.daily.n} lang={r.lang as Lang} official={r.daily.official} entry={r.daily.entry} />}
