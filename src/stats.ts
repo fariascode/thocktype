@@ -55,6 +55,32 @@ export function streak(h: Result[], now = Date.now()): number {
   return n
 }
 
+// lifetime per-key counters, feeding the weak-key practice mode
+export type KeyStats = { hits: Record<string, number>; errs: Record<string, number> }
+const KKEY = 'thocktype.keys'
+export function loadKeys(): KeyStats {
+  try { return { hits: {}, errs: {}, ...JSON.parse(localStorage.getItem(KKEY) || '{}') } } catch { return { hits: {}, errs: {} } }
+}
+export function mergeKeys(a: KeyStats, b: KeyStats): KeyStats {
+  const add = (x: Record<string, number>, y: Record<string, number>) => {
+    const out = { ...x }
+    for (const k in y) out[k] = (out[k] ?? 0) + y[k]
+    return out
+  }
+  return { hits: add(a.hits, b.hits), errs: add(a.errs, b.errs) }
+}
+export function saveKeys(k: KeyStats) {
+  try { localStorage.setItem(KKEY, JSON.stringify(k)) } catch { /* storage blocked: skip */ }
+}
+
+// letters with the highest error rate, ignoring keys typed too few times to judge
+export function weakKeys({ hits, errs }: KeyStats, n = 4, minHits = 15): string[] {
+  return Object.keys(errs)
+    .filter(k => hits[k] >= minHits && errs[k] > 0 && /\p{L}/u.test(k))
+    .sort((a, b) => errs[b] / hits[b] - errs[a] / hits[a])
+    .slice(0, n)
+}
+
 const KEY = 'thocktype.history'
 export function loadHistory(): Result[] {
   try { return JSON.parse(localStorage.getItem(KEY) || '[]') } catch { return [] }
