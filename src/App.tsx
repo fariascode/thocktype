@@ -315,6 +315,8 @@ export default function App() {
 
   const days = streak(history)
   const todayDaily = officialFor(daily, s.lang)
+  const on = (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k])
+  const ruleTags = on.length > 0 && <span className="rule-tags">{on.map(k => <span key={k}>{RULES[k][0]}</span>)}</span>
   const shown = zen ? typed : words.slice(0, typed.length + 80)
   const progress =
     s.mode === 'time' ? s.duration - clock
@@ -343,7 +345,7 @@ export default function App() {
         <>
           <div className="timer">
             {phase === 'running'
-              ? <>{progress}{s.live && <span className="live">{liveWpm} wpm</span>}</>
+              ? <>{progress}{s.live && <span className="live">{liveWpm} wpm</span>}{ruleTags}</>
               : <span className="live">{zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
           </div>
           <div className="typing">
@@ -361,7 +363,7 @@ export default function App() {
               {!touchFocus && <button className="tap-hint" onClick={() => touch.current?.focus()}>toca para escribir</button>}
             </>
           )}
-          <div className="words">
+          <div className={`words ${activeRules(s).blind ? 'blind' : ''}`}>
             <div className="inner" ref={inner}>
               {shown.map((w, wi) => {
                 const tw = typed[wi] ?? ''
@@ -436,6 +438,12 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
         <div className="seg">
           {opt(s.punct, '@ puntuación', () => restart({ punct: !s.punct }), 'mayúsculas y puntuación')}
           {opt(s.numbers, '# números', () => restart({ numbers: !s.numbers }))}
+        </div>
+      )}
+      {s.mode !== 'daily' && s.mode !== 'zen' && (
+        <div className="seg" aria-label="reglas">
+          {(Object.keys(RULES) as (keyof Rules)[]).map(k =>
+            opt(s.rules[k], RULES[k][0], () => restart({ rules: { ...s.rules, [k]: !s.rules[k] } }), RULES[k][1]))}
         </div>
       )}
       <div className="seg prefs">
