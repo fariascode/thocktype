@@ -22,6 +22,7 @@ import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
 import ProfilePage from './ProfilePage'
 import { applyAppearance, isLight, type Caret, type Font, type Size, type Theme } from './appearance'
+import SettingsPanel from './SettingsPanel'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -123,6 +124,7 @@ export default function App() {
   const profileName = path.match(PROFILE_RE)?.[1]
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [session, setSession] = useState<Session | null>(null)
   const [auth, setAuth] = useState<AuthView | null>(null)
   useEffect(() => {
@@ -250,7 +252,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
-      if (palette || auth || profileName) return // dialogs handle their own keys; profiles aren't for typing
+      if (palette || auth || settingsOpen || profileName) return // dialogs handle their own keys; profiles aren't for typing
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
@@ -317,7 +319,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, auth, profileName, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, profileName, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -396,6 +398,7 @@ export default function App() {
     add('opciones', `${sw(s.numbers)} números`, () => restart({ numbers: !s.numbers }))
     for (const r of Object.keys(RULES) as (keyof Rules)[])
       add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
+    add('preferencias', 'ajustes · tamaño, fuente, cursor y tema', () => setSettingsOpen(true))
     add('cuenta', session ? 'cerrar sesión' : 'iniciar sesión', () => (session ? supabase.auth.signOut() : setAuth('login')))
     add('preferencias', `${sw(s.sound)} sonido`, () => setS({ ...s, sound: !s.sound }))
     add('preferencias', `${sw(s.live)} wpm en vivo`, () => setS({ ...s, live: !s.live }))
@@ -423,6 +426,7 @@ export default function App() {
             <button className="daily-pill" onClick={() => restart({ mode: 'daily' })} title="el mismo texto para todos hoy">reto #{challengeNumber()}</button>
           )}
           {days > 0 && <span className="streak" title="días seguidos practicando">racha {days}d</span>}
+          <button className="gear" onClick={() => setSettingsOpen(true)} title="ajustes" aria-label="ajustes">⚙</button>
           <button className="palette-btn" onClick={() => setPalette(true)} title="paleta de comandos (ctrl+k)">
             comandos{!COARSE && <kbd>ctrl k</kbd>}
           </button>
@@ -494,6 +498,7 @@ export default function App() {
       )}
       {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
         onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
+      {settingsOpen && <SettingsPanel a={s} onChange={next => setS({ ...s, ...next })} onClose={() => setSettingsOpen(false)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )

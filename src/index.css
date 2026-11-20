@@ -369,3 +369,4 @@ kbd {
 .caret.static { transform: none; transition: none; animation: blink 1.1s ease-in-out infinite; }
 .swatch-label { display: inline-flex; align-items: center; gap: 8px; }
 .swatch { display: inline-grid; place-items: center; width: 26px; height: 20px; border-radius: 5px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); }
+.gear { font-size: 17px; line-height: 1; padding: 6px 9px; }
