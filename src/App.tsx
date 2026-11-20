@@ -344,7 +344,7 @@ function CustomEditor({ initial, onUse, onCancel }: { initial: string; onUse: (t
   const [text, setText] = useState(initial)
   const valid = text.trim().length > 0
   return (
-    <section className="editor">
+    <section className="editor card">
       <small>tu texto · pega lo que quieras practicar</small>
       <textarea autoFocus value={text} onChange={e => setText(e.target.value)} rows={6} />
       <div className="row">
@@ -371,7 +371,7 @@ function ResultView({ r, theme }: { r: FullResult; theme: string }) {
         <div><small>wpm</small><b>{r.wpm}</b></div>
         <div><small>precisión</small><b>{r.acc}%</b></div>
       </div>
-      {r.samples.length > 1 && <Chart key={theme} labels={labels} series={series} />}
+      {r.samples.length > 1 && <div className="card"><small>velocidad por segundo</small><Chart key={theme} labels={labels} series={series} /></div>}
       <div className="small">
         <div><small>raw</small>{r.raw}</div>
         <div><small>consistencia</small>{r.cons}%</div>
@@ -379,7 +379,7 @@ function ResultView({ r, theme }: { r: FullResult; theme: string }) {
         <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}</div>
       </div>
       {r.by && <p className="by">— {r.by}</p>}
-      {mode !== 'zen' && <Heatmap hits={r.hits} errs={r.errs} />}
+      {mode !== 'zen' && <div className="card"><small>teclas de este test</small><Heatmap hits={r.hits} errs={r.errs} /></div>}
       <p className="hint"><kbd>tab</kbd> siguiente test</p>
     </section>
   )
@@ -404,11 +404,9 @@ function History({ h, theme, keys }: { h: Result[]; theme: string; keys: KeyStat
           return <div key={d}><small>mejor {d}s</small>{best || '-'}</div>
         })}
       </div>
-      <small>actividad · últimos 6 meses</small>
-      <Calendar h={h} />
-      <Chart key={theme} labels={labels} series={series} />
-      <small>todas tus teclas</small>
-      <Heatmap hits={keys.hits} errs={keys.errs} />
+      <div className="card"><small>actividad · últimos 6 meses</small><Calendar h={h} /></div>
+      <div className="card"><small>últimos 50 tests · wpm y precisión</small><Chart key={theme} labels={labels} series={series} /></div>
+      <div className="card"><small>todas tus teclas</small><Heatmap hits={keys.hits} errs={keys.errs} /></div>
     </section>
   )
 }
