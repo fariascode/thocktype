@@ -316,3 +316,11 @@ kbd {
 }
 .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .file-btn:focus-within { outline: 2px solid var(--text-2); outline-offset: 2px; }
+
+/* ── Public profile ───────────────────────────────────────────────────── */
+.profile-head { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 20px; }
+.avatar-xl { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; font-size: 36px; border: 1px solid var(--border); flex-shrink: 0; }
+.profile-id { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 4px; }
+.profile-id h2 { font-size: 26px; font-weight: 700; letter-spacing: -.03em; }
+.profile-handle { font-family: var(--mono); font-size: 13px; color: var(--text-3); }
+.profile-bio { color: var(--text-2); max-width: 60ch; }

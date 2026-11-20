@@ -20,10 +20,12 @@ import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
+import ProfilePage from './ProfilePage'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
 // phones/tablets: no physical keyboard, so typing goes through a hidden input
+const PROFILE_RE = /^\/u\/([a-z0-9_]{3,20})\/?$/
 const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
 
 const COUNTS = [10, 25, 50, 100]
@@ -110,6 +112,14 @@ export default function App() {
   const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle')
   const [result, setResult] = useState<FullResult | null>(null)
   const [view, setView] = useState<'test' | 'history'>('test')
+  const [path, setPath] = useState(location.pathname)
+  useEffect(() => {
+    const onPop = () => setPath(location.pathname)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+  const go = useCallback((p: string) => { if (location.pathname !== p) window.history.pushState(null, '', p); setPath(p) }, [])
+  const profileName = path.match(PROFILE_RE)?.[1]
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
   const [session, setSession] = useState<Session | null>(null)
@@ -168,9 +178,10 @@ export default function App() {
     setPhase('idle')
     setResult(null)
     setView('test')
+    go('/')
     setEditing(false)
     t.current = { ...t.current, ...fresh() }
-  }, [s, keyStats])
+  }, [s, keyStats, go])
 
   const key = testKey(s)
   const pb = useMemo(() => bestWpm(history, key), [history, key])
@@ -238,7 +249,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
-      if (palette || auth) return // the palette and the login dialog handle their own keys
+      if (palette || auth || profileName) return // dialogs handle their own keys; profiles aren't for typing
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
@@ -305,7 +316,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, auth, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, auth, profileName, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -364,7 +375,8 @@ export default function App() {
     add('test', 'reiniciar', () => restart())
     add('test', `reto del día #${challengeNumber()}`, () => restart({ mode: 'daily' }))
     add('test', 'practicar teclas débiles', () => restart({ mode: 'practice', drill: [] }))
-    add('ver', 'historial', () => setView('history'))
+    add('ver', 'historial', () => { go('/'); setView('history') })
+    if (me?.username) add('ver', 'mi perfil', () => go(`/u/${me.username}`))
     add('ver', 'test', () => restart())
     for (const m of Object.keys(MODES) as Mode[]) add('modo', MODES[m], () => restart({ mode: m }))
     for (const d of DURATIONS) add('tiempo', `${d} segundos`, () => restart({ mode: 'time', duration: d }))
@@ -406,17 +418,18 @@ export default function App() {
           <button className="palette-btn" onClick={() => setPalette(true)} title="paleta de comandos (ctrl+k)">
             comandos{!COARSE && <kbd>ctrl k</kbd>}
           </button>
-          <button className={view === 'test' ? 'on' : ''} onClick={() => restart()}>test</button>
+          <button className={view === 'test' && !profileName ? 'on' : ''} onClick={() => restart()}>test</button>
           <button className="account-btn" onClick={() => setAuth(session ? 'account' : 'login')} title={session ? session.user.email : 'iniciar sesión'}>
             {!session ? 'entrar'
               : me?.avatar_url ? <img className="avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
               : <span className="avatar" aria-hidden>{(me?.username ?? session.user.email ?? '?')[0]}</span>}
           </button>
-          <button className={view === 'history' ? 'on' : ''} onClick={() => setView('history')}>historial</button>
+          <button className={view === 'history' && !profileName ? 'on' : ''} onClick={() => { go('/'); setView('history') }}>historial</button>
         </nav>
       </header>
 
-      {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} /> : phase === 'done' && result ? (
+      {profileName ? <ProfilePage username={profileName} theme={s.theme} isMe={me?.username === profileName} />
+        : view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} /> : phase === 'done' && result ? (
         <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
@@ -468,11 +481,11 @@ export default function App() {
         </>
       )}
 
-      {view === 'test' && phase !== 'done' && !editing && (
+      {!profileName && view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
       {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
-        onProfile={setMe} onOpenProfile={name => { location.href = `/u/${name}` }} />}
+        onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
