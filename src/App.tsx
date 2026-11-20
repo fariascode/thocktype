@@ -2,11 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { LANGS, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
-  loadKeys, mergeKeys, saveKeys, weakKeys, type KeyStats, type Mode, type Result,
+  loadKeys, mergeKeys, saveKeys, weakKeys, longestStreak, type KeyStats, type Mode, type Result,
 } from './stats'
 import { thock } from './sound'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
+import Calendar from './Calendar'
 
 const DURATIONS = [15, 30, 60, 120]
 const COUNTS = [10, 25, 50, 100]
@@ -397,11 +398,14 @@ function History({ h, theme, keys }: { h: Result[]; theme: string; keys: KeyStat
         <div><small>tests</small>{h.length}</div>
         <div><small>promedio</small>{avg} wpm</div>
         <div><small>racha</small>{streak(h)} días</div>
+        <div><small>racha más larga</small>{longestStreak(h)} días</div>
         {DURATIONS.map(d => {
           const best = Math.max(0, ...timed.filter(r => r.duration === d).map(r => r.wpm))
           return <div key={d}><small>mejor {d}s</small>{best || '-'}</div>
         })}
       </div>
+      <small>actividad · últimos 6 meses</small>
+      <Calendar h={h} />
       <Chart key={theme} labels={labels} series={series} />
       <small>todas tus teclas</small>
       <Heatmap hits={keys.hits} errs={keys.errs} />
