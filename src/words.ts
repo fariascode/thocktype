@@ -8,7 +8,25 @@ const lists: Record<string, string[]> = { es: es.split(' '), en: en.split(' '), 
 export const LANGS = { es: 'español', en: 'english', code: 'código' } as const
 export type Lang = keyof typeof LANGS
 
-export function randomWords(lang: Lang, n: number): string[] {
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)]
+
+// punct: adds capitals, punctuation and numbers (ignored for code, which already has symbols)
+export function randomWords(lang: Lang, n: number, punct = false): string[] {
   const list = lists[lang]
-  return Array.from({ length: n }, () => list[Math.floor(Math.random() * list.length)])
+  const out: string[] = []
+  let capNext = true
+  for (let i = 0; i < n; i++) {
+    let w = pick(list)
+    if (punct && lang !== 'code') {
+      if (Math.random() < 0.08) w = String(Math.floor(Math.random() * 1000))
+      if (capNext) w = w[0].toUpperCase() + w.slice(1)
+      capNext = false
+      const r = Math.random()
+      if (r < 0.1) { w += pick(['.', '.', '?', '!']); capNext = true }
+      else if (r < 0.2) w += pick([',', ',', ';', ':'])
+      if (lang === 'es' && w.endsWith('?')) w = '¿' + w
+    }
+    out.push(w)
+  }
+  return out
 }

@@ -18,7 +18,32 @@ export function consistency(samples: number[]): number {
   return Math.max(0, Math.min(100, 100 - (sd / mean) * 100))
 }
 
-export type Result = { date: number; wpm: number; raw: number; acc: number; cons: number; lang: string; duration: number }
+export type Result = { date: number; wpm: number; raw: number; acc: number; cons: number; lang: string; duration: number; punct?: boolean }
+
+// correct / incorrect / extra / missed characters, like the breakdown on result screens
+export function charStats(targets: string[], typed: string[]) {
+  const s = { correct: 0, incorrect: 0, extra: 0, missed: 0 }
+  typed.forEach((t, i) => {
+    const w = targets[i]
+    for (let c = 0; c < Math.min(t.length, w.length); c++) { if (t[c] === w[c]) s.correct++; else s.incorrect++ }
+    if (t.length > w.length) s.extra += t.length - w.length
+    else if (i < typed.length - 1) s.missed += w.length - t.length
+  })
+  return s
+}
+
+export const bestWpm = (h: Result[], lang: string, duration: number, punct = false) =>
+  Math.max(0, ...h.filter(r => r.lang === lang && r.duration === duration && !!r.punct === punct).map(r => r.wpm))
+
+// consecutive days (ending today or yesterday) with at least one test
+export function streak(h: Result[], now = Date.now()): number {
+  const days = new Set(h.map(r => new Date(r.date).toDateString()))
+  const d = new Date(now)
+  if (!days.has(d.toDateString())) d.setDate(d.getDate() - 1)
+  let n = 0
+  while (days.has(d.toDateString())) { n++; d.setDate(d.getDate() - 1) }
+  return n
+}
 
 const KEY = 'thocktype.history'
 export function loadHistory(): Result[] {
