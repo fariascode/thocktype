@@ -327,11 +327,14 @@ kbd {
 /* ── Command palette ──────────────────────────────────────────────────── */
 .palette-backdrop {
   position: fixed; inset: 0; z-index: 50; display: flex; justify-content: center; align-items: flex-start;
-  padding: 12vh 16px 16px; background: color-mix(in srgb, var(--bg) 60%, transparent); animation: fadein 120ms var(--ease);
+  padding: min(12vh, 96px) 12px 12px; background: color-mix(in srgb, var(--bg) 60%, transparent); animation: fadein 120ms var(--ease);
 }
+/* short screens (phones, small laptops): use the full height so dialogs never get cut */
+@media (max-height: 760px) { .palette-backdrop { padding-top: 12px; } }
+.palette-backdrop > [role='dialog'] { max-height: 100%; }
 @keyframes fadein { from { opacity: 0; } }
 .palette {
-  width: min(560px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  display: flex; flex-direction: column; width: min(560px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
   box-shadow: 0 24px 64px rgb(0 0 0 / .4); overflow: hidden; animation: enter 160ms var(--ease);
 }
 .palette input {
@@ -339,7 +342,7 @@ kbd {
   font: inherit; font-size: 16px; padding: 16px 18px; outline: none;
 }
 .palette input::placeholder { color: var(--text-3); }
-.palette ul { list-style: none; padding: 6px; margin: 0; max-height: min(50vh, 380px); overflow-y: auto; }
+.palette ul { list-style: none; padding: 6px; margin: 0; max-height: min(50vh, 380px); min-height: 0; flex: 1; overflow-y: auto; }
 .palette li {
   display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 12px;
   border-radius: var(--r-sm); color: var(--text-2); font-size: 14px; cursor: pointer;
@@ -354,7 +357,7 @@ kbd {
 .palette-btn kbd { font-size: 10px; padding: 0 5px; }
 
 /* ── Auth ─────────────────────────────────────────────────────────────── */
-.auth { width: min(400px, 100%); margin-top: 4vh; animation: enter 160ms var(--ease); }
+.auth { width: min(400px, 100%); margin-top: 4vh; overflow-y: auto; animation: enter 160ms var(--ease); } /* scroll only as a last resort on tiny screens, never cut */
 .auth h2 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
 .auth form { display: flex; flex-direction: column; gap: 12px; }
 .auth label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-3); }
@@ -407,15 +410,26 @@ kbd {
 .profile-bio { color: var(--text-2); max-width: 60ch; }
 
 /* ── Settings panel ───────────────────────────────────────────────────── */
-.settings { width: min(620px, 100%); margin-top: 2vh; max-height: 90vh; overflow-y: auto; animation: enter 160ms var(--ease); }
+/* sized to fit the screen without scrolling: 1 column on phones, 2 on wider screens */
+.settings {
+  width: min(820px, 100%); max-height: 100%; overflow: hidden; animation: enter 160ms var(--ease);
+  display: grid; grid-template-columns: 1fr; gap: 10px 28px; padding: clamp(14px, 2.2vw, 22px);
+}
+.settings-head, .settings-preview { font-size: min(var(--type-size), 24px); padding: 8px 14px !important; grid-column: 1 / -1; }
+.set-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+@media (min-width: 720px) { .settings { grid-template-columns: 1fr 1fr; } }
 .settings-head { display: flex; justify-content: space-between; align-items: center; }
-.settings h2 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
-.settings section { display: flex; flex-direction: column; gap: 8px; }
-.set-options { display: flex; flex-wrap: wrap; gap: 6px; }
-.set-options button { border-color: var(--border); }
+.settings h2 { font-size: 18px; font-weight: 600; letter-spacing: -.02em; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.settings h2 small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.settings section { display: flex; flex-direction: column; gap: 6px; }
+.set-options { display: flex; flex-wrap: wrap; gap: 5px; }
+.set-options button { border-color: var(--border); padding: 4px 10px; min-height: 32px; font-size: 12.5px; }
+.fonts .set-options, .themes .set-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+.themes .set-options button { justify-content: flex-start; text-align: left; }
+/* capped so "enorme" doesn't push the options off screen; the page behind shows the real size */
 .settings-preview {
-  font-family: var(--type-font); font-size: var(--type-size); line-height: 1.7; color: var(--text-3);
-  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 18px;
+  font-family: var(--type-font); font-size: min(var(--type-size), 24px); line-height: 1.6; color: var(--text-3);
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md); padding: 8px 14px;
   white-space: nowrap; overflow: hidden;
 }
 .pv-next { position: relative; }
@@ -423,3 +437,17 @@ kbd {
 .swatch-label { display: inline-flex; align-items: center; gap: 8px; }
 .swatch { display: inline-grid; place-items: center; width: 26px; height: 20px; border-radius: 5px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); }
 .gear { font-size: 17px; line-height: 1; padding: 6px 9px; }
+/* phones: tighter panel so every option fits on screens as small as 360×640 */
+@media (max-width: 480px) {
+  .settings { gap: 8px; padding: 12px; }
+  .set-col { gap: 8px; }
+  .settings h2 { font-size: 16px; }
+  .settings h2 small, .themes + .themes small { display: none; }
+  .settings-preview { font-size: 17px; padding: 5px 12px; }
+  .themes .set-options { grid-template-columns: repeat(3, 1fr); }
+  .themes .set-options button { padding: 4px 6px; font-size: 12px; }
+  .themes .swatch-label { gap: 6px; }
+  .themes .swatch { width: 20px; height: 18px; font-size: 9px; }
+  .themes .swatch-label { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .palette-backdrop { padding: 8px; }
+}

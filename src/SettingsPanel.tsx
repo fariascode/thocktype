@@ -30,7 +30,7 @@ export default function SettingsPanel({ a, onChange, onClose }: Props) {
       <div className="settings card" role="dialog" aria-modal="true" aria-label="ajustes"
         onMouseDown={e => e.stopPropagation()} onKeyDown={e => e.key === 'Escape' && onClose()}>
         <div className="settings-head">
-          <h2>ajustes</h2>
+          <h2>ajustes <small>se guardan en este dispositivo</small></h2>
           <button onClick={onClose} aria-label="cerrar" autoFocus>✕</button>
         </div>
 
@@ -39,12 +39,16 @@ export default function SettingsPanel({ a, onChange, onClose }: Props) {
           <span className="pv-next">e<span className="caret static" /></span>scribe limpio
         </div>
 
-        <section><small>tamaño del texto</small>{group('size', SIZES)}</section>
-        <section><small>fuente</small>{group('font', FONTS, f => <span style={{ fontFamily: FONT_FAMILY[f] }}>{FONTS[f]}</span>)}</section>
-        <section><small>cursor</small>{group('caret', CARETS)}</section>
-        <section><small>tema · monocromáticos</small>{group('theme', THEMES, swatch, MONO_THEMES)}</section>
-        <section><small>tema · de color</small>{group('theme', THEMES, swatch, COLOR_THEMES)}</section>
-        <p className="hint" style={{ textAlign: 'left' }}>se guardan en este dispositivo</p>
+        {/* two columns on wide screens so the whole panel fits without scrolling */}
+        <div className="set-col">
+          <section><small>tamaño del texto</small>{group('size', SIZES)}</section>
+          <section className="fonts"><small>fuente</small>{group('font', FONTS, f => <span style={{ fontFamily: FONT_FAMILY[f] }}>{FONTS[f]}</span>)}</section>
+          <section><small>cursor</small>{group('caret', CARETS)}</section>
+        </div>
+        <div className="set-col">
+          <section className="themes"><small>tema · monocromáticos</small>{group('theme', THEMES, swatch, MONO_THEMES)}</section>
+          <section className="themes"><small>tema · de color</small>{group('theme', THEMES, swatch, COLOR_THEMES)}</section>
+        </div>
       </div>
     </div>
   )
