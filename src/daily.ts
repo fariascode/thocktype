@@ -1,6 +1,7 @@
 // Daily challenge: the same words for everyone on the same day and language, one official attempt.
 import { randomWords, type Lang } from './words.ts'
 import { dayKey } from './stats.ts'
+import { APP_URL } from './config.ts'
 
 export const DAILY_WORDS = 30
 const LAUNCH = new Date(2026, 10, 19) // challenge #1
@@ -62,4 +63,4 @@ export function dailyStreak(all: Record<string, DailyEntry>, now = new Date()) {
 }
 
 export const shareText = (n: number, lang: Lang, e: DailyEntry) =>
-  `ThockType · reto #${n} (${lang})\n${e.wpm} wpm · ${e.acc}%\n${e.grid}`
+  `ThockType · reto #${n} (${lang})\n${e.wpm} wpm · ${e.acc}%\n${e.grid}\n${APP_URL}`
