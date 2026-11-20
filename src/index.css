@@ -44,7 +44,9 @@ main {
   max-width: 1080px; margin: 0 auto; min-height: 100vh;
   padding: clamp(20px, 4vw, 48px) clamp(16px, 4vw, 40px) 24px;
   display: flex; flex-direction: column; gap: clamp(24px, 4vh, 40px);
+  overflow-x: clip; /* typing line never pushes the page sideways */
 }
+main > * { min-width: 0; }
 main.running { cursor: none; }
 main.running .fade { opacity: 0; pointer-events: none; }
 .fade { transition: opacity var(--t) var(--ease); }
@@ -111,11 +113,11 @@ kbd {
   margin-top: auto; position: sticky; bottom: 16px; display: flex; flex-wrap: wrap; align-items: center;
   background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--border);
   border-radius: var(--r-md); box-shadow: var(--shadow); padding: 4px; font-size: 13px;
+  column-gap: 14px; row-gap: 2px; max-width: 100%;
 }
-.seg { display: flex; align-items: center; gap: 2px; padding: 2px 6px; position: relative; }
-.seg + .seg::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--border); }
+/* groups are separated by space, so wrapped rows never start with a stray divider */
+.seg { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; }
 .seg button { padding: 4px 10px; min-height: 30px; }
-.seg.mode { padding-left: 2px; }
 .seg.prefs { margin-left: auto; }
 .note { color: var(--text-3); padding: 4px 10px; font-size: 13px; }
 .weak { color: var(--text-1); font-family: var(--mono); letter-spacing: .2em; }
@@ -186,8 +188,6 @@ kbd {
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .status { position: static; }
-  .seg { padding: 2px; }
-  .seg + .seg::before { display: none; }
   .seg.prefs { margin-left: 0; }
   .key { width: 27px; height: 30px; font-size: 12px; border-radius: 6px; }
   .heat-row { gap: 4px; }
