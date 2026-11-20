@@ -202,7 +202,9 @@ export default function App() {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
       if (palette) return // the palette handles its own keys
-      if (e.target instanceof HTMLTextAreaElement) return
+      // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
+      const el = e.target
+      if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
       if (e.key === 'Tab' || e.key === 'Escape') { e.preventDefault(); restart(); return }
       if (phase === 'done' || view !== 'test' || editing || e.metaKey || e.altKey) return
       if (zen && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); if (phase === 'running') finish(t.current.typed); return }
