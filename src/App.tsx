@@ -28,14 +28,28 @@ type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
   theme: 'dark' | 'light'; sound: boolean; live: boolean; ghost: boolean
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
+  rules: Rules
 }
+type Rules = { noBack: boolean; blind: boolean; brake: boolean; sudden: boolean }
+const NO_RULES: Rules = { noBack: false, blind: false, brake: false, sudden: false }
+const RULES: Record<keyof Rules, [label: string, help: string]> = {
+  noBack: ['sin borrar', 'backspace desactivado'],
+  blind: ['ciego', 'no ves tus errores hasta el final'],
+  brake: ['frenar', 'no avanzas hasta teclear la letra correcta'],
+  sudden: ['súbita', 'un error y se acaba el test'],
+}
+// the daily challenge is the same fair test for everyone, and zen has nothing to be wrong about
+const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', sound: false, live: true, ghost: true, drill: [],
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
-  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SKEY) || '{}') } } catch { return DEFAULTS }
+  try {
+    const saved = JSON.parse(localStorage.getItem(SKEY) || '{}')
+    return { ...DEFAULTS, ...saved, rules: { ...NO_RULES, ...saved.rules } }
+  } catch { return DEFAULTS }
 }
 
 // punctuation/numbers only apply to generated words
@@ -66,6 +80,7 @@ type FullResult = Result & {
   samples: Sample[]; chars: ReturnType<typeof charStats>; by?: string
   hits: Record<string, number>; errs: Record<string, number>; prevPb: number; bigrams: Bigrams
   daily?: { n: number; official: boolean; entry: DailyEntry } // set for the daily challenge
+  failed?: number // sudden death: index of the word where the test was lost
 }
 
 // pixel position of character `ci` inside a word element (after the last char if past the end)
@@ -122,7 +137,7 @@ export default function App() {
   const key = testKey(s)
   const pb = useMemo(() => bestWpm(history, key), [history, key])
 
-  const finish = useCallback((typed: string[]) => {
+  const finish = useCallback((typed: string[], failed?: number) => {
     const { keys, good, samples, hits, errs, start, bigrams } = t.current
     const done = typed[typed.length - 1] === '' ? typed.slice(0, -1) : typed
     const targets = zen ? done : words
@@ -136,8 +151,14 @@ export default function App() {
       lang: s.lang, duration: Math.round(secs), mode: s.mode,
       value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0,
       punct: usesOpts(s.mode) && s.punct, numbers: usesOpts(s.mode) && s.numbers,
+      rules: (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k]),
     }
     if (!done.length) { setPhase('idle'); return } // nothing typed (zen): don't record
+    if (failed !== undefined) { // sudden death: show what happened, keep it out of history and records
+      setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, failed })
+      setPhase('done')
+      return
+    }
     saveResult(r)
     setHistory(h => [...h, r])
     const merged = mergeKeys(keyStats, { hits, errs })
@@ -187,9 +208,11 @@ export default function App() {
       const cur = typed[i]
       const target = zen ? undefined : words[i]
       if (!zen && target === undefined) return // empty custom text
+      const rules = activeRules(s)
 
       if (e.key === 'Backspace') {
         e.preventDefault()
+        if (rules.noBack) return
         if (cur === '' && i > 0 && (zen || typed[i - 1] !== words[i - 1])) type(typed.slice(0, -1)) // back into a wrong word
         else type([...typed.slice(0, i), e.ctrlKey ? '' : cur.slice(0, -1)])
         return
@@ -200,8 +223,10 @@ export default function App() {
       if (phase === 'idle') { c.start = performance.now(); setPhase('running') }
       if (e.key === ' ') {
         if (cur === '') return
+        if (rules.brake && cur !== target) { if (s.sound) thock(true); return } // must finish the word correctly first
         c.keys++; c.secKeys++
         const ok = zen || cur === target
+        if (!ok && rules.sudden) { finish(typed, i); return }
         if (ok) c.good++
         c.lastAt = performance.now()
         if (s.sound) thock(!ok)
@@ -227,6 +252,8 @@ export default function App() {
       }
       c.lastAt = now
       if (s.sound) thock(!ok)
+      if (!ok && rules.sudden) { finish(typed, i); return }
+      if (!ok && rules.brake) return // the mistake counts, but the caret stays until the right key
       const next = [...typed.slice(0, i), cur + e.key]
       type(next)
       if (finite && i === words.length - 1 && cur + e.key === target) finish(next) // last word typed correctly ends the test
@@ -288,6 +315,8 @@ export default function App() {
 
   const days = streak(history)
   const todayDaily = officialFor(daily, s.lang)
+  const on = (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k])
+  const ruleTags = on.length > 0 && <span className="rule-tags">{on.map(k => <span key={k}>{RULES[k][0]}</span>)}</span>
   const shown = zen ? typed : words.slice(0, typed.length + 80)
   const progress =
     s.mode === 'time' ? s.duration - clock
@@ -316,7 +345,7 @@ export default function App() {
         <>
           <div className="timer">
             {phase === 'running'
-              ? <>{progress}{s.live && <span className="live">{liveWpm} wpm</span>}</>
+              ? <>{progress}{s.live && <span className="live">{liveWpm} wpm</span>}{ruleTags}</>
               : <span className="live">{zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
           </div>
           <div className="typing">
@@ -334,7 +363,7 @@ export default function App() {
               {!touchFocus && <button className="tap-hint" onClick={() => touch.current?.focus()}>toca para escribir</button>}
             </>
           )}
-          <div className="words">
+          <div className={`words ${activeRules(s).blind ? 'blind' : ''}`}>
             <div className="inner" ref={inner}>
               {shown.map((w, wi) => {
                 const tw = typed[wi] ?? ''
@@ -411,6 +440,12 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
           {opt(s.numbers, '# números', () => restart({ numbers: !s.numbers }))}
         </div>
       )}
+      {s.mode !== 'daily' && s.mode !== 'zen' && (
+        <div className="seg" aria-label="reglas">
+          {(Object.keys(RULES) as (keyof Rules)[]).map(k =>
+            opt(s.rules[k], RULES[k][0], () => restart({ rules: { ...s.rules, [k]: !s.rules[k] } }), RULES[k][1]))}
+        </div>
+      )}
       <div className="seg prefs">
         {opt(s.sound, 'sonido', () => set({ ...s, sound: !s.sound }))}
         {opt(s.live, 'wpm', () => set({ ...s, live: !s.live }), 'wpm en vivo')}
@@ -442,11 +477,16 @@ function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: strin
     { label: 'wpm', data: r.samples.map(x => x.wpm) },
     { label: 'raw', data: r.samples.map(x => x.raw), dim: true },
   ], [r])
-  const newPb = r.wpm > r.prevPb
+  const newPb = r.failed === undefined && r.wpm > r.prevPb
   const mode = r.mode ?? 'time'
   const detail = mode === 'time' ? `${r.duration}s` : mode === 'words' ? `${r.value} palabras · ${r.duration}s` : `${r.duration}s`
   return (
     <section className="result">
+      {r.failed !== undefined && (
+        <div className="failed" role="alert">
+          <b>muerte súbita</b> · fallaste en la palabra {r.failed + 1}. Este intento no cuenta para tu historial ni tus récords.
+        </div>
+      )}
       {newPb && <div className="pb">{r.prevPb ? `nuevo récord · +${r.wpm - r.prevPb} wpm` : 'primer récord en este modo'}</div>}
       <div className="big">
         <div><small>wpm</small><b>{r.wpm}</b></div>
@@ -457,7 +497,7 @@ function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: strin
         <div><small>raw</small>{r.raw}</div>
         <div><small>consistencia</small>{r.cons}%</div>
         <div title="correctos / incorrectos / extra / faltantes"><small>caracteres</small>{r.chars.correct}/{r.chars.incorrect}/{r.chars.extra}/{r.chars.missed}</div>
-        <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}</div>
+        <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}{r.rules?.length ? ` · ${r.rules.map(k => RULES[k as keyof Rules][0]).join(', ')}` : ''}</div>
       </div>
       <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
       {r.daily && <DailyCard n={r.daily.n} lang={r.lang as Lang} official={r.daily.official} entry={r.daily.entry} />}
