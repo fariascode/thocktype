@@ -292,7 +292,12 @@ export default function App() {
               <input ref={touch} className="touch-input" defaultValue=" " aria-label="escribe aquí"
                 autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="next"
                 onInput={onTouchInput} onCompositionEnd={e => resetTouch(e.currentTarget)}
-                onFocus={() => setTouchFocus(true)} onBlur={() => setTouchFocus(false)} />
+                onFocus={e => {
+                  setTouchFocus(true)
+                  const el = e.currentTarget // wait for the on-screen keyboard to open, then keep the text visible
+                  setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
+                }}
+                onBlur={() => setTouchFocus(false)} />
               {!touchFocus && <button className="tap-hint" onClick={() => touch.current?.focus()}>toca para escribir</button>}
             </>
           )}
