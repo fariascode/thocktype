@@ -8,6 +8,10 @@ import { thock } from './sound'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
 import Calendar from './Calendar'
+import { inputDiff } from './inputDiff'
+
+// phones/tablets: no physical keyboard, so typing goes through a hidden input
+const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
 
 const DURATIONS = [15, 30, 60, 120]
 const COUNTS = [10, 25, 50, 100]
@@ -202,6 +206,19 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [typed, words, phase, view, editing, s, zen, finite, restart, finish])
 
+  // touch keyboards: a hidden input whose changes are replayed as keydown events,
+  // so phones go through exactly the same typing logic as physical keyboards
+  const touch = useRef<HTMLInputElement>(null)
+  const prevInput = useRef(' ') // leading space lets a backspace on an "empty" field still fire
+  const [touchFocus, setTouchFocus] = useState(false)
+  const resetTouch = (el: HTMLInputElement) => { el.value = ' '; prevInput.current = ' ' }
+  const onTouchInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const el = e.currentTarget
+    for (const key of inputDiff(prevInput.current, el.value)) window.dispatchEvent(new KeyboardEvent('keydown', { key }))
+    if ((e.nativeEvent as InputEvent).isComposing) prevInput.current = el.value
+    else resetTouch(el)
+  }
+
   // smooth caret + smooth line scroll
   const inner = useRef<HTMLDivElement>(null)
   const caret = useRef<HTMLSpanElement>(null)
@@ -259,7 +276,7 @@ export default function App() {
       </header>
 
       {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} /> : phase === 'done' && result ? (
-        <ResultView r={result} theme={s.theme} />
+        <ResultView r={result} theme={s.theme} onNext={() => restart()} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
       ) : (
@@ -269,6 +286,16 @@ export default function App() {
               ? <>{progress}{s.live && <span className="live">{liveWpm} wpm</span>}</>
               : <span className="live">{zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
           </div>
+          <div className="typing">
+          {COARSE && (
+            <>
+              <input ref={touch} className="touch-input" defaultValue=" " aria-label="escribe aquí"
+                autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="next"
+                onInput={onTouchInput} onCompositionEnd={e => resetTouch(e.currentTarget)}
+                onFocus={() => setTouchFocus(true)} onBlur={() => setTouchFocus(false)} />
+              {!touchFocus && <button className="tap-hint" onClick={() => touch.current?.focus()}>toca para escribir</button>}
+            </>
+          )}
           <div className="words">
             <div className="inner" ref={inner}>
               {shown.map((w, wi) => {
@@ -287,8 +314,11 @@ export default function App() {
               <span className="ghost" ref={ghost} />
             </div>
           </div>
+          </div>
           {test.by && <p className="by fade">— {test.by}</p>}
-          <p className="hint fade"><kbd>tab</kbd> reiniciar</p>
+          <p className="hint fade">
+            {COARSE ? <button onClick={() => restart()}>↻ reiniciar</button> : <><kbd>tab</kbd> reiniciar</>}
+          </p>
         </>
       )}
 
@@ -358,7 +388,7 @@ function CustomEditor({ initial, onUse, onCancel }: { initial: string; onUse: (t
   )
 }
 
-function ResultView({ r, theme }: { r: FullResult; theme: string }) {
+function ResultView({ r, theme, onNext }: { r: FullResult; theme: string; onNext: () => void }) {
   const labels = useMemo(() => r.samples.map((_, i) => i + 1), [r])
   const series = useMemo(() => [
     { label: 'wpm', data: r.samples.map(x => x.wpm) },
@@ -383,7 +413,7 @@ function ResultView({ r, theme }: { r: FullResult; theme: string }) {
       </div>
       {r.by && <p className="by">— {r.by}</p>}
       {mode !== 'zen' && <div className="card"><small>teclas de este test</small><Heatmap hits={r.hits} errs={r.errs} /></div>}
-      <p className="hint"><kbd>tab</kbd> siguiente test</p>
+      <p className="hint">{COARSE ? <button onClick={onNext}>↻ siguiente test</button> : <><kbd>tab</kbd> siguiente test</>}</p>
     </section>
   )
 }
