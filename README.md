@@ -14,6 +14,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Reglas** combinables: sin borrar, ciego, frenar en error y muerte súbita
 - **Coach:** mide el tiempo entre cada par de letras, te dice cuáles te frenan (p. ej. «qu» 2.1× más lenta) y genera práctica con ellas
 - **Modo práctica:** genera palabras cargadas de tus teclas débiles para que las entrenes
+- **Récords personales** por modo (15/30/60/120 s y 10/25/50/100 palabras) con wpm, precisión, raw y consistencia, más totales: tests, tiempo escribiendo, wpm más alto, promedios
 - **Racha** de días seguidos practicando, con racha más larga y un **calendario de actividad** de 6 meses
 - **Historial** con gráficas, guardado en tu navegador y sincronizado en la nube entre tus dispositivos al iniciar sesión (funciona sin conexión y sube lo pendiente después)
 - Funciona en celular y tablet con el teclado táctil
