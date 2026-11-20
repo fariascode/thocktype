@@ -254,7 +254,7 @@ export default function App() {
         </nav>
       </header>
 
-      {view === 'history' ? <History h={history} theme={s.theme} /> : phase === 'done' && result ? (
+      {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} /> : phase === 'done' && result ? (
         <ResultView r={result} theme={s.theme} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
@@ -384,7 +384,7 @@ function ResultView({ r, theme }: { r: FullResult; theme: string }) {
   )
 }
 
-function History({ h, theme }: { h: Result[]; theme: string }) {
+function History({ h, theme, keys }: { h: Result[]; theme: string; keys: KeyStats }) {
   const last = useMemo(() => h.slice(-50), [h])
   const labels = useMemo(() => last.map(r => new Date(r.date).toLocaleDateString()), [last])
   const series = useMemo(() => [{ label: 'wpm', data: last.map(r => r.wpm) }, { label: 'precisión', data: last.map(r => r.acc), dim: true }], [last])
@@ -403,6 +403,8 @@ function History({ h, theme }: { h: Result[]; theme: string }) {
         })}
       </div>
       <Chart key={theme} labels={labels} series={series} />
+      <small>todas tus teclas</small>
+      <Heatmap hits={keys.hits} errs={keys.errs} />
     </section>
   )
 }
