@@ -18,7 +18,18 @@ export function consistency(samples: number[]): number {
   return Math.max(0, Math.min(100, 100 - (sd / mean) * 100))
 }
 
-export type Result = { date: number; wpm: number; raw: number; acc: number; cons: number; lang: string; duration: number; punct?: boolean }
+export type Mode = 'time' | 'words' | 'quote' | 'zen' | 'custom'
+// duration = seconds the test lasted; value = 30 (s) in time mode or 50 (words) in words mode
+export type Result = {
+  date: number; wpm: number; raw: number; acc: number; cons: number; lang: string; duration: number
+  punct?: boolean; numbers?: boolean; mode?: Mode; value?: number
+}
+
+// identifies "the same kind of test" for personal bests; old results (no mode) were time tests
+export const modeKey = (r: Pick<Result, 'lang' | 'duration' | 'punct' | 'numbers' | 'mode' | 'value'>) => {
+  const mode = r.mode ?? 'time'
+  return [mode, r.value ?? (mode === 'time' ? r.duration : ''), r.lang, !!r.punct, !!r.numbers].join('|')
+}
 
 // correct / incorrect / extra / missed characters, like the breakdown on result screens
 export function charStats(targets: string[], typed: string[]) {
@@ -32,8 +43,7 @@ export function charStats(targets: string[], typed: string[]) {
   return s
 }
 
-export const bestWpm = (h: Result[], lang: string, duration: number, punct = false) =>
-  Math.max(0, ...h.filter(r => r.lang === lang && r.duration === duration && !!r.punct === punct).map(r => r.wpm))
+export const bestWpm = (h: Result[], key: string) => Math.max(0, ...h.filter(r => modeKey(r) === key).map(r => r.wpm))
 
 // consecutive days (ending today or yesterday) with at least one test
 export function streak(h: Result[], now = Date.now()): number {
