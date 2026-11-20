@@ -14,6 +14,7 @@ import { copyText, shareImage } from './share'
 import CoachCard from './CoachCard'
 import DailyCard from './DailyCard'
 import CommandPalette, { type Command } from './CommandPalette'
+import { APP_URL } from './config'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -546,8 +547,7 @@ function ResultView({ r, theme, onNext, onDrill }: { r: FullResult; theme: strin
 function ShareBar({ r, modeLabel }: { r: FullResult; modeLabel: string }) {
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
-  // shortcut: no link in the text until the app has a public URL, add it after publishing
-  const text = `ThockType · ${r.wpm} wpm · ${r.acc}% precisión · ${modeLabel}`
+  const text = `ThockType · ${r.wpm} wpm · ${r.acc}% precisión · ${modeLabel}\n${APP_URL}`
   const flash = (msg: string) => { setStatus(msg); setTimeout(() => setStatus(''), 2500) }
   const onImage = async () => {
     setBusy(true)
