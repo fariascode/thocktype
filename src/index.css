@@ -352,3 +352,20 @@ kbd {
 .profile-id h2 { font-size: 26px; font-weight: 700; letter-spacing: -.03em; }
 .profile-handle { font-family: var(--mono); font-size: 13px; color: var(--text-3); }
 .profile-bio { color: var(--text-2); max-width: 60ch; }
+
+/* ── Settings panel ───────────────────────────────────────────────────── */
+.settings { width: min(620px, 100%); margin-top: 2vh; max-height: 90vh; overflow-y: auto; animation: enter 160ms var(--ease); }
+.settings-head { display: flex; justify-content: space-between; align-items: center; }
+.settings h2 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.settings section { display: flex; flex-direction: column; gap: 8px; }
+.set-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.set-options button { border-color: var(--border); }
+.settings-preview {
+  font-family: var(--type-font); font-size: var(--type-size); line-height: 1.7; color: var(--text-3);
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 18px;
+  white-space: nowrap; overflow: hidden;
+}
+.pv-next { position: relative; }
+.caret.static { transform: none; transition: none; animation: blink 1.1s ease-in-out infinite; }
+.swatch-label { display: inline-flex; align-items: center; gap: 8px; }
+.swatch { display: inline-grid; place-items: center; width: 26px; height: 20px; border-radius: 5px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); }

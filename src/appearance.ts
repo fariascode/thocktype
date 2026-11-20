@@ -32,3 +32,13 @@ export function applyAppearance(a: Appearance) {
   d.theme = a.theme; d.size = a.size; d.font = a.font; d.caret = a.caret
   loadFont(a.font)
 }
+
+// [background, text] for the theme swatches in the settings panel
+export const SWATCH: Record<Theme, [string, string]> = {
+  dark: ['#101113', '#ededed'], light: ['#f3f3f1', '#18191b'], paper: ['#ece8df', '#2b2825'],
+  ink: ['#000000', '#f4f4f4'], contrast: ['#000000', '#ffffff'],
+}
+export const FONT_FAMILY: Record<Font, string> = {
+  jetbrains: "'JetBrains Mono', monospace", plex: "'IBM Plex Mono', monospace", space: "'Space Mono', monospace",
+  fira: "'Fira Code', monospace", source: "'Source Code Pro', monospace",
+}
