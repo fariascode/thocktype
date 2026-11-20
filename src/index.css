@@ -13,13 +13,26 @@ main.running .fade { opacity: 0; pointer-events: none; }
 header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 h1 { font-size: 28px; cursor: pointer; letter-spacing: -1.5px; font-weight: 700; }
 h1 span { color: var(--dim); font-weight: 400; }
-nav, .config, .toggles { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; align-items: center; }
-.toggles { font-size: 13px; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; align-items: center; }
 button { background: none; border: 0; color: var(--dim); font: inherit; padding: 4px 10px; cursor: pointer; border-radius: 2px; }
 button:hover { color: var(--fg); }
 button.on { background: var(--fg); color: var(--bg); }
 button:focus-visible { outline: 1px dashed var(--fg); outline-offset: 2px; }
-.sep { width: 1px; height: 18px; background: var(--dim); margin: 0 8px; }
+button:disabled { opacity: .4; cursor: default; }
+
+/* editor-style status line pinned to the bottom */
+.status { margin-top: auto; position: sticky; bottom: 0; display: flex; flex-wrap: wrap; border-top: 1px solid var(--dim); background: var(--bg); font-size: 13px; }
+.seg { display: flex; align-items: center; gap: 2px; padding: 6px 10px; border-right: 1px solid var(--dim); }
+.seg button { padding: 3px 8px; }
+.seg.mode { padding-left: 0; }
+.seg.prefs { margin-left: auto; border-right: 0; padding-right: 0; }
+.note { color: var(--dim); padding: 3px 8px; }
+.by { color: var(--dim); text-align: right; font-style: italic; }
+
+.editor { display: flex; flex-direction: column; gap: 12px; }
+.editor textarea { background: transparent; color: var(--fg); border: 1px solid var(--dim); font: inherit; font-size: 18px; padding: 12px; resize: vertical; }
+.editor textarea:focus { outline: 1px solid var(--fg); }
+.editor .row { display: flex; gap: 8px; }
 .streak { color: var(--fg); border: 1px solid var(--dim); padding: 3px 8px; font-size: 13px; margin-right: 8px; }
 
 .timer { font-size: 32px; height: 40px; display: flex; align-items: baseline; gap: 16px; }
@@ -59,4 +72,6 @@ small { display: block; color: var(--dim); font-size: 13px; }
   .words { font-size: 20px; height: calc(20px * 1.7 * 3); }
   .big b { font-size: 52px; }
   .key { width: 26px; height: 26px; font-size: 12px; }
+  .seg { border-right: 0; padding: 4px 0; }
+  .seg.prefs { margin-left: 0; }
 }
