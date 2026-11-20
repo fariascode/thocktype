@@ -18,6 +18,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Historial** con gráficas (guardado en tu navegador)
 - Funciona en celular y tablet con el teclado táctil
 - **Compartir** tu resultado como imagen en blanco y negro (menú nativo en celular, descarga en PC) o como texto
+- **Cuentas:** Google, enlace por correo o correo y contraseña (Supabase)
 - **Instalable (PWA)** y funciona sin internet después de la primera visita
 - Cursor suave, sonido *thock* sintetizado, tema claro u oscuro, WPM en vivo
 - Métricas: WPM, raw, precisión, consistencia, y caracteres correctos, incorrectos, extra y faltantes
