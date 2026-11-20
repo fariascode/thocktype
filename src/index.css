@@ -27,6 +27,7 @@ button:disabled { opacity: .4; cursor: default; }
 .seg.mode { padding-left: 0; }
 .seg.prefs { margin-left: auto; border-right: 0; padding-right: 0; }
 .note { color: var(--dim); padding: 3px 8px; }
+.weak { color: var(--fg); letter-spacing: 3px; }
 .by { color: var(--dim); text-align: right; font-style: italic; }
 
 .editor { display: flex; flex-direction: column; gap: 12px; }
