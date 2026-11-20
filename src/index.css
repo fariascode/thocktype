@@ -451,3 +451,9 @@ kbd {
   .themes .swatch-label { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .palette-backdrop { padding: 8px; }
 }
+
+/* Caps Lock warning, lives in the timer row so the text never moves */
+.caps {
+  margin-left: auto; align-self: center; font-family: var(--sans); font-size: 12px; font-weight: 600;
+  color: var(--bg); background: var(--accent); padding: 4px 12px; border-radius: 999px; animation: pop 200ms var(--ease);
+}
