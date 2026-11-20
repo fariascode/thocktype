@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { LANGS, randomWords, type Lang } from './words'
-import { bestWpm, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm, type Result } from './stats'
+import { bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm, type Result } from './stats'
 import { thock } from './sound'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
@@ -63,7 +63,7 @@ export default function App() {
     t.current = { ...t.current, ...fresh() }
   }, [s])
 
-  const pb = useMemo(() => bestWpm(history, s.lang, s.duration, s.punct), [history, s.lang, s.duration, s.punct])
+  const pb = useMemo(() => bestWpm(history, modeKey({ lang: s.lang, duration: s.duration, punct: s.punct })), [history, s.lang, s.duration, s.punct])
 
   const finish = useCallback(() => {
     const { typed, words, keys, good, samples, hits, errs } = t.current

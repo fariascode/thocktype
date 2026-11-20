@@ -1,6 +1,11 @@
 // Self-check: run with `npm run check`
 import assert from 'node:assert'
-import { correctChars, wpm, consistency, charStats, streak, type Result } from './stats.ts'
+import { correctChars, wpm, consistency, charStats, streak, modeKey, bestWpm, type Result } from './stats.ts'
+
+const old = { date: 0, wpm: 80, raw: 0, acc: 0, cons: 0, lang: 'es', duration: 30 } as Result
+assert.equal(modeKey(old), modeKey({ ...old, mode: 'time', value: 30, punct: false }))
+assert.notEqual(modeKey(old), modeKey({ ...old, mode: 'words', value: 30 }))
+assert.equal(bestWpm([old, { ...old, wpm: 90, numbers: true }], modeKey(old)), 80)
 
 assert.deepEqual(charStats(['hola', 'mundo', 'x'], ['hoka', 'mun', 'xyz']), { correct: 7, incorrect: 1, extra: 2, missed: 2 })
 const day = 86400000, now = new Date(2026, 10, 19, 12).getTime()
