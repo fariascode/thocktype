@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "node src/stats.test.ts && node src/words.test.ts && node src/inputDiff.test.ts"
+    "check": "node src/stats.test.ts && node src/words.test.ts && node src/inputDiff.test.ts && node src/coach.test.ts"
   },
   "dependencies": {
     "chart.js": "^4.4.7",
