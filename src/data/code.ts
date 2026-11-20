@@ -1,0 +1,2 @@
+// space-separated word list
+export default `const let var function return if else for while switch case break continue import export from default class extends new this null undefined true false async await try catch finally throw typeof instanceof => {} [] () ; === !== && || ?? ?. ++ -- += console.log() map() filter() reduce() forEach() push() length props state useState() useEffect() def print() self lambda None True False int str list dict len() range() public static void main() string bool <div> </div> npm git commit merge`
