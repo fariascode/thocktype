@@ -128,6 +128,14 @@ export default function App() {
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // Caps Lock: browsers only report it on key events, so refresh it on every press/release
+  const [caps, setCaps] = useState(false)
+  useEffect(() => {
+    const check = (e: KeyboardEvent) => setCaps(e.getModifierState?.('CapsLock') ?? false)
+    window.addEventListener('keydown', check)
+    window.addEventListener('keyup', check)
+    return () => { window.removeEventListener('keydown', check); window.removeEventListener('keyup', check) }
+  }, [])
   const [session, setSession] = useState<Session | null>(null)
   const [auth, setAuth] = useState<AuthView | null>(null)
   useEffect(() => {
@@ -454,6 +462,7 @@ export default function App() {
             {phase === 'running'
               ? <>{progress}{s.live && <span className="live">{liveWpm} wpm</span>}{ruleTags}</>
               : <span className="live">{zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
+            {caps && <span className="caps" role="status">⇪ mayúsculas activadas</span>}
           </div>
           <div className="typing">
           {COARSE && (
