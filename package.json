@@ -11,6 +11,7 @@
     "check": "node src/stats.test.ts && node src/words.test.ts && node src/inputDiff.test.ts && node src/coach.test.ts && node src/daily.test.ts && node src/fuzzy.test.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.2",
     "chart.js": "^4.4.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
@@ -29,4 +30,3 @@
     "vite": "^6.3.5"
   }
 }
-
