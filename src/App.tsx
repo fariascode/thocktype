@@ -21,6 +21,7 @@ import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
 import ProfilePage from './ProfilePage'
+import { applyAppearance, isLight, type Caret, type Font, type Size, type Theme } from './appearance'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -34,7 +35,7 @@ const PRACTICE_WORDS = 40
 
 type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
-  theme: 'dark' | 'light'; sound: boolean; live: boolean; ghost: boolean
+  theme: Theme; size: Size; font: Font; caret: Caret; sound: boolean; live: boolean; ghost: boolean
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
 }
@@ -50,7 +51,7 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'jetbrains', caret: 'line', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
@@ -158,7 +159,7 @@ export default function App() {
   const finite = s.mode !== 'time' && !zen
 
   useEffect(() => {
-    document.documentElement.dataset.theme = s.theme
+    applyAppearance(s)
     try { localStorage.setItem(SKEY, JSON.stringify(s)) } catch { /* storage blocked */ }
   }, [s])
 
@@ -334,6 +335,13 @@ export default function App() {
   // smooth caret + smooth line scroll
   const inner = useRef<HTMLDivElement>(null)
   const caret = useRef<HTMLSpanElement>(null)
+  // a web font finishing its download changes letter widths: re-place the caret
+  const [fontTick, setFontTick] = useState(0)
+  useEffect(() => {
+    const bump = () => setFontTick(n => n + 1)
+    document.fonts?.addEventListener('loadingdone', bump)
+    return () => document.fonts?.removeEventListener('loadingdone', bump)
+  }, [])
   const ghost = useRef<HTMLSpanElement>(null)
   useLayoutEffect(() => {
     const box = inner.current
@@ -343,7 +351,7 @@ export default function App() {
     box.style.transform = `translateY(${-shift}px)`
     const p = charPos(word, typed[typed.length - 1].length)
     caret.current.style.transform = `translate(${p.x}px, ${p.y}px)`
-  }, [typed, view, phase, editing])
+  }, [typed, view, phase, editing, s.size, s.font, fontTick])
 
   // TypeRacer-style ghost: a second caret running at your personal best for this mode
   useEffect(() => {
@@ -392,7 +400,7 @@ export default function App() {
     add('preferencias', `${sw(s.sound)} sonido`, () => setS({ ...s, sound: !s.sound }))
     add('preferencias', `${sw(s.live)} wpm en vivo`, () => setS({ ...s, live: !s.live }))
     add('preferencias', `${sw(s.ghost)} fantasma`, () => setS({ ...s, ghost: !s.ghost }))
-    add('preferencias', `tema ${s.theme === 'dark' ? 'claro' : 'oscuro'}`, () => setS({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
+    add('preferencias', `tema ${isLight(s.theme) ? 'oscuro' : 'claro'}`, () => setS({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))
     return cmds
   }
 
@@ -545,7 +553,7 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
         {opt(s.sound, 'sonido', () => set({ ...s, sound: !s.sound }))}
         {opt(s.live, 'wpm', () => set({ ...s, live: !s.live }), 'wpm en vivo')}
         {opt(s.ghost, 'fantasma', () => set({ ...s, ghost: !s.ghost }), 'un cursor fantasma corre a tu récord')}
-        {opt(false, s.theme === 'dark' ? '◐ claro' : '◑ oscuro', () => set({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))}
+        {opt(false, isLight(s.theme) ? '◑ oscuro' : '◐ claro', () => set({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))}
       </div>
     </footer>
   )

@@ -20,6 +20,30 @@
   --ease: cubic-bezier(.2, .7, .3, 1);
   --t-fast: 120ms; --t: 180ms;
 }
+:root[data-theme='paper'] {
+  --bg: #ece8df; --surface: #f4f1ea; --surface-2: #faf8f3; --border: #d6cfc2;
+  --text-1: #2b2825; --text-2: #5d5851; --text-3: #978f84; --dim: #978f84;
+  --shadow: 0 1px 2px rgb(60 40 20 / .05), 0 8px 24px rgb(60 40 20 / .06);
+}
+:root[data-theme='ink'] {
+  --bg: #000000; --surface: #0b0b0c; --surface-2: #141416; --border: #27282b;
+  --text-1: #f4f4f4; --text-2: #a8a9ad; --text-3: #5f6166; --dim: #5f6166;
+}
+/* accessibility: maximum contrast, visible borders */
+:root[data-theme='contrast'] {
+  --bg: #000000; --surface: #000000; --surface-2: #121212; --border: #ffffff;
+  --text-1: #ffffff; --text-2: #ffffff; --text-3: #c4c4c4; --dim: #c4c4c4; --shadow: none;
+}
+
+/* typing area size and font (per device, from the settings panel) */
+:root { --type-size: clamp(20px, 2.4vw, 27px); --type-font: var(--mono); }
+:root[data-size='s'] { --type-size: clamp(16px, 1.8vw, 20px); }
+:root[data-size='l'] { --type-size: clamp(24px, 3.1vw, 34px); }
+:root[data-size='xl'] { --type-size: clamp(28px, 4vw, 44px); }
+:root[data-font='plex'] { --type-font: 'IBM Plex Mono', var(--mono); }
+:root[data-font='space'] { --type-font: 'Space Mono', var(--mono); }
+:root[data-font='fira'] { --type-font: 'Fira Code', var(--mono); }
+:root[data-font='source'] { --type-font: 'Source Code Pro', var(--mono); }
 :root[data-theme='light'] {
   --bg: #f3f3f1;
   --surface: #fafaf9;
@@ -83,7 +107,7 @@ nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 }
 .live { font-family: var(--mono); font-size: 14px; font-weight: 400; color: var(--text-3); }
 .words {
-  font-family: var(--mono); font-size: clamp(20px, 2.4vw, 27px); line-height: 1.7; letter-spacing: .01em;
+  font-family: var(--type-font); font-size: var(--type-size); line-height: 1.7; letter-spacing: .01em;
   height: calc(1.7em * 3); overflow: hidden; color: var(--text-3); user-select: none;
 }
 .inner { position: relative; display: flex; flex-wrap: wrap; transition: transform 140ms var(--ease); }
@@ -98,6 +122,10 @@ nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 }
 .ghost { background: var(--text-3); opacity: .7; transition: none; }
 .caret.blink { animation: blink 1.1s ease-in-out infinite; }
+/* caret styles; .6em ≈ one monospace character */
+:root[data-caret='block'] .caret { width: .6em; border-radius: 3px; background: color-mix(in srgb, var(--text-1) 35%, transparent); }
+:root[data-caret='underline'] .caret { width: .6em; height: 2px; top: 1.3em; }
+:root[data-caret='outline'] .caret { width: .6em; border-radius: 3px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--text-1); }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .15; } }
 
 /* touch typing: invisible input over the text; 16px font stops iOS from zooming on focus */
