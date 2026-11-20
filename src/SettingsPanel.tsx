@@ -1,15 +1,22 @@
 import { useEffect } from 'react'
-import { CARETS, FONTS, FONT_FAMILY, SIZES, SWATCH, THEMES, loadFont, type Appearance, type Font } from './appearance'
+import { CARETS, FONTS, FONT_FAMILY, MONO_THEMES, SIZES, SWATCH, THEMES, loadFont, type Appearance, type Font, type Theme } from './appearance'
 
 type Props = { a: Appearance; onChange: (next: Partial<Appearance>) => void; onClose: () => void }
+
+const COLOR_THEMES = (Object.keys(THEMES) as Theme[]).filter(t => !(MONO_THEMES as readonly Theme[]).includes(t))
+const swatch = (t: Theme) => (
+  <span className="swatch-label">
+    <span className="swatch" style={{ background: SWATCH[t][0], color: SWATCH[t][1] }}>Aa</span>{THEMES[t]}
+  </span>
+)
 
 // Changes apply instantly (to the preview and to the page behind), and are saved per device
 export default function SettingsPanel({ a, onChange, onClose }: Props) {
   useEffect(() => { (Object.keys(FONTS) as Font[]).forEach(loadFont) }, []) // so each option shows in its own font
 
-  const group = <K extends keyof Appearance>(key: K, options: Record<Appearance[K], string>, render?: (v: Appearance[K]) => React.ReactNode) => (
+  const group = <K extends keyof Appearance>(key: K, options: Record<Appearance[K], string>, render?: (v: Appearance[K]) => React.ReactNode, only?: readonly Appearance[K][]) => (
     <div className="set-options" role="radiogroup">
-      {(Object.keys(options) as Appearance[K][]).map(v => (
+      {(only ?? (Object.keys(options) as Appearance[K][])).map(v => (
         <button key={v} role="radio" aria-checked={a[key] === v} className={a[key] === v ? 'on' : ''}
           onClick={() => onChange({ [key]: v } as Partial<Appearance>)}>
           {render ? render(v) : options[v]}
@@ -35,14 +42,8 @@ export default function SettingsPanel({ a, onChange, onClose }: Props) {
         <section><small>tamaño del texto</small>{group('size', SIZES)}</section>
         <section><small>fuente</small>{group('font', FONTS, f => <span style={{ fontFamily: FONT_FAMILY[f] }}>{FONTS[f]}</span>)}</section>
         <section><small>cursor</small>{group('caret', CARETS)}</section>
-        <section>
-          <small>tema</small>
-          {group('theme', THEMES, t => (
-            <span className="swatch-label">
-              <span className="swatch" style={{ background: SWATCH[t][0], color: SWATCH[t][1] }}>Aa</span>{THEMES[t]}
-            </span>
-          ))}
-        </section>
+        <section><small>tema · monocromáticos</small>{group('theme', THEMES, swatch, MONO_THEMES)}</section>
+        <section><small>tema · de color</small>{group('theme', THEMES, swatch, COLOR_THEMES)}</section>
         <p className="hint" style={{ textAlign: 'left' }}>se guardan en este dispositivo</p>
       </div>
     </div>

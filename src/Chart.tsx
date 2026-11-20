@@ -10,7 +10,7 @@ export default function Chart({ labels, series }: Props) {
   useEffect(() => {
     const css = getComputedStyle(document.documentElement)
     const v = (name: string) => css.getPropertyValue(name).trim()
-    const fg = v('--text-1'), dim = v('--text-3'), border = v('--border')
+    const fg = v('--accent'), dim = v('--text-3'), border = v('--border')
     C.defaults.font.family = v('--mono')
     C.defaults.font.size = 11
     const chart = new C(ref.current!, {
