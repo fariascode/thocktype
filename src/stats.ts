@@ -116,3 +116,4 @@ export function saveResult(r: Result) {
 export function saveHistory(h: Result[]) {
   try { localStorage.setItem(KEY, JSON.stringify(h)) } catch { /* storage blocked: skip */ }
 }
+export const DURATIONS = [15, 30, 60, 120]

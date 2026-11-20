@@ -1,0 +1,45 @@
+import { useEffect, useState } from 'react'
+import { loadPublicProfile, type PublicProfile } from './profile'
+import { copyText } from './share'
+import { APP_URL } from './config'
+import History from './History'
+
+type Props = { username: string; theme: string; isMe: boolean }
+
+export default function ProfilePage({ username, theme, isMe }: Props) {
+  const [data, setData] = useState<PublicProfile | null | 'loading' | 'error'>('loading')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    setData('loading')
+    loadPublicProfile(username).then(d => alive && setData(d)).catch(() => alive && setData('error'))
+    return () => { alive = false }
+  }, [username])
+
+  if (data === 'loading') return <p className="hint">cargando perfil…</p>
+  if (data === 'error') return <p className="hint">no se pudo cargar el perfil. Revisa tu conexión.</p>
+  if (!data) return <p className="hint">@{username} no existe o su perfil es privado.</p>
+
+  const { profile: p, history, keys, bigrams } = data
+  const joined = new Date(p.created_at).toLocaleDateString('es', { month: 'long', year: 'numeric' })
+  const url = `${APP_URL}/u/${p.username}`
+  return (
+    <section className="result profile">
+      <div className="card profile-head">
+        {p.avatar_url
+          ? <img className="avatar-xl" src={p.avatar_url} alt="" referrerPolicy="no-referrer" />
+          : <span className="avatar-xl avatar">{(p.username ?? '?')[0]}</span>}
+        <div className="profile-id">
+          <h2>{p.display_name || `@${p.username}`}</h2>
+          <p className="profile-handle">@{p.username} · se unió en {joined}{isMe && !p.is_public && ' · privado: solo tú lo ves'}</p>
+          {p.bio && <p className="profile-bio">{p.bio}</p>}
+        </div>
+        <button onClick={async () => { setCopied(await copyText(url)); setTimeout(() => setCopied(false), 2000) }}>
+          {copied ? 'enlace copiado' : '⧉ copiar enlace'}
+        </button>
+      </div>
+      <History h={history} theme={theme} keys={keys} bigrams={bigrams} />
+    </section>
+  )
+}

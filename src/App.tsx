@@ -2,12 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { LANGS, bigramWords, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
-  loadKeys, mergeKeys, saveKeys, weakKeys, longestStreak, type KeyStats, type Mode, type Result,
+  loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, type KeyStats, type Mode, type Result,
 } from './stats'
 import { thock } from './sound'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
-import Calendar from './Calendar'
+import History from './History'
 import { inputDiff } from './inputDiff'
 import { renderCard } from './shareCard'
 import { copyText, shareImage } from './share'
@@ -19,13 +19,15 @@ import AuthModal, { type AuthView } from './AuthModal'
 import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
+import { getMyProfile, type Profile } from './profile'
+import ProfilePage from './ProfilePage'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
 // phones/tablets: no physical keyboard, so typing goes through a hidden input
+const PROFILE_RE = /^\/u\/([a-z0-9_]{3,20})\/?$/
 const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
 
-const DURATIONS = [15, 30, 60, 120]
 const COUNTS = [10, 25, 50, 100]
 const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica', daily: 'reto' }
 const PRACTICE_WORDS = 40
@@ -110,6 +112,14 @@ export default function App() {
   const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle')
   const [result, setResult] = useState<FullResult | null>(null)
   const [view, setView] = useState<'test' | 'history'>('test')
+  const [path, setPath] = useState(location.pathname)
+  useEffect(() => {
+    const onPop = () => setPath(location.pathname)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+  const go = useCallback((p: string) => { if (location.pathname !== p) window.history.pushState(null, '', p); setPath(p) }, [])
+  const profileName = path.match(PROFILE_RE)?.[1]
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
   const [session, setSession] = useState<Session | null>(null)
@@ -125,6 +135,11 @@ export default function App() {
 
   // cloud sync: everything on sign-in/app start, pending uploads when the connection returns
   const uid = session?.user.id
+  const [me, setMe] = useState<Profile | null>(null)
+  useEffect(() => {
+    setMe(null)
+    if (uid) getMyProfile(uid).then(setMe)
+  }, [uid])
   const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
   const applySync = useCallback((p: Promise<Synced>) => {
     setSyncState('syncing')
@@ -163,9 +178,10 @@ export default function App() {
     setPhase('idle')
     setResult(null)
     setView('test')
+    go('/')
     setEditing(false)
     t.current = { ...t.current, ...fresh() }
-  }, [s, keyStats])
+  }, [s, keyStats, go])
 
   const key = testKey(s)
   const pb = useMemo(() => bestWpm(history, key), [history, key])
@@ -233,7 +249,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
-      if (palette || auth) return // the palette and the login dialog handle their own keys
+      if (palette || auth || profileName) return // dialogs handle their own keys; profiles aren't for typing
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
@@ -300,7 +316,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, auth, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, auth, profileName, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -359,7 +375,8 @@ export default function App() {
     add('test', 'reiniciar', () => restart())
     add('test', `reto del día #${challengeNumber()}`, () => restart({ mode: 'daily' }))
     add('test', 'practicar teclas débiles', () => restart({ mode: 'practice', drill: [] }))
-    add('ver', 'historial', () => setView('history'))
+    add('ver', 'historial', () => { go('/'); setView('history') })
+    if (me?.username) add('ver', 'mi perfil', () => go(`/u/${me.username}`))
     add('ver', 'test', () => restart())
     for (const m of Object.keys(MODES) as Mode[]) add('modo', MODES[m], () => restart({ mode: m }))
     for (const d of DURATIONS) add('tiempo', `${d} segundos`, () => restart({ mode: 'time', duration: d }))
@@ -401,15 +418,18 @@ export default function App() {
           <button className="palette-btn" onClick={() => setPalette(true)} title="paleta de comandos (ctrl+k)">
             comandos{!COARSE && <kbd>ctrl k</kbd>}
           </button>
-          <button className={view === 'test' ? 'on' : ''} onClick={() => restart()}>test</button>
+          <button className={view === 'test' && !profileName ? 'on' : ''} onClick={() => restart()}>test</button>
           <button className="account-btn" onClick={() => setAuth(session ? 'account' : 'login')} title={session ? session.user.email : 'iniciar sesión'}>
-            {session ? <span className="avatar" aria-hidden>{(session.user.email ?? '?')[0]}</span> : 'entrar'}
+            {!session ? 'entrar'
+              : me?.avatar_url ? <img className="avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
+              : <span className="avatar" aria-hidden>{(me?.username ?? session.user.email ?? '?')[0]}</span>}
           </button>
-          <button className={view === 'history' ? 'on' : ''} onClick={() => setView('history')}>historial</button>
+          <button className={view === 'history' && !profileName ? 'on' : ''} onClick={() => { go('/'); setView('history') }}>historial</button>
         </nav>
       </header>
 
-      {view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} onDrill={drill => restart({ mode: 'practice', drill })} /> : phase === 'done' && result ? (
+      {profileName ? <ProfilePage username={profileName} theme={s.theme} isMe={me?.username === profileName} />
+        : view === 'history' ? <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} /> : phase === 'done' && result ? (
         <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
@@ -461,10 +481,11 @@ export default function App() {
         </>
       )}
 
-      {view === 'test' && phase !== 'done' && !editing && (
+      {!profileName && view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
-      {auth && <AuthModal view={auth} session={session} syncState={syncState} onView={setAuth} onClose={() => setAuth(null)} />}
+      {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
+        onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
@@ -609,30 +630,3 @@ function ShareBar({ r, modeLabel }: { r: FullResult; modeLabel: string }) {
   )
 }
 
-function History({ h, theme, keys, onDrill }: { h: Result[]; theme: string; keys: KeyStats; onDrill: (pairs: string[]) => void }) {
-  const lifetime = useMemo(loadBigrams, [h])
-  const last = useMemo(() => h.slice(-50), [h])
-  const labels = useMemo(() => last.map(r => new Date(r.date).toLocaleDateString()), [last])
-  const series = useMemo(() => [{ label: 'wpm', data: last.map(r => r.wpm) }, { label: 'precisión', data: last.map(r => r.acc), dim: true }], [last])
-  if (!h.length) return <p className="hint">aún no hay tests. ¡a escribir!</p>
-  const avg = Math.round(h.reduce((a, r) => a + r.wpm, 0) / h.length)
-  const timed = h.filter(r => (r.mode ?? 'time') === 'time')
-  return (
-    <section className="result">
-      <div className="small">
-        <div><small>tests</small>{h.length}</div>
-        <div><small>promedio</small>{avg} wpm</div>
-        <div><small>racha</small>{streak(h)} días</div>
-        <div><small>racha más larga</small>{longestStreak(h)} días</div>
-        {DURATIONS.map(d => {
-          const best = Math.max(0, ...timed.filter(r => r.duration === d).map(r => r.wpm))
-          return <div key={d}><small>mejor {d}s</small>{best || '-'}</div>
-        })}
-      </div>
-      <div className="card"><small>actividad · últimos 6 meses</small><Calendar h={h} /></div>
-      <div className="card"><small>últimos 50 tests · wpm y precisión</small><Chart key={theme} labels={labels} series={series} /></div>
-      <CoachCard bigrams={lifetime} title="coach · todos tus tests" minN={8} onDrill={onDrill} />
-      <div className="card"><small>todas tus teclas</small><Heatmap hits={keys.hits} errs={keys.errs} /></div>
-    </section>
-  )
-}
