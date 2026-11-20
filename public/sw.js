@@ -4,8 +4,17 @@ const VERSION = 'v1'
 const CACHE = `thocktype-${VERSION}`
 const SHELL = ['/', '/manifest.webmanifest', '/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png']
 
+// the built JS/CSS have hashed names, so read them from index.html instead of hardcoding
+async function precache() {
+  const c = await caches.open(CACHE)
+  await c.addAll(SHELL)
+  const html = await (await c.match('/')).text()
+  const assets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)].map(m => m[1])
+  await c.addAll(assets)
+}
+
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()))
+  e.waitUntil(precache().then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', e => {
