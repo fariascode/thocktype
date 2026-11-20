@@ -21,6 +21,8 @@ import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
 import ProfilePage from './ProfilePage'
+import { applyAppearance, isLight, type Caret, type Font, type Size, type Theme } from './appearance'
+import SettingsPanel from './SettingsPanel'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -34,7 +36,7 @@ const PRACTICE_WORDS = 40
 
 type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
-  theme: 'dark' | 'light'; sound: boolean; live: boolean; ghost: boolean
+  theme: Theme; size: Size; font: Font; caret: Caret; sound: boolean; live: boolean; ghost: boolean
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
 }
@@ -50,7 +52,7 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'jetbrains', caret: 'line', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
@@ -122,6 +124,7 @@ export default function App() {
   const profileName = path.match(PROFILE_RE)?.[1]
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [session, setSession] = useState<Session | null>(null)
   const [auth, setAuth] = useState<AuthView | null>(null)
   useEffect(() => {
@@ -158,7 +161,7 @@ export default function App() {
   const finite = s.mode !== 'time' && !zen
 
   useEffect(() => {
-    document.documentElement.dataset.theme = s.theme
+    applyAppearance(s)
     try { localStorage.setItem(SKEY, JSON.stringify(s)) } catch { /* storage blocked */ }
   }, [s])
 
@@ -249,7 +252,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
-      if (palette || auth || profileName) return // dialogs handle their own keys; profiles aren't for typing
+      if (palette || auth || settingsOpen || profileName) return // dialogs handle their own keys; profiles aren't for typing
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
@@ -316,7 +319,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, auth, profileName, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, profileName, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -334,6 +337,13 @@ export default function App() {
   // smooth caret + smooth line scroll
   const inner = useRef<HTMLDivElement>(null)
   const caret = useRef<HTMLSpanElement>(null)
+  // a web font finishing its download changes letter widths: re-place the caret
+  const [fontTick, setFontTick] = useState(0)
+  useEffect(() => {
+    const bump = () => setFontTick(n => n + 1)
+    document.fonts?.addEventListener('loadingdone', bump)
+    return () => document.fonts?.removeEventListener('loadingdone', bump)
+  }, [])
   const ghost = useRef<HTMLSpanElement>(null)
   useLayoutEffect(() => {
     const box = inner.current
@@ -343,7 +353,7 @@ export default function App() {
     box.style.transform = `translateY(${-shift}px)`
     const p = charPos(word, typed[typed.length - 1].length)
     caret.current.style.transform = `translate(${p.x}px, ${p.y}px)`
-  }, [typed, view, phase, editing])
+  }, [typed, view, phase, editing, s.size, s.font, fontTick])
 
   // TypeRacer-style ghost: a second caret running at your personal best for this mode
   useEffect(() => {
@@ -388,11 +398,12 @@ export default function App() {
     add('opciones', `${sw(s.numbers)} números`, () => restart({ numbers: !s.numbers }))
     for (const r of Object.keys(RULES) as (keyof Rules)[])
       add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
+    add('preferencias', 'ajustes · tamaño, fuente, cursor y tema', () => setSettingsOpen(true))
     add('cuenta', session ? 'cerrar sesión' : 'iniciar sesión', () => (session ? supabase.auth.signOut() : setAuth('login')))
     add('preferencias', `${sw(s.sound)} sonido`, () => setS({ ...s, sound: !s.sound }))
     add('preferencias', `${sw(s.live)} wpm en vivo`, () => setS({ ...s, live: !s.live }))
     add('preferencias', `${sw(s.ghost)} fantasma`, () => setS({ ...s, ghost: !s.ghost }))
-    add('preferencias', `tema ${s.theme === 'dark' ? 'claro' : 'oscuro'}`, () => setS({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
+    add('preferencias', `tema ${isLight(s.theme) ? 'oscuro' : 'claro'}`, () => setS({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))
     return cmds
   }
 
@@ -415,6 +426,7 @@ export default function App() {
             <button className="daily-pill" onClick={() => restart({ mode: 'daily' })} title="el mismo texto para todos hoy">reto #{challengeNumber()}</button>
           )}
           {days > 0 && <span className="streak" title="días seguidos practicando">racha {days}d</span>}
+          <button className="gear" onClick={() => setSettingsOpen(true)} title="ajustes" aria-label="ajustes">⚙</button>
           <button className="palette-btn" onClick={() => setPalette(true)} title="paleta de comandos (ctrl+k)">
             comandos{!COARSE && <kbd>ctrl k</kbd>}
           </button>
@@ -486,6 +498,7 @@ export default function App() {
       )}
       {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
         onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
+      {settingsOpen && <SettingsPanel a={s} onChange={next => setS({ ...s, ...next })} onClose={() => setSettingsOpen(false)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
@@ -545,7 +558,7 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
         {opt(s.sound, 'sonido', () => set({ ...s, sound: !s.sound }))}
         {opt(s.live, 'wpm', () => set({ ...s, live: !s.live }), 'wpm en vivo')}
         {opt(s.ghost, 'fantasma', () => set({ ...s, ghost: !s.ghost }), 'un cursor fantasma corre a tu récord')}
-        {opt(false, s.theme === 'dark' ? '◐ claro' : '◑ oscuro', () => set({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))}
+        {opt(false, isLight(s.theme) ? '◑ oscuro' : '◐ claro', () => set({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))}
       </div>
     </footer>
   )
