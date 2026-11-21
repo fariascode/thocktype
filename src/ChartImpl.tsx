@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { reducedMotion } from './motion'
 import { Chart as C, LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip } from 'chart.js'
 
 C.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip)
@@ -23,7 +24,17 @@ export default function Chart({ labels, series }: Props) {
         })),
       },
       options: {
-        responsive: true, maintainAspectRatio: false, animation: false,
+        responsive: true, maintainAspectRatio: false,
+        // the line rises from the baseline point by point, left to right; resizes and hovers stay instant
+        animation: reducedMotion() ? false : { duration: 700, easing: 'easeOutCubic' },
+        transitions: { resize: { animation: { duration: 0 } }, active: { animation: { duration: 150 } } },
+        animations: {
+          x: { duration: 0 },
+          y: {
+            from: ctx => (ctx.type === 'data' ? ctx.chart.scales.y?.getPixelForValue(0) : undefined),
+            delay: ctx => (ctx.type === 'data' && ctx.mode === 'default' ? ctx.dataIndex * Math.min(40, 600 / Math.max(1, labels.length)) : 0),
+          },
+        },
         interaction: { mode: 'index', intersect: false },
         plugins: {
           tooltip: {

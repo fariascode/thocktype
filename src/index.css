@@ -21,6 +21,7 @@
   --shadow: 0 1px 2px rgb(0 0 0 / .25), 0 8px 24px rgb(0 0 0 / .18);
   --ease: cubic-bezier(.2, .7, .3, 1);
   --t-fast: 120ms; --t: 180ms;
+  --spring: cubic-bezier(.34, 1.4, .64, 1); /* slight overshoot for things that pop in */
 }
 :root[data-theme='paper'] {
   --bg: #ece8df; --surface: #f4f1ea; --surface-2: #faf8f3; --border: #d6cfc2;
@@ -253,10 +254,6 @@ kbd {
 }
 .small > div:hover { border-color: var(--text-3); transform: translateY(-1px); }
 .small small { margin-bottom: 4px; font-family: var(--sans); }
-.pb {
-  align-self: flex-start; font-size: 13px; font-weight: 600; color: var(--bg); background: var(--accent);
-  padding: 6px 14px; border-radius: 999px; animation: pop 260ms var(--ease);
-}
 @keyframes pop { from { transform: scale(.92); opacity: 0; } }
 .chart { height: 220px; }
 .share { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -306,6 +303,68 @@ kbd {
   .key { width: 27px; height: 30px; font-size: 12px; border-radius: 6px; }
   .heat-row { gap: 4px; }
 }
+
+/* ── Motion ───────────────────────────────────────────────────────────── */
+button:active { transform: scale(.96); }
+button.on { animation: on-pop 260ms var(--spring); }
+@keyframes on-pop { 0% { transform: scale(.9); } }
+/* status bar rises in; groups that a mode change brings in slide up one after another */
+.status { animation: rise 420ms var(--ease) backwards; } /* backwards: keeps the fade-while-typing transition working afterwards */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+.seg { animation: seg-in 360ms var(--ease) backwards; }
+.status-row > .seg:nth-child(2) { animation-delay: 40ms; }
+.status-row > .seg:nth-child(3) { animation-delay: 80ms; }
+.status-row:nth-child(2) > .seg { animation-delay: 110ms; }
+.status-row:nth-child(2) > .seg:nth-child(2) { animation-delay: 150ms; }
+.status-row:nth-child(2) > .seg:nth-child(3) { animation-delay: 190ms; }
+@keyframes seg-in { from { opacity: 0; transform: translateY(6px); } }
+/* dialogs: blurred backdrop, panel grows in from just below */
+.palette-backdrop { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: fadein 220ms var(--ease); }
+.palette, .auth, .settings { animation: dialog-in 280ms var(--spring) both; transform-origin: 50% 0; }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(12px) scale(.97); } }
+/* result screen: sections arrive in sequence */
+.result { animation: none; }
+.result > * { animation: enter 420ms var(--ease) backwards; }
+.result > :nth-child(2) { animation-delay: 50ms; } .result > :nth-child(3) { animation-delay: 100ms; }
+.result > :nth-child(4) { animation-delay: 150ms; } .result > :nth-child(5) { animation-delay: 200ms; }
+.result > :nth-child(6) { animation-delay: 250ms; } .result > :nth-child(n+7) { animation-delay: 300ms; }
+.card { transition: border-color var(--t) var(--ease), box-shadow var(--t) var(--ease); }
+
+/* ── Personal best celebration ────────────────────────────────────────── */
+.result > .pr-hero {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 18px;
+  padding: 16px 20px; border-radius: var(--r-lg); border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--accent) 16%, var(--surface)), var(--surface) 70%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent), 0 10px 40px color-mix(in srgb, var(--accent) 18%, transparent);
+  animation: pr-in 620ms var(--spring) backwards;
+}
+@keyframes pr-in { from { opacity: 0; transform: translateY(10px) scale(.94); } }
+/* a light sweep crosses the banner once */
+.pr-hero::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--text-1) 14%, transparent) 50%, transparent 65%);
+  transform: translateX(-100%); animation: sweep 1100ms 300ms var(--ease) forwards;
+}
+@keyframes sweep { to { transform: translateX(100%); } }
+.pr-text { display: flex; flex-direction: column; gap: 2px; position: relative; }
+.pr-text small { color: var(--accent); letter-spacing: .08em; text-transform: uppercase; font-size: 11px; font-weight: 600; }
+.pr-text b { font-family: var(--mono); font-size: 34px; font-weight: 600; line-height: 1.1; color: var(--text-1); font-variant-numeric: tabular-nums; }
+.pr-text b span { font-size: 15px; color: var(--text-2); font-weight: 500; }
+.pr-mode { font-size: 13px; color: var(--text-2); }
+/* burst: small accent dots fly out from a medal-like core */
+.pr-burst { position: relative; width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 60%, transparent); animation: core 900ms var(--spring) both; }
+.pr-burst::before { content: '★'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--bg); font-size: 20px; }
+@keyframes core { 0% { transform: scale(0) rotate(-90deg); } 60% { transform: scale(1.12) rotate(8deg); } }
+.pr-burst i {
+  position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%;
+  background: var(--accent); opacity: 0; animation: fly 900ms calc(180ms + var(--d) * 60ms) var(--ease) forwards;
+}
+@keyframes fly {
+  0% { opacity: 1; transform: rotate(var(--a)) translateX(10px) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(calc(46px + var(--d) * 14px)) scale(.4); }
+}
+.big.is-pb b { color: var(--accent); text-shadow: 0 0 28px color-mix(in srgb, var(--accent) 35%, transparent); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
