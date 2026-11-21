@@ -7,8 +7,11 @@ import { COUNTS, DURATIONS, formatDuration, lifetime, personalBests, type Result
 // personal bests only compare like with like: pick a language and whether @ punctuation / # numbers were on
 const VARIANTS = { all: 'todo', plain: 'normal', punct: '@ puntuación', numbers: '# números' } as const
 type Variant = keyof typeof VARIANTS
-const fits = (r: Result, lang: Lang | 'all', v: Variant) => (lang === 'all' || r.lang === lang)
+const LISTS = { all: 'todas', 200: 'top 200', full: '1k' } as const
+type List = keyof typeof LISTS
+const fits = (r: Result, lang: Lang | 'all', v: Variant, list: List) => (lang === 'all' || r.lang === lang)
   && (v === 'all' || (v === 'plain' ? !r.punct && !r.numbers : !!r[v]))
+  && (list === 'all' || (list === 'full' ? !r.pool : r.pool === 200))
 
 // Lifetime totals + personal bests per mode, shown in your history and on public profiles
 export default function Records({ h }: { h: Result[] }) {
@@ -16,7 +19,8 @@ export default function Records({ h }: { h: Result[] }) {
   const lv = levelOf(totalXp(h))
   const [lang, setLang] = useState<Lang | 'all'>('all')
   const [variant, setVariant] = useState<Variant>('all')
-  const pbs = personalBests(h.filter(r => fits(r, lang, variant)))
+  const [list, setList] = useState<List>('all')
+  const pbs = personalBests(h.filter(r => fits(r, lang, variant, list)))
   const slot = (label: string, r?: Result) => (
     <div key={label} className={`pb-slot ${r ? '' : 'empty'}`} title={r ? new Date(r.date).toLocaleString() : 'aún sin récord'}>
       <small>{label}</small>
@@ -25,7 +29,7 @@ export default function Records({ h }: { h: Result[] }) {
           <b>{r.wpm}<span> wpm</span></b>
           <span className="pb-acc">{r.acc}%</span>
           <span className="pb-meta">raw {r.raw} · cons {r.cons}%</span>
-          <span className="pb-meta">{new Date(r.date).toLocaleDateString()}{lang === 'all' ? ` · ${r.lang}` : ''}{r.punct ? ' · @' : ''}{r.numbers ? ' · #' : ''}</span>
+          <span className="pb-meta">{new Date(r.date).toLocaleDateString()}{lang === 'all' ? ` · ${r.lang}` : ''}{r.pool ? ' · top 200' : ''}{r.plain ? ' · sin acentos' : ''}{r.punct ? ' · @' : ''}{r.numbers ? ' · #' : ''}</span>
         </>
       ) : <b className="pb-none">—</b>}
     </div>
@@ -53,6 +57,10 @@ export default function Records({ h }: { h: Result[] }) {
           <div className="seg" aria-label="variante">
             {(Object.keys(VARIANTS) as Variant[]).map(k =>
               <button key={k} className={k === variant ? 'on' : ''} onClick={() => setVariant(k)}>{VARIANTS[k]}</button>)}
+          </div>
+          <div className="seg" aria-label="lista de palabras">
+            {(Object.keys(LISTS) as List[]).map(k =>
+              <button key={k} className={k === list ? 'on' : ''} onClick={() => setList(k)}>{LISTS[k]}</button>)}
           </div>
         </div>
         <div className="pb-groups">
