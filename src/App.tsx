@@ -267,7 +267,8 @@ export default function App() {
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
-      if (e.key === 'Tab' || e.key === 'Escape') { e.preventDefault(); restart(); return }
+      // in the history Tab keeps moving focus, so keyboard users can reach its buttons (Esc still goes back)
+      if ((e.key === 'Tab' && view === 'test') || e.key === 'Escape') { e.preventDefault(); restart(); return }
       if (phase === 'done' || view !== 'test' || editing || e.metaKey || e.altKey) return
       if (zen && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); if (phase === 'running') finish(t.current.typed); return }
       const c = t.current
@@ -348,12 +349,13 @@ export default function App() {
   // smooth caret + smooth line scroll
   const inner = useRef<HTMLDivElement>(null)
   const caret = useRef<HTMLSpanElement>(null)
-  // a web font finishing its download changes letter widths: re-place the caret
+  // a web font finishing its download or the window resizing (phone rotation) moves letters: re-place the caret
   const [fontTick, setFontTick] = useState(0)
   useEffect(() => {
     const bump = () => setFontTick(n => n + 1)
     document.fonts?.addEventListener('loadingdone', bump)
-    return () => document.fonts?.removeEventListener('loadingdone', bump)
+    window.addEventListener('resize', bump)
+    return () => { document.fonts?.removeEventListener('loadingdone', bump); window.removeEventListener('resize', bump) }
   }, [])
   const ghost = useRef<HTMLSpanElement>(null)
   useLayoutEffect(() => {
