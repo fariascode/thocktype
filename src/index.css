@@ -168,6 +168,8 @@ nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
   font-family: var(--type-font); font-size: var(--type-size); line-height: 1.7; letter-spacing: .01em;
   height: calc(1.7em * var(--lines, 3)); overflow: hidden; color: var(--text-3); user-select: none;
 }
+.words { animation: words-in 380ms var(--ease) backwards; }
+@keyframes words-in { from { opacity: 0; transform: translateY(5px); filter: blur(3px); } }
 .inner { position: relative; display: flex; flex-wrap: wrap; transition: transform 140ms var(--ease); }
 .word { margin-right: .6em; }
 .word.wrong { text-decoration: underline; text-decoration-color: var(--text-3); text-decoration-thickness: 1px; text-underline-offset: .3em; }
@@ -210,7 +212,7 @@ kbd {
 .status {
   margin-top: auto; position: sticky; bottom: 16px; display: flex; flex-direction: column; gap: 6px;
   background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--border);
-  border-radius: var(--r-md); box-shadow: var(--shadow); padding: 6px; font-size: 13px; max-width: 100%;
+  border-radius: var(--r-md); box-shadow: var(--shadow); padding: 6px; font-size: 13px; max-width: 100%; overflow: clip;
 }
 .status-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 /* each group sits on its own soft track, so options read as sets instead of one long line */
@@ -219,6 +221,15 @@ kbd {
   background: color-mix(in srgb, var(--surface-2) 55%, transparent); border-radius: calc(var(--r-md) - 4px);
 }
 .seg:empty { display: none; }
+/* sliding selection: one pill per single-choice group glides between options */
+.seg[data-pill] { position: relative; isolation: isolate; }
+.seg-pill {
+  position: absolute; left: 0; top: 0; z-index: -1; pointer-events: none; opacity: 0;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .18);
+  transition: transform 460ms cubic-bezier(.22, 1, .36, 1), width 460ms cubic-bezier(.22, 1, .36, 1), height 460ms cubic-bezier(.22, 1, .36, 1), opacity 200ms var(--ease);
+}
+.seg[data-pill] button.on { background: transparent; border-color: transparent; animation: none; }
 .seg-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); padding: 0 6px 0 8px; }
 .seg button { padding: 4px 10px; min-height: 30px; }
 /* options spread evenly along each track, at their natural size */
@@ -365,6 +376,25 @@ button.on { animation: on-pop 260ms var(--spring); }
   100% { opacity: 0; transform: rotate(var(--a)) translateX(calc(46px + var(--d) * 14px)) scale(.4); }
 }
 .big.is-pb b { color: var(--accent); text-shadow: 0 0 28px color-mix(in srgb, var(--accent) 35%, transparent); }
+
+/* ── Account level ────────────────────────────────────────────────────── */
+.lv-bar { display: block; height: 3px; border-radius: 3px; background: color-mix(in srgb, var(--text-3) 30%, transparent); overflow: hidden; }
+.lv-bar > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; transform-origin: 0 50%;
+  transition: transform 1100ms cubic-bezier(.22, 1, .36, 1); }
+.lv-chip { display: inline-flex; flex-direction: column; align-items: stretch; gap: 3px; font-family: var(--mono); font-size: 12px; color: var(--text-2);
+  border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px 5px; min-height: 0; }
+.lv-chip .lv-bar { height: 2px; }
+.lv-tile .lv-bar { margin-top: 8px; }
+.lv-title { font-family: var(--sans); font-size: 13px; color: var(--text-3); margin-left: 4px; }
+.xp-card { gap: 10px; }
+.xp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.xp-head b { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+.xp-head b span { font-size: 13px; color: var(--text-2); font-weight: 500; }
+.big-bar { height: 8px; }
+.xp-next { font-size: 12px; color: var(--text-3); }
+.xp-card.level-up { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); animation: level-glow 1600ms 300ms var(--ease) backwards; }
+.xp-card.level-up small { color: var(--accent); font-weight: 600; }
+@keyframes level-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
