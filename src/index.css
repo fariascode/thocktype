@@ -519,6 +519,7 @@ kbd {
 .rk-note { text-align: left; margin-top: 6px; }
 
 /* ── Personal bests ───────────────────────────────────────────────────── */
+.pb-filters { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 8px 0 16px; }
 .pb-groups { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 820px) { .pb-groups { grid-template-columns: 1fr 1fr; } }
 .pb-group { margin-bottom: 8px; color: var(--text-2); }
