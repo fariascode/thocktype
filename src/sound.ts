@@ -20,3 +20,20 @@ export function thock(error = false) {
     src.start()
   } catch { /* audio unavailable: stay silent */ }
 }
+
+// personal best: two soft rising sine notes (a fifth apart)
+export function chime() {
+  try {
+    ctx ??= new AudioContext()
+    const now = ctx.currentTime
+    ;[660, 990].forEach((hz, i) => {
+      const o = ctx!.createOscillator(), g = ctx!.createGain(), t = now + i * 0.11
+      o.type = 'sine'; o.frequency.value = hz
+      g.gain.setValueAtTime(0, t)
+      g.gain.linearRampToValueAtTime(0.18, t + 0.02)
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+      o.connect(g).connect(ctx!.destination)
+      o.start(t); o.stop(t + 0.62)
+    })
+  } catch { /* audio unavailable: stay silent */ }
+}

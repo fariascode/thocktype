@@ -4,7 +4,9 @@ import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
   loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, COUNTS, dayKey, type KeyStats, type Mode, type Result,
 } from './stats'
-import { thock } from './sound'
+import { chime, thock } from './sound'
+import PrBanner from './PrBanner'
+import { useCountUp } from './motion'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
 import History from './History'
@@ -238,6 +240,7 @@ export default function App() {
       if (!prev) setDaily(saveOfficial(daily, s.lang, entry))
       dailyInfo = { n: challengeNumber(), official: !prev, entry }
     }
+    if (s.sound && r.wpm > pb) chime()
     setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo })
     setPhase('done')
   }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync])
@@ -620,6 +623,7 @@ function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme:
   ], [r])
   const newPb = r.failed === undefined && r.wpm > r.prevPb
   const mode = r.mode ?? 'time'
+  const shownWpm = useCountUp(r.wpm), shownAcc = useCountUp(r.acc)
   const detail = mode === 'time' ? `${r.duration}s` : mode === 'words' ? `${r.value} palabras · ${r.duration}s` : `${r.duration}s`
   return (
     <section className="result">
@@ -628,10 +632,10 @@ function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme:
           <b>muerte súbita</b> · fallaste en la palabra {r.failed + 1}. Este intento no cuenta para tu historial ni tus récords.
         </div>
       )}
-      {newPb && <div className="pb">{r.prevPb ? `nuevo récord · +${r.wpm - r.prevPb} wpm` : 'primer récord en este modo'}</div>}
-      <div className="big">
-        <div><small>wpm</small><b>{r.wpm}</b></div>
-        <div><small>precisión</small><b>{r.acc}%</b></div>
+      {newPb && <PrBanner wpm={r.wpm} prev={r.prevPb} mode={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />}
+      <div className={`big ${newPb ? 'is-pb' : ''}`}>
+        <div><small>wpm</small><b>{shownWpm}</b></div>
+        <div><small>precisión</small><b>{shownAcc}%</b></div>
       </div>
       {r.samples.length > 1 && <div className="card"><small>velocidad por segundo</small><Chart key={theme} labels={labels} series={series} /></div>}
       <div className="small">
