@@ -267,7 +267,8 @@ export default function App() {
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
-      if (e.key === 'Tab' || e.key === 'Escape') { e.preventDefault(); restart(); return }
+      // in the history Tab keeps moving focus, so keyboard users can reach its buttons (Esc still goes back)
+      if ((e.key === 'Tab' && view === 'test') || e.key === 'Escape') { e.preventDefault(); restart(); return }
       if (phase === 'done' || view !== 'test' || editing || e.metaKey || e.altKey) return
       if (zen && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); if (phase === 'running') finish(t.current.typed); return }
       const c = t.current
