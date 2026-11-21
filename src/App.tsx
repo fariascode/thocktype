@@ -11,6 +11,7 @@ import { totalXp, xpFor } from './level'
 import { useCountUp, useLayoutMotion } from './motion'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
+import Keymap from './Keymap'
 import History from './History'
 import { inputDiff } from './inputDiff'
 import { renderCard } from './shareCard'
@@ -26,7 +27,7 @@ import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
 import ProfilePage from './ProfilePage'
-import { applyAppearance, isLight, type Caret, type CaretMotion, type Font, type Lines, type Progress, type SoundKind, type Width, type Size, type Theme } from './appearance'
+import { GHOST_SOURCES, KEYMAPS, applyAppearance, isLight, type Appearance, type GhostSource, type Keymap as KeymapMode, type Caret, type CaretMotion, type Font, type Lines, type Progress, type SoundKind, type Width, type Size, type Theme } from './appearance'
 import SettingsPanel from './SettingsPanel'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
@@ -44,6 +45,9 @@ type Settings = {
   plain: boolean // spanish without accents
   theme: Theme; size: Size; font: Font; caret: Caret; lines: Lines; width: Width;
   caretMotion: CaretMotion; focus: boolean; progress: Progress; soundKind: SoundKind; volume: number; sound: boolean; live: boolean; ghost: boolean
+  ghostSource: GhostSource; ghostWpm: number; liveAcc: boolean; liveBurst: boolean; keymap: KeymapMode
+  ghostStyle: Caret; liveColor: Appearance['liveColor']; highlight: Appearance['highlight']; typedEffect: Appearance['typedEffect']
+  tape: Appearance['tape']; tapeMargin: Appearance['tapeMargin']; smoothScroll: boolean; graphZero: boolean; localFont: string
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
   v: number // settings format version, for one-time migrations
@@ -60,7 +64,9 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [], rules: NO_RULES, v: 2,
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [],
+  ghostSource: 'pb', ghostWpm: 80, liveAcc: false, liveBurst: false, keymap: 'off', ghostStyle: 'line', liveColor: 'dim',
+  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, v: 2,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
@@ -134,6 +140,10 @@ export default function App() {
   const [typed, setTyped] = useState<string[]>([''])
   const [clock, setClock] = useState(0) // seconds elapsed
   const [liveWpm, setLiveWpm] = useState(0)
+  const [liveAcc, setLiveAcc] = useState(100)
+  const [burst, setBurst] = useState(0) // wpm of the last finished word
+  const [ghostDelta, setGhostDelta] = useState(0) // characters ahead (+) or behind (-) the pace caret
+  const [pressed, setPressed] = useState<{ key: string; ok: boolean; n: number }>() // last key, for the reacting keymap
   const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle')
   const [result, setResult] = useState<FullResult | null>(null)
   const [round, setRound] = useState(0) // bumps on every new test so the text fades in fresh
@@ -203,7 +213,7 @@ export default function App() {
     return () => mq?.removeEventListener('change', follow)
   }, [s])
 
-  const fresh = () => ({ start: 0, keys: 0, good: 0, secKeys: 0, samples: [] as Sample[], hits: {} as Record<string, number>, errs: {} as Record<string, number>, bigrams: {} as Bigrams, lastAt: 0 })
+  const fresh = () => ({ start: 0, keys: 0, good: 0, secKeys: 0, samples: [] as Sample[], hits: {} as Record<string, number>, errs: {} as Record<string, number>, bigrams: {} as Bigrams, lastAt: 0, wordStart: 0 })
   // mutable test data read inside the timer and animation loop
   const t = useRef({ ...fresh(), typed, words })
   t.current.typed = typed
@@ -216,7 +226,7 @@ export default function App() {
     setRound(n => n + 1)
     setTyped([''])
     setClock(0)
-    setLiveWpm(0)
+    setLiveWpm(0); setLiveAcc(100); setBurst(0); setGhostDelta(0)
     setPhase('idle')
     setResult(null)
     setView('test')
@@ -227,6 +237,18 @@ export default function App() {
 
   const key = testKey(s)
   const pb = useMemo(() => bestWpm(history, key), [history, key])
+  // speed of the pace caret ("fantasma"); 0 = no ghost
+  const pace = useMemo(() => {
+    if (!s.ghost || s.mode === 'zen') return 0
+    const now = Date.now(), last10 = history.slice(-10)
+    switch (s.ghostSource) {
+      case 'pb': return pb
+      case 'avg': return last10.length ? Math.round(last10.reduce((a, r) => a + r.wpm, 0) / last10.length) : 0
+      case 'day': return Math.max(0, ...history.filter(r => now - r.date < 86400000).map(r => r.wpm))
+      case 'last': return history[history.length - 1]?.wpm ?? 0
+      case 'fixed': return Math.max(1, Math.min(300, s.ghostWpm))
+    }
+  }, [s.ghost, s.mode, s.ghostSource, s.ghostWpm, pb, history])
 
   const finish = useCallback((typed: string[], failed?: number) => {
     const { keys, good, samples, hits, errs, start, bigrams } = t.current
@@ -282,11 +304,13 @@ export default function App() {
       c.samples.push(sample)
       c.secKeys = 0
       setLiveWpm(sample.wpm)
+      setLiveAcc(c.keys ? Math.round((c.good / c.keys) * 100) : 100)
+      if (pace) setGhostDelta(Math.round(correctChars(targets, c.typed) - (pace * 5 * sec) / 60))
       setClock(sec)
       if (s.mode === 'time' && sec >= s.duration) finish(c.typed)
     }, 1000)
     return () => clearInterval(id)
-  }, [phase, s.mode, s.duration, finish, zen])
+  }, [phase, s.mode, s.duration, finish, zen, pace])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -329,6 +353,8 @@ export default function App() {
         if (!ok && rules.sudden) { finish(typed, i); return }
         if (ok) c.good++
         c.lastAt = performance.now()
+        if (c.wordStart) setBurst(Math.round(wpm(cur.length, (c.lastAt - c.wordStart) / 1000)))
+        c.wordStart = 0
         if (s.sound) thock(!ok, s.soundKind, s.volume)
         if (finite && i === words.length - 1) { finish(typed); return } // space on the last word ends the test
         type([...typed, ''])
@@ -346,12 +372,14 @@ export default function App() {
       }
       // coach: time between two correct letters inside a word = cost of that letter pair
       const now = performance.now()
+      if (!c.wordStart) c.wordStart = now
       if (ok && target && cur.length > 0 && cur[cur.length - 1] === target[cur.length - 1] && c.lastAt) {
         const dt = now - c.lastAt
         if (dt > 15 && dt < 2000) addBigram(c.bigrams, (target[cur.length - 1] + e.key).toLowerCase(), dt) // skip bursts and pauses
       }
       c.lastAt = now
       if (s.sound) thock(!ok, s.soundKind, s.volume)
+      if (s.keymap === 'react') setPressed(p => ({ key: e.key.toLowerCase(), ok, n: (p?.n ?? 0) + 1 }))
       if (!ok && rules.sudden) { finish(typed, i); return }
       if (!ok && rules.brake) return // the mistake counts, but the caret stays until the right key
       const next = [...typed.slice(0, i), cur + e.key]
@@ -391,23 +419,28 @@ export default function App() {
     const box = inner.current
     const word = box?.querySelectorAll<HTMLElement>('.word')[typed.length - 1]
     if (!box || !word || !caret.current) return
+    const p = charPos(word, typed[typed.length - 1].length)
+    caret.current.style.transform = `translate(${p.x}px, ${p.y}px)`
+    if (s.tape === 'on') { // tape: one line sliding left so the caret stays at the chosen margin
+      const lead = (box.parentElement!.clientWidth * Number(s.tapeMargin)) / 100
+      box.style.transform = `translateX(${Math.min(0, lead - p.x)}px)`
+      return
+    }
     // keep one typed line above the current one; with only 2 lines the current one goes on top so the next stays visible
     const shift = Math.max(0, word.offsetTop - (s.lines === '2' ? 0 : word.offsetHeight))
     box.style.transform = `translateY(${-shift}px)`
-    const p = charPos(word, typed[typed.length - 1].length)
-    caret.current.style.transform = `translate(${p.x}px, ${p.y}px)`
-  }, [typed, view, phase, editing, s.size, s.font, s.lines, s.width, fontTick])
+  }, [typed, view, phase, editing, s.size, s.font, s.lines, s.width, s.tape, s.tapeMargin, fontTick])
 
-  // TypeRacer-style ghost: a second caret running at your personal best for this mode
+  // TypeRacer-style ghost: a second caret running at the chosen pace
   useEffect(() => {
     const g = ghost.current
     if (!g) return
     g.style.display = 'none'
-    if (phase !== 'running' || !s.ghost || !pb || zen) return
+    if (phase !== 'running' || !pace) return
     let raf = 0
     const loop = () => {
       const c = t.current
-      let chars = (pb * 5 * (performance.now() - c.start)) / 60000
+      let chars = (pace * 5 * (performance.now() - c.start)) / 60000
       let wi = 0
       while (wi < c.words.length - 1 && chars > c.words[wi].length) { chars -= c.words[wi].length + 1; wi++ }
       const word = inner.current?.querySelectorAll<HTMLElement>('.word')[wi]
@@ -420,7 +453,7 @@ export default function App() {
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [phase, s.ghost, pb, zen])
+  }, [phase, pace])
 
   const commands = (): Command[] => {
     const cmds: Command[] = []
@@ -449,6 +482,9 @@ export default function App() {
     add('preferencias', `${sw(s.sound)} sonido`, () => setS({ ...s, sound: !s.sound }))
     add('preferencias', `${sw(s.live)} wpm en vivo`, () => setS({ ...s, live: !s.live }))
     add('preferencias', `${sw(s.ghost)} fantasma`, () => setS({ ...s, ghost: !s.ghost }))
+    for (const [k, l] of Object.entries(GHOST_SOURCES)) add('fantasma', `el fantasma corre a: ${l}`, () => setS({ ...s, ghost: true, ghostSource: k as GhostSource }))
+    add('vista', s.tape === 'on' ? 'volver a líneas' : 'modo cinta (una sola línea)', () => setS({ ...s, tape: s.tape === 'on' ? 'off' : 'on' }))
+    for (const [k, l] of Object.entries(KEYMAPS)) add('vista', `teclado en pantalla: ${l}`, () => setS({ ...s, keymap: k as KeymapMode }))
     add('preferencias', `tema ${isLight(s.theme) ? 'oscuro' : 'claro'}`, () => setS({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))
     return cmds
   }
@@ -507,7 +543,16 @@ export default function App() {
         <>
           <div className="timer">
             {phase === 'running'
-              ? <>{progress}{s.live && <span className="live">{liveWpm} wpm</span>}{ruleTags}</>
+              ? <>
+                {progress}
+                {s.live && <span className="live">{liveWpm} wpm</span>}
+                {s.liveAcc && <span className="live">{liveAcc}%</span>}
+                {s.liveBurst && burst > 0 && <span className="live" title="velocidad de tu última palabra">ráfaga {burst}</span>}
+                {pace > 0 && clock > 0 && <span className={`live delta ${ghostDelta >= 0 ? 'ahead' : 'behind'}`} title={`frente a un fantasma a ${pace} wpm`}>
+                  {ghostDelta >= 0 ? '▲' : '▼'} {Math.abs(ghostDelta)} letras
+                </span>}
+                {ruleTags}
+              </>
               : <span className="live">{zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
             {caps && <span className="caps" role="status">⇪ mayúsculas activadas</span>}
           </div>
@@ -535,7 +580,7 @@ export default function App() {
                 const tw = typed[wi] ?? ''
                 const wrong = !zen && wi < typed.length - 1 && tw !== w
                 return (
-                  <span key={wi} className={`word ${wrong ? 'wrong' : ''}`}>
+                  <span key={wi} className={`word ${wrong ? 'wrong' : ''} ${wi === typed.length - 1 ? 'cur' : wi < typed.length - 1 ? 'done' : ''}`}>
                     {[...w].map((ch, ci) => (
                       <span key={ci} className={`c l ${ci < tw.length ? (tw[ci] === ch ? 'ok' : 'bad') : ''}`}>{ch}</span>
                     ))}
@@ -548,6 +593,9 @@ export default function App() {
             </div>
           </div>
           </div>
+          {s.keymap !== 'off' && !COARSE && (
+            <Keymap mode={s.keymap} next={zen ? undefined : (words[typed.length - 1]?.[typed[typed.length - 1].length] ?? ' ')} pressed={pressed} />
+          )}
           {test.by && <p className="by fade">— {test.by}</p>}
           <p className="hint fade">
             {COARSE ? <button onClick={() => restart()}>↻ reiniciar</button> : <><kbd>tab</kbd> reiniciar</>}
@@ -641,7 +689,7 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
           <span className="seg-label" aria-hidden>interfaz</span>
         {opt(s.sound, 'sonido', () => set({ ...s, sound: !s.sound }))}
         {opt(s.live, 'wpm', () => set({ ...s, live: !s.live }), 'wpm en vivo')}
-        {opt(s.ghost, 'fantasma', () => set({ ...s, ghost: !s.ghost }), 'un cursor fantasma corre a tu récord')}
+        {opt(s.ghost, 'fantasma', () => set({ ...s, ghost: !s.ghost }), 'un segundo cursor corre a tu ritmo elegido (ajustes → cursor)')}
         {opt(false, isLight(s.theme) ? '◑ oscuro' : '◐ claro', () => set({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))}
       </div>
       </div>

@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLayoutMotion } from './motion'
 import {
-  CARETS, CARET_MOTION, FONTS, FONT_FAMILY, LINES, MONO_THEMES, PROGRESS, SIZES, SOUNDS, WIDTHS, SWATCH, THEMES, loadFont,
-  type Appearance, type Font, type Progress, type SoundKind, type Theme,
+  CARETS, CARET_MOTION, FONTS, FONT_FAMILY, GHOST_SOURCES, HIGHLIGHTS, KEYMAPS, LINES, LIVE_COLORS, MONO_THEMES, PROGRESS, SIZES,
+  SOUNDS, TAPE, TAPE_MARGINS, TYPED_EFFECTS, WIDTHS, SWATCH, THEMES, loadFont,
+  type Appearance, type Font, type GhostSource, type Keymap, type Progress, type SoundKind, type Theme,
 } from './appearance'
 
-export type Prefs = Appearance & { progress: Progress; sound: boolean; soundKind: SoundKind; volume: number; live: boolean; ghost: boolean }
+export type Prefs = Appearance & {
+  progress: Progress; sound: boolean; soundKind: SoundKind; volume: number; live: boolean; ghost: boolean
+  ghostSource: GhostSource; ghostWpm: number; liveAcc: boolean; liveBurst: boolean; keymap: Keymap
+}
+type Flag = { [K in keyof Prefs]: Prefs[K] extends boolean ? K : never }[keyof Prefs]
 type Props = { a: Prefs; onChange: (next: Partial<Prefs>) => void; onClose: () => void; onPreviewSound: (k: SoundKind, volume: number) => void }
 
-const TABS = { tema: 'tema', texto: 'texto', escritura: 'escritura', sonido: 'sonido' } as const
+const TABS = { tema: 'tema', texto: 'texto', cursor: 'cursor', vista: 'vista', vivo: 'en vivo', sonido: 'sonido' } as const
 type Tab = keyof typeof TABS
 const COLOR_THEMES = (Object.keys(THEMES) as Theme[]).filter(t => !(MONO_THEMES as readonly Theme[]).includes(t))
 const swatch = (t: Theme) => (
@@ -38,7 +43,11 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound }: 
     </div>
   )
   // on/off preference
-  const toggle = (key: 'live' | 'ghost' | 'focus' | 'sound', label: string, help: string) => (
+  // compact on/off chip, for options that read fine without an explanation
+  const flag = (key: Flag, label: string, title?: string) => (
+    <button key={key} role="switch" aria-checked={a[key]} className={a[key] ? 'on' : ''} title={title} onClick={() => onChange({ [key]: !a[key] })}>{label}</button>
+  )
+  const toggle = (key: Flag, label: string, help: string) => (
     <button role="switch" aria-checked={a[key]} className={`set-toggle ${a[key] ? 'on' : ''}`} onClick={() => onChange({ [key]: !a[key] })}>
       <span><b>{label}</b><small>{help}</small></span>
       <span className="switch" aria-hidden />
@@ -73,23 +82,54 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound }: 
           </>}
           {tab === 'texto' && <>
             <section className="fonts"><small>fuente</small>{group('font', FONTS, f => <span style={{ fontFamily: FONT_FAMILY[f as Font] }}>{FONTS[f as Font]}</span>)}</section>
+            {a.font === 'local' && (
+              <input className="set-input" placeholder="nombre de una fuente instalada, p. ej. Consolas" aria-label="fuente local" autoFocus
+                value={a.localFont} maxLength={60} onChange={e => onChange({ localFont: e.target.value })} />
+            )}
             <section><small>tamaño del texto</small>{group('size', SIZES)}</section>
             <div className="set-pair">
               <section><small>líneas</small>{group('lines', LINES, v => v)}</section>
               <section className="width-opt"><small>ancho</small>{group('width', WIDTHS)}</section>
             </div>
-            <div className="set-pair">
-              <section><small>cursor</small>{group('caret', CARETS)}</section>
-              <section><small>movimiento</small>{group('caretMotion', CARET_MOTION)}</section>
-            </div>
           </>}
-          {tab === 'escritura' && <>
-            <section><small>progreso del test</small>{group('progress', PROGRESS)}</section>
-            <div className="set-toggles">
-              {toggle('live', 'wpm en vivo', 'tu velocidad mientras escribes')}
-              {toggle('ghost', 'fantasma', 'un cursor corre a la velocidad de tu récord')}
-              {toggle('focus', 'modo enfoque', 'oculta también la cabecera mientras escribes')}
+          {tab === 'cursor' && <>
+            <section><small>estilo</small>{group('caret', CARETS)}</section>
+            <section><small>movimiento</small>{group('caretMotion', CARET_MOTION)}</section>
+            <div className="set-toggles">{toggle('ghost', 'fantasma', 'un segundo cursor corre a ritmo fijo; en vivo ves cuántas letras le llevas')}</div>
+            {a.ghost && <>
+              <section><small>el fantasma corre a</small>
+                <div className="set-row">
+                  {group('ghostSource', GHOST_SOURCES)}
+                  {a.ghostSource === 'fixed' && (
+                    <label className="set-num">
+                      <input type="number" min={10} max={300} value={a.ghostWpm} aria-label="wpm del fantasma"
+                        onChange={e => onChange({ ghostWpm: Math.max(10, Math.min(300, Number(e.target.value) || 0)) })} /> wpm
+                    </label>
+                  )}
+                </div>
+              </section>
+              <section><small>estilo del fantasma</small>{group('ghostStyle', CARETS)}</section>
+            </>}
+          </>}
+          {tab === 'vista' && <>
+            <div className="set-pair">
+              <section><small>desplazamiento</small>{group('tape', TAPE)}</section>
+              {a.tape === 'on' && <section><small>cursor en la cinta</small>{group('tapeMargin', TAPE_MARGINS)}</section>}
             </div>
+            <section><small>resaltar</small>{group('highlight', HIGHLIGHTS)}</section>
+            <section><small>palabras escritas</small>{group('typedEffect', TYPED_EFFECTS)}</section>
+            <section><small>teclado en pantalla</small>{group('keymap', KEYMAPS)}</section>
+            <section><small>movimiento</small><div className="set-options">{flag('smoothScroll', 'cambio de línea suave')}</div></section>
+          </>}
+          {tab === 'vivo' && <>
+            <section><small>progreso del test</small>{group('progress', PROGRESS)}</section>
+            <section><small>mostrar mientras escribes</small>
+              <div className="set-options">{flag('live', 'wpm')}{flag('liveAcc', 'precisión')}{flag('liveBurst', 'ráfaga', 'velocidad de tu última palabra')}</div>
+            </section>
+            <section><small>color de los números</small>{group('liveColor', LIVE_COLORS)}</section>
+            <section><small>otros</small>
+              <div className="set-options">{flag('focus', 'modo enfoque', 'oculta también la cabecera mientras escribes')}{flag('graphZero', 'gráficas desde cero', 'el eje de las gráficas empieza en 0')}</div>
+            </section>
           </>}
           {tab === 'sonido' && <>
             <div className="set-toggles">{toggle('sound', 'sonido al teclear', 'un golpe sintetizado por tecla; más grave al fallar')}</div>
