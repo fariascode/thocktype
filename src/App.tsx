@@ -26,7 +26,7 @@ import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
 import ProfilePage from './ProfilePage'
-import { applyAppearance, isLight, type Caret, type Font, type Lines, type Width, type Size, type Theme } from './appearance'
+import { applyAppearance, isLight, type Caret, type CaretMotion, type Font, type Lines, type Progress, type SoundKind, type Width, type Size, type Theme } from './appearance'
 import SettingsPanel from './SettingsPanel'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
@@ -42,7 +42,8 @@ type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
   pool: number // 200 or 1000 most frequent words (1000 = the whole list)
   plain: boolean // spanish without accents
-  theme: Theme; size: Size; font: Font; caret: Caret; lines: Lines; width: Width; sound: boolean; live: boolean; ghost: boolean
+  theme: Theme; size: Size; font: Font; caret: Caret; lines: Lines; width: Width;
+  caretMotion: CaretMotion; focus: boolean; progress: Progress; soundKind: SoundKind; volume: number; sound: boolean; live: boolean; ghost: boolean
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
   v: number // settings format version, for one-time migrations
@@ -59,7 +60,7 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES, v: 2,
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [], rules: NO_RULES, v: 2,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
@@ -194,6 +195,12 @@ export default function App() {
   useEffect(() => {
     applyAppearance(s)
     try { localStorage.setItem(SKEY, JSON.stringify(s)) } catch { /* storage blocked */ }
+    if (s.theme !== 'auto') return
+    // "sistema": follow the device when it switches between light and dark
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
+    const follow = () => applyAppearance(s)
+    mq?.addEventListener('change', follow)
+    return () => mq?.removeEventListener('change', follow)
   }, [s])
 
   const fresh = () => ({ start: 0, keys: 0, good: 0, secKeys: 0, samples: [] as Sample[], hits: {} as Record<string, number>, errs: {} as Record<string, number>, bigrams: {} as Bigrams, lastAt: 0 })
@@ -316,13 +323,13 @@ export default function App() {
       if (phase === 'idle') { c.start = performance.now(); setPhase('running') }
       if (e.key === ' ') {
         if (cur === '') return
-        if (rules.brake && cur !== target) { if (s.sound) thock(true); return } // must finish the word correctly first
+        if (rules.brake && cur !== target) { if (s.sound) thock(true, s.soundKind, s.volume); return } // must finish the word correctly first
         c.keys++; c.secKeys++
         const ok = zen || cur === target
         if (!ok && rules.sudden) { finish(typed, i); return }
         if (ok) c.good++
         c.lastAt = performance.now()
-        if (s.sound) thock(!ok)
+        if (s.sound) thock(!ok, s.soundKind, s.volume)
         if (finite && i === words.length - 1) { finish(typed); return } // space on the last word ends the test
         type([...typed, ''])
         if (s.mode === 'time' && i > words.length - 50) setTest({ words: [...words, ...randomWords(s.lang, 200, wordOpts(s)).map(w => (usesPlain(s) ? plain(w) : w))] })
@@ -344,7 +351,7 @@ export default function App() {
         if (dt > 15 && dt < 2000) addBigram(c.bigrams, (target[cur.length - 1] + e.key).toLowerCase(), dt) // skip bursts and pauses
       }
       c.lastAt = now
-      if (s.sound) thock(!ok)
+      if (s.sound) thock(!ok, s.soundKind, s.volume)
       if (!ok && rules.sudden) { finish(typed, i); return }
       if (!ok && rules.brake) return // the mistake counts, but the caret stays until the right key
       const next = [...typed.slice(0, i), cur + e.key]
@@ -454,10 +461,12 @@ export default function App() {
   const on = (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k])
   const ruleTags = on.length > 0 && <span className="rule-tags">{on.map(k => <span key={k}>{RULES[k][0]}</span>)}</span>
   const shown = zen ? typed : words.slice(0, typed.length + 80)
-  const progress =
-    s.mode === 'time' ? s.duration - clock
+  const progress = s.progress !== 'number' ? null
+    : s.mode === 'time' ? s.duration - clock
     : zen ? clock
     : `${typed.length - 1}/${words.length}`
+  // 0..1 for the progress bar; zen has no end
+  const done01 = zen ? 0 : s.mode === 'time' ? clock / s.duration : (typed.length - 1) / Math.max(1, words.length)
 
   return (
     <main className={phase === 'running' ? 'running' : ''}>
@@ -502,6 +511,9 @@ export default function App() {
               : <span className="live">{zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
             {caps && <span className="caps" role="status">⇪ mayúsculas activadas</span>}
           </div>
+          {s.progress === 'bar' && !zen && (
+            <div className="progress-bar" aria-hidden><span style={{ transform: `scaleX(${phase === 'running' ? done01 : 0})`, transitionDuration: s.mode === 'time' ? '1s' : '300ms' }} /></div>
+          )}
           <div className="typing">
           {COARSE && (
             <>
@@ -548,7 +560,7 @@ export default function App() {
       )}
       {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
         onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
-      {settingsOpen && <SettingsPanel a={s} onChange={next => setS({ ...s, ...next })} onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsPanel a={s} onChange={next => setS({ ...s, ...next })} onPreviewSound={(k, v) => thock(false, k, v)} onClose={() => setSettingsOpen(false)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )

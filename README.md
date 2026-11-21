@@ -23,7 +23,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Cuentas:** Google, enlace por correo o correo y contraseña (Supabase)
 - **Perfiles públicos** en `/u/usuario`: foto, bio, récords, calendario, progreso, coach y teclado; se pueden hacer privados
 - **Instalable (PWA)** y funciona sin internet después de la primera visita
-- **Ajustes ⚙** por dispositivo: tamaño del texto, líneas visibles (2/3/4), ancho (estrecho/normal/ancho), 6 fuentes (Cascadia Code es la insignia), 4 estilos de cursor y 13 temas: 5 monocromáticos (carbón, claro, papel, tinta, alto contraste) y 8 de color (lila y lavanda propios, más Catppuccin, Rosé Pine, Nord, Gruvbox, Tokyo Night y Everforest), todos verificados con contraste WCAG
+- **Ajustes ⚙** por dispositivo, en pestañas: **tema** (22: "sistema" que sigue al dispositivo, 5 monocromáticos y 16 de color: lila, lavanda, sakura, matcha, ámbar y océano propios, más Catppuccin, Rosé Pine, Nord, Gruvbox, Tokyo Night, Everforest, Dracula, Monokai y Solarized oscuro/claro, todos verificados con contraste WCAG) · **texto** (10 fuentes con Cascadia Code como insignia, tamaño, líneas, ancho, cursor y su movimiento) · **escritura** (progreso como número, barra u oculto; wpm en vivo; fantasma; modo enfoque) · **sonido** (thock, click, máquina o suave, con volumen)
 - Aviso de **Bloq Mayús** activado mientras escribes
 - Cursor suave, sonido *thock* sintetizado, WPM en vivo
 - Métricas: WPM, raw, precisión, consistencia, y caracteres correctos, incorrectos, extra y faltantes
