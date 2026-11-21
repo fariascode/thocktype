@@ -35,12 +35,17 @@ function drill(lang: Lang, score: (w: string) => number, n: number): string[] {
   return Array.from({ length: n }, () => (Math.random() < 0.8 ? pick(top) : pick(lists[lang])))
 }
 
-export type WordOpts ={ punct?: boolean; numbers?: boolean }
+// pool: draw only from the N most frequent words (lists are ordered by frequency); undefined = whole list
+export type WordOpts = { punct?: boolean; numbers?: boolean; pool?: number }
+export const POOLS = [200, 1000] as const
+
+// "sin acentos": drops acute accents and diaeresis (á→a, ü→u) but keeps ñ, which is its own letter
+export const plain = (w: string) => w.normalize('NFD').replace(/[\u0301\u0308]/g, '').normalize('NFC')
 
 // punct: capitals + punctuation (ignored for code, which already has symbols); numbers: mixes in numbers
 // rng: pass a seeded generator to get the same words for everyone (daily challenge)
-export function randomWords(lang: Lang, n: number, { punct = false, numbers = false }: WordOpts = {}, rng = Math.random): string[] {
-  const list = lists[lang]
+export function randomWords(lang: Lang, n: number, { punct = false, numbers = false, pool }: WordOpts = {}, rng = Math.random): string[] {
+  const list = pool ? lists[lang].slice(0, pool) : lists[lang]
   const out: string[] = []
   let capNext = true
   for (let i = 0; i < n; i++) {

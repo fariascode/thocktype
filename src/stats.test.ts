@@ -10,6 +10,7 @@ const old = { date: 0, wpm: 80, raw: 0, acc: 0, cons: 0, lang: 'es', duration: 3
 assert.equal(modeKey(old), modeKey({ ...old, mode: 'time', value: 30, punct: false }))
 assert.notEqual(modeKey(old), modeKey({ ...old, mode: 'words', value: 30 }))
 assert.equal(bestWpm([old, { ...old, wpm: 90, numbers: true }], modeKey(old)), 80)
+assert.equal(bestWpm([old, { ...old, wpm: 99, pool: 200 }, { ...old, wpm: 98, plain: true }], modeKey(old)), 80) // 200-word and accent-free runs are their own records
 
 assert.deepEqual(charStats(['hola', 'mundo', 'x'], ['hoka', 'mun', 'xyz']), { correct: 7, incorrect: 1, extra: 2, missed: 2 })
 const day = 86400000, now = new Date(2026, 10, 19, 12).getTime()

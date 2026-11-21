@@ -23,12 +23,14 @@ export type Mode = 'time' | 'words' | 'quote' | 'zen' | 'custom' | 'practice' | 
 export type Result = {
   date: number; wpm: number; raw: number; acc: number; cons: number; lang: string; duration: number
   punct?: boolean; numbers?: boolean; mode?: Mode; value?: number; rules?: string[]
+  pool?: number // 200 = only the 200 most common words; unset = the whole list
+  plain?: boolean // spanish without accents
 }
 
 // identifies "the same kind of test" for personal bests; old results (no mode) were time tests
-export const modeKey = (r: Pick<Result, 'lang' | 'duration' | 'punct' | 'numbers' | 'mode' | 'value'>) => {
+export const modeKey = (r: Pick<Result, 'lang' | 'duration' | 'punct' | 'numbers' | 'mode' | 'value' | 'pool' | 'plain'>) => {
   const mode = r.mode ?? 'time'
-  return [mode, r.value ?? (mode === 'time' ? r.duration : ''), r.lang, !!r.punct, !!r.numbers].join('|')
+  return [mode, r.value ?? (mode === 'time' ? r.duration : ''), r.lang, !!r.punct, !!r.numbers, r.pool ?? 'all', !!r.plain].join('|')
 }
 
 // correct / incorrect / extra / missed characters, like the breakdown on result screens

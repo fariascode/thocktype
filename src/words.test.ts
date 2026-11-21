@@ -26,3 +26,10 @@ const bw = bigramWords('es', ['qu', 'ci'], 200)
 assert.equal(bw.length, 200)
 assert.ok(bw.filter(w => /qu|ci/i.test(w)).length > 120, 'mostly words with the slow pairs')
 console.log('bigramWords ok')
+
+import { plain, randomWords as rw } from './words.ts'
+assert.equal(plain('acción ñandú pingüino ¿Qué?'), 'accion ñandu pinguino ¿Que?')
+import en from './data/en.ts'
+const first200 = new Set([...new Set(en.split(/\s+/).filter(Boolean))].slice(0, 200))
+assert.ok(rw('en', 500, { pool: 200 }).every(x => first200.has(x))) // drawn only from the 200 most frequent
+console.log('pools ok')

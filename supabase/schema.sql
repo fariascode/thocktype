@@ -45,6 +45,8 @@ create table public.results (
   punct boolean not null default false,
   numbers boolean not null default false,
   rules text[] not null default '{}',
+  pool smallint check (pool in (200, 1000)), -- null = whole word list
+  plain boolean not null default false,      -- spanish without accents
   unique (user_id, date)
 );
 create index results_user_date on public.results (user_id, date desc);
