@@ -15,6 +15,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Coach:** mide el tiempo entre cada par de letras, te dice cuáles te frenan (p. ej. «qu» 2.1× más lenta) y genera práctica con ellas
 - **Modo práctica:** genera palabras cargadas de tus teclas débiles para que las entrenes
 - **Récords personales** por modo (15/30/60/120 s y 10/25/50/100 palabras) con wpm, precisión, raw y consistencia, filtrables por idioma y por puntuación/números, más totales: tests, tiempo escribiendo, wpm más alto, promedios
+- **Nivel de cuenta:** cada test da xp (≈ caracteres correctos + bono, el reto oficial vale doble); el nivel sube con una curva suave, con títulos cada 10 niveles (novato → leyenda). Se calcula del historial, así que se sincroniza solo y aparece en tu perfil público
 - **Racha** de días seguidos practicando, con racha más larga y un **calendario de actividad** de 6 meses
 - **Historial** con gráficas, guardado en tu navegador y sincronizado en la nube entre tus dispositivos al iniciar sesión (funciona sin conexión y sube lo pendiente después)
 - Funciona en celular y tablet con el teclado táctil

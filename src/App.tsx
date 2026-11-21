@@ -6,7 +6,9 @@ import {
 } from './stats'
 import { chime, thock } from './sound'
 import PrBanner from './PrBanner'
-import { useCountUp } from './motion'
+import { LevelChip, XpCard } from './LevelUi'
+import { totalXp, xpFor } from './level'
+import { useCountUp, useLayoutMotion } from './motion'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
 import History from './History'
@@ -96,6 +98,7 @@ type FullResult = Result & {
   hits: Record<string, number>; errs: Record<string, number>; prevPb: number; bigrams: Bigrams
   daily?: { n: number; official: boolean; entry: DailyEntry } // set for the daily challenge
   failed?: number // sudden death: index of the word where the test was lost
+  xpBefore?: number // account xp before this test (unset when the test didn't count)
 }
 
 // pixel position of character `ci` inside a word element (after the last char if past the end)
@@ -118,6 +121,7 @@ export default function App() {
   const [liveWpm, setLiveWpm] = useState(0)
   const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle')
   const [result, setResult] = useState<FullResult | null>(null)
+  const [round, setRound] = useState(0) // bumps on every new test so the text fades in fresh
   const [view, setView] = useState<'test' | 'history'>('test')
   const [path, setPath] = useState(location.pathname)
   useEffect(() => {
@@ -188,6 +192,7 @@ export default function App() {
     const ns = { ...s, ...next }
     setS(ns)
     setTest(buildTest(ns, keyStats))
+    setRound(n => n + 1)
     setTyped([''])
     setClock(0)
     setLiveWpm(0)
@@ -241,9 +246,9 @@ export default function App() {
       dailyInfo = { n: challengeNumber(), official: !prev, entry }
     }
     if (s.sound && r.wpm > pb) chime()
-    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo })
+    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo, xpBefore: totalXp(history) })
     setPhase('done')
-  }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync])
+  }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync, history])
 
   // 1s tick: sample speed, count the clock
   useEffect(() => {
@@ -428,6 +433,7 @@ export default function App() {
   // ranking props: refresh after each sync so a just-uploaded official attempt appears
   const rank: RankProps = { uid, hasUsername: !!me?.username, refresh: syncState, onOpenProfile: name => go(`/u/${name}`) }
   const days = streak(history)
+  const xp = useMemo(() => totalXp(history), [history])
   const todayDaily = officialFor(daily, s.lang)
   const on = (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k])
   const ruleTags = on.length > 0 && <span className="rule-tags">{on.map(k => <span key={k}>{RULES[k][0]}</span>)}</span>
@@ -445,6 +451,7 @@ export default function App() {
           {!todayDaily && s.mode !== 'daily' && (
             <button className="daily-pill" onClick={() => restart({ mode: 'daily' })} title="el mismo texto para todos hoy">reto #{challengeNumber()}</button>
           )}
+          {history.length > 0 && <LevelChip xp={xp} onClick={() => { go('/'); setView('history') }} />}
           {days > 0 && <span className="streak" title="días seguidos practicando">racha {days}d</span>}
           <button className="gear" onClick={() => setSettingsOpen(true)} title="ajustes" aria-label="ajustes">⚙</button>
           <button className="palette-btn" onClick={() => setPalette(true)} title="paleta de comandos (ctrl+k)">
@@ -494,7 +501,7 @@ export default function App() {
               {!touchFocus && <button className="tap-hint" onClick={() => touch.current?.focus()}>toca para escribir</button>}
             </>
           )}
-          <div className={`words ${activeRules(s).blind ? 'blind' : ''}`}>
+          <div key={round} className={`words ${activeRules(s).blind ? 'blind' : ''}`}>
             <div className="inner" ref={inner}>
               {shown.map((w, wi) => {
                 const tw = typed[wi] ?? ''
@@ -537,17 +544,21 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
   today?: DailyEntry
 }) {
   const opt = (on: boolean, label: string, onClick: () => void, title?: string) =>
-    <button className={on ? 'on' : ''} onClick={onClick} title={title}>{label}</button>
+    <button key={label} className={on ? 'on' : ''} onClick={onClick} title={title}>{label}</button>
+  const bar = useRef<HTMLElement>(null)
+  useLayoutMotion(bar)
   return (
-    <footer className="status fade">
+    <footer className="status fade" ref={bar}>
       {/* pairs: mode | length, language | extras, rules | interface */}
       <div className="status-row">
-      <div className="seg mode p1" aria-label="modo">
+      <div className="seg mode p1" aria-label="modo" data-pill>
+        <span className="seg-pill" aria-hidden />
         {(Object.keys(MODES) as Mode[]).map(m => (
           <button key={m} className={m === s.mode ? 'on' : ''} onClick={() => restart({ mode: m })}>{MODES[m]}</button>
         ))}
       </div>
-      <div className="seg p2" aria-label="duración">
+      <div className="seg p2" aria-label="duración" data-pill key={s.mode}>
+        <span className="seg-pill" aria-hidden />
         {s.mode === 'time' && DURATIONS.map(d => opt(d === s.duration, `${d}s`, () => restart({ duration: d })))}
         {s.mode === 'words' && COUNTS.map(c => opt(c === s.count, `${c}`, () => restart({ count: c })))}
         {s.mode === 'quote' && opt(false, 'otra cita', () => restart())}
@@ -567,7 +578,8 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
           : <span className="note">haz unos tests para detectar tus teclas débiles</span>)}
       </div>
       {s.mode !== 'custom' && (
-        <div className="seg p3" aria-label="idioma">
+        <div className="seg p3" aria-label="idioma" data-pill>
+          <span className="seg-pill" aria-hidden />
           <span className="seg-label" aria-hidden>idioma</span>
           {(Object.keys(LANGS) as Lang[]).map(l => opt(l === s.lang, LANGS[l], () => restart({ lang: l })))}
         </div>
@@ -644,6 +656,7 @@ function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme:
         <div title="correctos / incorrectos / extra / faltantes"><small>caracteres</small>{r.chars.correct}/{r.chars.incorrect}/{r.chars.extra}/{r.chars.missed}</div>
         <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}{r.rules?.length ? ` · ${r.rules.map(k => RULES[k as keyof Rules][0]).join(', ')}` : ''}</div>
       </div>
+      {r.xpBefore !== undefined && <XpCard before={r.xpBefore} gained={xpFor(r)} />}
       <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
       {r.daily && <DailyCard n={r.daily.n} lang={r.lang as Lang} official={r.daily.official} entry={r.daily.entry} rank={rank} />}
       {r.by && <p className="by">— {r.by}</p>}
