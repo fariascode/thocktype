@@ -348,12 +348,13 @@ export default function App() {
   // smooth caret + smooth line scroll
   const inner = useRef<HTMLDivElement>(null)
   const caret = useRef<HTMLSpanElement>(null)
-  // a web font finishing its download changes letter widths: re-place the caret
+  // a web font finishing its download or the window resizing (phone rotation) moves letters: re-place the caret
   const [fontTick, setFontTick] = useState(0)
   useEffect(() => {
     const bump = () => setFontTick(n => n + 1)
     document.fonts?.addEventListener('loadingdone', bump)
-    return () => document.fonts?.removeEventListener('loadingdone', bump)
+    window.addEventListener('resize', bump)
+    return () => { document.fonts?.removeEventListener('loadingdone', bump); window.removeEventListener('resize', bump) }
   }, [])
   const ghost = useRef<HTMLSpanElement>(null)
   useLayoutEffect(() => {
