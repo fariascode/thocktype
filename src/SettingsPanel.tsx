@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { CARETS, FONTS, FONT_FAMILY, MONO_THEMES, SIZES, SWATCH, THEMES, loadFont, type Appearance, type Font, type Theme } from './appearance'
+import { CARETS, FONTS, FONT_FAMILY, LINES, MONO_THEMES, SIZES, WIDTHS, SWATCH, THEMES, loadFont, type Appearance, type Font, type Theme } from './appearance'
 
 type Props = { a: Appearance; onChange: (next: Partial<Appearance>) => void; onClose: () => void }
 
@@ -44,6 +44,10 @@ export default function SettingsPanel({ a, onChange, onClose }: Props) {
           <section><small>tamaño del texto</small>{group('size', SIZES)}</section>
           <section className="fonts"><small>fuente</small>{group('font', FONTS, f => <span style={{ fontFamily: FONT_FAMILY[f] }}>{FONTS[f]}</span>)}</section>
           <section><small>cursor</small>{group('caret', CARETS)}</section>
+          <div className="set-pair">
+            <section><small>líneas</small>{group('lines', LINES, v => v)}</section>
+            <section className="width-opt"><small>ancho</small>{group('width', WIDTHS)}</section>
+          </div>
         </div>
         <div className="set-col">
           <section className="themes"><small>tema · monocromáticos</small>{group('theme', THEMES, swatch, MONO_THEMES)}</section>
