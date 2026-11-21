@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { levelOf, titleFor, totalXp } from './level'
+import { LevelBar } from './LevelUi'
 import { LANGS, type Lang } from './words'
 import { COUNTS, DURATIONS, formatDuration, lifetime, personalBests, type Result } from './stats'
 
@@ -11,6 +13,7 @@ const fits = (r: Result, lang: Lang | 'all', v: Variant) => (lang === 'all' || r
 // Lifetime totals + personal bests per mode, shown in your history and on public profiles
 export default function Records({ h }: { h: Result[] }) {
   const life = lifetime(h)
+  const lv = levelOf(totalXp(h))
   const [lang, setLang] = useState<Lang | 'all'>('all')
   const [variant, setVariant] = useState<Variant>('all')
   const pbs = personalBests(h.filter(r => fits(r, lang, variant)))
@@ -30,6 +33,9 @@ export default function Records({ h }: { h: Result[] }) {
   return (
     <>
       <div className="small">
+        <div className="lv-tile" title={`${lv.into}/${lv.need} xp para el nivel ${lv.level + 1}`}>
+          <small>nivel</small>{lv.level} <span className="lv-title">{titleFor(lv.level)}</span><LevelBar progress={lv.progress} />
+        </div>
         <div><small>tests completados</small>{life.tests}</div>
         <div><small>tiempo escribiendo</small>{formatDuration(life.seconds)}</div>
         <div><small>wpm más alto</small>{life.top}</div>
