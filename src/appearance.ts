@@ -9,13 +9,17 @@ export const SIZES = { s: 'chico', m: 'normal', l: 'grande', xl: 'enorme' } as c
 export const FONTS = {
   cascadia: 'Cascadia Code', jetbrains: 'JetBrains Mono', plex: 'IBM Plex Mono', space: 'Space Mono', fira: 'Fira Code', source: 'Source Code Pro',
 } as const
+export const LINES = { '2': '2 líneas', '3': '3 líneas', '4': '4 líneas' } as const
+export const WIDTHS = { narrow: 'estrecho', normal: 'normal', wide: 'ancho' } as const
 export const CARETS = { line: 'línea', block: 'bloque', underline: 'subrayado', outline: 'contorno' } as const
 
 export type Theme = keyof typeof THEMES
 export type Size = keyof typeof SIZES
 export type Font = keyof typeof FONTS
 export type Caret = keyof typeof CARETS
-export type Appearance = { theme: Theme; size: Size; font: Font; caret: Caret }
+export type Lines = keyof typeof LINES
+export type Width = keyof typeof WIDTHS
+export type Appearance = { theme: Theme; size: Size; font: Font; caret: Caret; lines: Lines; width: Width }
 
 export const isLight = (t: Theme) => t === 'light' || t === 'paper' || t === 'lavanda'
 
@@ -34,7 +38,7 @@ export function loadFont(f: Font) {
 
 export function applyAppearance(a: Appearance) {
   const d = document.documentElement.dataset
-  d.theme = a.theme; d.size = a.size; d.font = a.font; d.caret = a.caret
+  d.theme = a.theme; d.size = a.size; d.font = a.font; d.caret = a.caret; d.lines = a.lines; d.width = a.width
   loadFont(a.font)
 }
 

@@ -14,7 +14,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Reglas** combinables: sin borrar, ciego, frenar en error y muerte súbita
 - **Coach:** mide el tiempo entre cada par de letras, te dice cuáles te frenan (p. ej. «qu» 2.1× más lenta) y genera práctica con ellas
 - **Modo práctica:** genera palabras cargadas de tus teclas débiles para que las entrenes
-- **Récords personales** por modo (15/30/60/120 s y 10/25/50/100 palabras) con wpm, precisión, raw y consistencia, más totales: tests, tiempo escribiendo, wpm más alto, promedios
+- **Récords personales** por modo (15/30/60/120 s y 10/25/50/100 palabras) con wpm, precisión, raw y consistencia, filtrables por idioma y por puntuación/números, más totales: tests, tiempo escribiendo, wpm más alto, promedios
 - **Racha** de días seguidos practicando, con racha más larga y un **calendario de actividad** de 6 meses
 - **Historial** con gráficas, guardado en tu navegador y sincronizado en la nube entre tus dispositivos al iniciar sesión (funciona sin conexión y sube lo pendiente después)
 - Funciona en celular y tablet con el teclado táctil
@@ -22,7 +22,7 @@ Test de mecanografía minimalista en blanco y negro.
 - **Cuentas:** Google, enlace por correo o correo y contraseña (Supabase)
 - **Perfiles públicos** en `/u/usuario`: foto, bio, récords, calendario, progreso, coach y teclado; se pueden hacer privados
 - **Instalable (PWA)** y funciona sin internet después de la primera visita
-- **Ajustes ⚙** por dispositivo: tamaño del texto, 6 fuentes (Cascadia Code es la insignia), 4 estilos de cursor y 13 temas: 5 monocromáticos (carbón, claro, papel, tinta, alto contraste) y 8 de color (lila y lavanda propios, más Catppuccin, Rosé Pine, Nord, Gruvbox, Tokyo Night y Everforest), todos verificados con contraste WCAG
+- **Ajustes ⚙** por dispositivo: tamaño del texto, líneas visibles (2/3/4), ancho (estrecho/normal/ancho), 6 fuentes (Cascadia Code es la insignia), 4 estilos de cursor y 13 temas: 5 monocromáticos (carbón, claro, papel, tinta, alto contraste) y 8 de color (lila y lavanda propios, más Catppuccin, Rosé Pine, Nord, Gruvbox, Tokyo Night y Everforest), todos verificados con contraste WCAG
 - Aviso de **Bloq Mayús** activado mientras escribes
 - Cursor suave, sonido *thock* sintetizado, WPM en vivo
 - Métricas: WPM, raw, precisión, consistencia, y caracteres correctos, incorrectos, extra y faltantes

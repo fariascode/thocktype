@@ -22,7 +22,7 @@ import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
 import ProfilePage from './ProfilePage'
-import { applyAppearance, isLight, type Caret, type Font, type Size, type Theme } from './appearance'
+import { applyAppearance, isLight, type Caret, type Font, type Lines, type Width, type Size, type Theme } from './appearance'
 import SettingsPanel from './SettingsPanel'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
@@ -36,7 +36,7 @@ const PRACTICE_WORDS = 40
 
 type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
-  theme: Theme; size: Size; font: Font; caret: Caret; sound: boolean; live: boolean; ghost: boolean
+  theme: Theme; size: Size; font: Font; caret: Caret; lines: Lines; width: Width; sound: boolean; live: boolean; ghost: boolean
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
   v: number // settings format version, for one-time migrations
@@ -53,7 +53,7 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES, v: 2,
+  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES, v: 2,
 }
 const SKEY = 'thocktype.settings'
 function loadSettings(): Settings {
@@ -362,11 +362,12 @@ export default function App() {
     const box = inner.current
     const word = box?.querySelectorAll<HTMLElement>('.word')[typed.length - 1]
     if (!box || !word || !caret.current) return
-    const shift = Math.max(0, word.offsetTop - word.offsetHeight)
+    // keep one typed line above the current one; with only 2 lines the current one goes on top so the next stays visible
+    const shift = Math.max(0, word.offsetTop - (s.lines === '2' ? 0 : word.offsetHeight))
     box.style.transform = `translateY(${-shift}px)`
     const p = charPos(word, typed[typed.length - 1].length)
     caret.current.style.transform = `translate(${p.x}px, ${p.y}px)`
-  }, [typed, view, phase, editing, s.size, s.font, fontTick])
+  }, [typed, view, phase, editing, s.size, s.font, s.lines, s.width, fontTick])
 
   // TypeRacer-style ghost: a second caret running at your personal best for this mode
   useEffect(() => {
