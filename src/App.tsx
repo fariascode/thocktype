@@ -537,12 +537,14 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
     <button className={on ? 'on' : ''} onClick={onClick} title={title}>{label}</button>
   return (
     <footer className="status fade">
-      <div className="seg mode">
+      {/* row 1: what you type · row 2: how you type it */}
+      <div className="status-row">
+      <div className="seg mode" aria-label="modo">
         {(Object.keys(MODES) as Mode[]).map(m => (
           <button key={m} className={m === s.mode ? 'on' : ''} onClick={() => restart({ mode: m })}>{MODES[m]}</button>
         ))}
       </div>
-      <div className="seg">
+      <div className="seg" aria-label="duración">
         {s.mode === 'time' && DURATIONS.map(d => opt(d === s.duration, `${d}s`, () => restart({ duration: d })))}
         {s.mode === 'words' && COUNTS.map(c => opt(c === s.count, `${c}`, () => restart({ count: c })))}
         {s.mode === 'quote' && opt(false, 'otra cita', () => restart())}
@@ -562,27 +564,33 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
           : <span className="note">haz unos tests para detectar tus teclas débiles</span>)}
       </div>
       {s.mode !== 'custom' && (
-        <div className="seg">
+        <div className="seg" aria-label="idioma">
+          <span className="seg-label" aria-hidden>idioma</span>
           {(Object.keys(LANGS) as Lang[]).map(l => opt(l === s.lang, LANGS[l], () => restart({ lang: l })))}
         </div>
       )}
+      </div>
+      <div className="status-row">
       {usesOpts(s.mode) && (
-        <div className="seg">
+        <div className="seg" aria-label="extras">
+          <span className="seg-label" aria-hidden>extras</span>
           {opt(s.punct, '@ puntuación', () => restart({ punct: !s.punct }), 'mayúsculas y puntuación')}
           {opt(s.numbers, '# números', () => restart({ numbers: !s.numbers }))}
         </div>
       )}
       {s.mode !== 'daily' && s.mode !== 'zen' && (
         <div className="seg" aria-label="reglas">
+          <span className="seg-label" aria-hidden>reglas</span>
           {(Object.keys(RULES) as (keyof Rules)[]).map(k =>
             opt(s.rules[k], RULES[k][0], () => restart({ rules: { ...s.rules, [k]: !s.rules[k] } }), RULES[k][1]))}
         </div>
       )}
-      <div className="seg prefs">
+      <div className="seg prefs" aria-label="preferencias">
         {opt(s.sound, 'sonido', () => set({ ...s, sound: !s.sound }))}
         {opt(s.live, 'wpm', () => set({ ...s, live: !s.live }), 'wpm en vivo')}
         {opt(s.ghost, 'fantasma', () => set({ ...s, ghost: !s.ghost }), 'un cursor fantasma corre a tu récord')}
         {opt(false, isLight(s.theme) ? '◑ oscuro' : '◐ claro', () => set({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))}
+      </div>
       </div>
     </footer>
   )

@@ -207,13 +207,18 @@ kbd {
 
 /* ── Status bar: floating soft surface ────────────────────────────────── */
 .status {
-  margin-top: auto; position: sticky; bottom: 16px; display: flex; flex-wrap: wrap; align-items: center;
+  margin-top: auto; position: sticky; bottom: 16px; display: flex; flex-direction: column; gap: 6px;
   background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--border);
-  border-radius: var(--r-md); box-shadow: var(--shadow); padding: 4px; font-size: 13px;
-  column-gap: 14px; row-gap: 2px; max-width: 100%;
+  border-radius: var(--r-md); box-shadow: var(--shadow); padding: 6px; font-size: 13px; max-width: 100%;
 }
-/* groups are separated by space, so wrapped rows never start with a stray divider */
-.seg { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; }
+.status-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+/* each group sits on its own soft track, so options read as sets instead of one long line */
+.seg {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; padding: 2px;
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent); border-radius: calc(var(--r-md) - 4px);
+}
+.seg:empty { display: none; }
+.seg-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); padding: 0 6px 0 8px; }
 .seg button { padding: 4px 10px; min-height: 30px; }
 .seg.prefs { margin-left: auto; }
 .note { color: var(--text-3); padding: 4px 10px; font-size: 13px; }
