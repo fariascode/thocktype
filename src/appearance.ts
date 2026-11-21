@@ -11,11 +11,19 @@ export const SIZES = { s: 'chico', m: 'normal', l: 'grande', xl: 'enorme' } as c
 export const FONTS = {
   cascadia: 'Cascadia Code', jetbrains: 'JetBrains Mono', plex: 'IBM Plex Mono', space: 'Space Mono', fira: 'Fira Code',
   source: 'Source Code Pro', geist: 'Geist Mono', roboto: 'Roboto Mono', ubuntu: 'Ubuntu Mono', inconsolata: 'Inconsolata',
+  local: 'fuente local',
 } as const
 export const LINES = { '2': '2 líneas', '3': '3 líneas', '4': '4 líneas' } as const
 export const WIDTHS = { narrow: 'estrecho', normal: 'normal', wide: 'ancho' } as const
 export const CARETS = { line: 'línea', block: 'bloque', underline: 'subrayado', outline: 'contorno' } as const
-export const CARET_MOTION = { smooth: 'suave', instant: 'instantáneo' } as const
+export const CARET_MOTION = { smooth: 'suave', fast: 'rápido', instant: 'instantáneo' } as const
+export const GHOST_SOURCES = { pb: 'récord', avg: 'promedio 10', day: 'mejor 24 h', last: 'test anterior', fixed: 'fija' } as const
+export const LIVE_COLORS = { dim: 'tenue', text: 'normal', accent: 'acento' } as const
+export const HIGHLIGHTS = { letter: 'letra', word: 'palabra' } as const
+export const TYPED_EFFECTS = { normal: 'normal', dim: 'atenuar', hide: 'ocultar' } as const
+export const TAPE = { off: 'líneas', on: 'cinta' } as const
+export const TAPE_MARGINS = { '25': '25%', '40': '40%', '50': '50%' } as const
+export const KEYMAPS = { off: 'no', next: 'siguiente', react: 'reacción' } as const
 export const PROGRESS = { number: 'número', bar: 'barra', off: 'oculto' } as const
 export const SOUNDS = { thock: 'thock', click: 'click', typewriter: 'máquina', soft: 'suave' } as const
 
@@ -28,7 +36,13 @@ export type Width = keyof typeof WIDTHS
 export type CaretMotion = keyof typeof CARET_MOTION
 export type Progress = keyof typeof PROGRESS
 export type SoundKind = keyof typeof SOUNDS
-export type Appearance = { theme: Theme; size: Size; font: Font; caret: Caret; lines: Lines; width: Width; caretMotion: CaretMotion; focus: boolean }
+export type GhostSource = keyof typeof GHOST_SOURCES
+export type Keymap = keyof typeof KEYMAPS
+export type Appearance = {
+  theme: Theme; size: Size; font: Font; caret: Caret; lines: Lines; width: Width; caretMotion: CaretMotion; focus: boolean
+  ghostStyle: Caret; liveColor: keyof typeof LIVE_COLORS; highlight: keyof typeof HIGHLIGHTS; typedEffect: keyof typeof TYPED_EFFECTS
+  tape: keyof typeof TAPE; tapeMargin: keyof typeof TAPE_MARGINS; smoothScroll: boolean; graphZero: boolean; localFont: string
+}
 
 // "sistema" follows the device's light/dark setting
 const prefersDark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true
@@ -54,6 +68,11 @@ export function applyAppearance(a: Appearance) {
   const d = document.documentElement.dataset
   d.theme = resolveTheme(a.theme); d.size = a.size; d.font = a.font; d.caret = a.caret; d.lines = a.lines; d.width = a.width
   d.caretMotion = a.caretMotion; d.focus = a.focus ? 'on' : 'off'
+  d.ghostStyle = a.ghostStyle; d.liveColor = a.liveColor; d.highlight = a.highlight; d.typedEffect = a.typedEffect
+  d.tape = a.tape; d.smoothScroll = a.smoothScroll ? 'on' : 'off'; d.graphZero = a.graphZero ? 'on' : 'off'
+  // an installed font, typed by name; quotes and css punctuation are stripped so it can't break out of the value
+  const local = a.localFont.replace(/['";{}()\\]/g, '').trim()
+  document.documentElement.style.setProperty('--local-font', local ? `'${local}'` : "'Cascadia Code'")
   loadFont(a.font)
 }
 
@@ -72,4 +91,5 @@ export const FONT_FAMILY: Record<Font, string> = {
   cascadia: "'Cascadia Code', monospace", jetbrains: "'JetBrains Mono', monospace", plex: "'IBM Plex Mono', monospace", space: "'Space Mono', monospace",
   fira: "'Fira Code', monospace", source: "'Source Code Pro', monospace", geist: "'Geist Mono', monospace",
   roboto: "'Roboto Mono', monospace", ubuntu: "'Ubuntu Mono', monospace", inconsolata: "'Inconsolata', monospace",
+  local: 'var(--local-font), monospace',
 }

@@ -56,8 +56,38 @@
 :root[data-font='roboto'] { --type-font: 'Roboto Mono', var(--mono); }
 :root[data-font='ubuntu'] { --type-font: 'Ubuntu Mono', var(--mono); }
 :root[data-font='inconsolata'] { --type-font: 'Inconsolata', var(--mono); }
-/* instant caret: jumps letter to letter instead of gliding */
+/* caret motion: suave (default glide), rápido (short glide), instantáneo (jumps) */
+:root[data-caret-motion='fast'] .caret { transition-duration: 40ms; }
 :root[data-caret-motion='instant'] .caret { transition: none; }
+:root[data-font='local'] { --type-font: var(--local-font), var(--mono); }
+/* pace caret ("fantasma") styles, dimmer than your own caret */
+:root[data-ghost-style='block'] .ghost { width: .6em; border-radius: 3px; background: color-mix(in srgb, var(--text-3) 35%, transparent); opacity: 1; }
+:root[data-ghost-style='underline'] .ghost { width: .6em; height: 2px; top: 1.3em; }
+:root[data-ghost-style='outline'] .ghost { width: .6em; border-radius: 3px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--text-3); opacity: 1; }
+/* live numbers: progress, wpm, accuracy, burst and the pace delta share one color choice */
+:root[data-live-color='text'] .timer .live { color: var(--text-2); }
+:root[data-live-color='accent'] .timer, :root[data-live-color='accent'] .timer .live { color: var(--accent); }
+.delta { transition: color var(--t) var(--ease); }
+/* highlight "palabra": the whole word you are on is bright, not just the letters already typed */
+:root[data-highlight='word'] .word.cur .c:not(.bad):not(.extra) { color: var(--text-1); }
+/* typed words: atenuar fades them back, ocultar removes them once finished */
+:root[data-typed-effect='dim'] .word.done .ok { color: color-mix(in srgb, var(--text-1) 40%, var(--bg)); transition: color 400ms var(--ease); }
+:root[data-typed-effect='hide'] .word.done { opacity: 0; transition: opacity 400ms var(--ease); }
+/* tape: a single line that slides left; the caret stays at the chosen margin */
+:root[data-tape='on'] .words { height: 1.7em; }
+:root[data-tape='on'] .inner { flex-wrap: nowrap; width: max-content; }
+:root[data-smooth-scroll='off'] .inner { transition: none; }
+/* on-screen keyboard during the test */
+.keymap { display: flex; flex-direction: column; gap: 5px; align-items: center; margin-top: 18px; }
+.keymap .key { width: 30px; height: 30px; font-size: 12px; color: var(--text-3); background: transparent; transition: background-color 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease); }
+.keymap .key:hover { transform: none; }
+.keymap .key.space { width: 220px; font-size: 11px; }
+.keymap .key.want { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+.keymap .key.hit { animation: key-hit 320ms var(--ease); }
+.keymap .key.miss { animation: key-miss 420ms var(--ease); }
+@keyframes key-hit { from { background: var(--accent); color: var(--bg); border-color: var(--accent); } }
+@keyframes key-miss { from { background: var(--err); color: var(--bg); border-color: var(--err); } }
+main.running .keymap { opacity: 1; }
 /* focus mode: the header also fades away while you type */
 header { transition: opacity var(--t) var(--ease); }
 :root[data-focus='on'] main.running header { opacity: 0; pointer-events: none; }
@@ -611,6 +641,14 @@ button.on { animation: on-pop 260ms var(--spring); }
 .set-toggle.on .switch { background: var(--accent); border-color: var(--accent); }
 .set-toggle.on .switch::after { transform: translateX(16px); background: var(--bg); }
 .set-range { width: 100%; accent-color: var(--accent); }
+.set-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.set-input, .set-num input {
+  font: inherit; font-size: 14px; color: var(--text-1); background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 7px 10px; transition: border-color var(--t) var(--ease);
+}
+.set-input:focus, .set-num input:focus { outline: none; border-color: var(--text-2); }
+.set-num { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-3); }
+.set-num input { width: 72px; font-family: var(--mono); }
 /* capped so "enorme" doesn't push the options off screen; the page behind shows the real size */
 .settings-preview {
   font-family: var(--type-font); font-size: min(var(--type-size), 24px); line-height: 1.6; color: var(--text-3);
@@ -629,7 +667,10 @@ button.on { animation: on-pop 260ms var(--spring); }
   .settings h2 small { display: none; }
   .settings-preview { font-size: 17px; padding: 5px 12px; }
   .set-page { gap: 10px; min-height: 0; }
-  .themes .set-options, .fonts .set-options { grid-template-columns: repeat(2, 1fr); }
+  .set-tabs { flex-wrap: wrap; }
+  .set-tabs button { flex: 1 0 30%; min-height: 30px; }
+  .fonts .set-options { grid-template-columns: repeat(2, 1fr); }
+  .themes .set-options { grid-template-columns: repeat(3, 1fr); }
   .themes .set-options button { padding: 4px 6px; font-size: 12px; }
   /* phones are narrower than every width option, and one row is enough for the line count */
   .set-pair .width-opt { display: none; }
