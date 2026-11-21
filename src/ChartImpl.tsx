@@ -44,7 +44,7 @@ export default function Chart({ labels, series }: Props) {
         },
         scales: {
           x: { ticks: { color: dim, maxTicksLimit: 8 }, grid: { display: false }, border: { display: false } },
-          y: { beginAtZero: true, ticks: { color: dim, maxTicksLimit: 5 }, grid: { color: border }, border: { display: false } },
+          y: { beginAtZero: document.documentElement.dataset.graphZero !== 'off', ticks: { color: dim, maxTicksLimit: 5 }, grid: { color: border }, border: { display: false } },
         },
       },
     })
