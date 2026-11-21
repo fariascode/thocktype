@@ -220,7 +220,15 @@ kbd {
 .seg:empty { display: none; }
 .seg-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); padding: 0 6px 0 8px; }
 .seg button { padding: 4px 10px; min-height: 30px; }
-.seg.prefs { margin-left: auto; }
+/* options spread evenly along each track, at their natural size */
+.seg { justify-content: space-between; }
+/* wide screens: two equal columns, so every group lines up with its neighbour above and below */
+@media (min-width: 900px) {
+  .status { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .status-row { display: contents; }
+  /* groups flow in order (modes hide some of them); an odd count leaves the last one spanning the full row */
+  .status:has(.p3):has(.p5):not(:has(.p4)) .p6 { grid-column: 1 / -1; justify-content: center; gap: 24px; }
+}
 .note { color: var(--text-3); padding: 4px 10px; font-size: 13px; }
 .weak { color: var(--text-1); font-family: var(--mono); letter-spacing: .2em; }
 
@@ -294,7 +302,7 @@ kbd {
 /* ── Responsive ───────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .status { position: static; }
-  .seg.prefs { margin-left: 0; }
+  .status-row > .seg { flex: 1 1 auto; }
   .key { width: 27px; height: 30px; font-size: 12px; border-radius: 6px; }
   .heat-row { gap: 4px; }
 }
