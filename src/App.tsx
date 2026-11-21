@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { LANGS, bigramWords, randomQuote, randomWords, weakWords, type Lang } from './words'
+import { LANGS, POOLS, bigramWords, plain, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
   loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, COUNTS, dayKey, type KeyStats, type Mode, type Result,
@@ -40,6 +40,8 @@ const PRACTICE_WORDS = 40
 
 type Settings = {
   lang: Lang; mode: Mode; duration: number; count: number; punct: boolean; numbers: boolean; custom: string
+  pool: number // 200 or 1000 most frequent words (1000 = the whole list)
+  plain: boolean // spanish without accents
   theme: Theme; size: Size; font: Font; caret: Caret; lines: Lines; width: Width; sound: boolean; live: boolean; ghost: boolean
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
@@ -56,7 +58,7 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 // the daily challenge is the same fair test for everyone, and zen has nothing to be wrong about
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
 const DEFAULTS: Settings = {
-  lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false,
+  lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
   custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', sound: false, live: true, ghost: true, drill: [], rules: NO_RULES, v: 2,
 }
 const SKEY = 'thocktype.settings'
@@ -69,16 +71,28 @@ function loadSettings(): Settings {
   } catch { return DEFAULTS }
 }
 
-// punctuation/numbers only apply to generated words
+// punctuation/numbers/word-list size only apply to generated words
 const usesOpts = (m: Mode) => m === 'time' || m === 'words'
+// 200-word lists: generated words in a natural language (code tokens have no frequency order)
+const pool200 = (s: Settings) => usesOpts(s.mode) && s.lang !== 'code' && s.pool === 200
+// accents can be dropped for spanish anywhere except the shared daily challenge and your own text
+const usesPlain = (s: Settings) => s.lang === 'es' && s.plain && s.mode !== 'daily' && s.mode !== 'custom'
+const wordOpts = (s: Settings) => ({ punct: s.punct, numbers: s.numbers, pool: pool200(s) ? 200 : undefined })
+const variant = (s: Settings) => ({
+  punct: usesOpts(s.mode) && s.punct, numbers: usesOpts(s.mode) && s.numbers,
+  pool: pool200(s) ? 200 : undefined, plain: usesPlain(s) || undefined,
+})
 const testKey = (s: Settings) => modeKey({
   lang: s.lang, mode: s.mode, duration: 0,
-  value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0,
-  punct: usesOpts(s.mode) && s.punct, numbers: usesOpts(s.mode) && s.numbers,
+  value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0, ...variant(s),
 })
 
 function buildTest(s: Settings, keys: KeyStats): { words: string[]; by?: string } {
-  const opts = { punct: s.punct, numbers: s.numbers }
+  const t = generate(s, keys)
+  return usesPlain(s) ? { ...t, words: t.words.map(plain) } : t
+}
+function generate(s: Settings, keys: KeyStats): { words: string[]; by?: string } {
+  const opts = wordOpts(s)
   switch (s.mode) {
     case 'practice': return {
       words: s.drill.length ? bigramWords(s.lang, s.drill, PRACTICE_WORDS) : weakWords(s.lang, weakKeys(keys), PRACTICE_WORDS),
@@ -220,7 +234,7 @@ export default function App() {
       cons: Math.round(consistency(samples.map(x => x.raw))),
       lang: s.lang, duration: Math.round(secs), mode: s.mode,
       value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0,
-      punct: usesOpts(s.mode) && s.punct, numbers: usesOpts(s.mode) && s.numbers,
+      ...variant(s),
       rules: (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k]),
     }
     if (!done.length) { setPhase('idle'); return } // nothing typed (zen): don't record
@@ -311,7 +325,7 @@ export default function App() {
         if (s.sound) thock(!ok)
         if (finite && i === words.length - 1) { finish(typed); return } // space on the last word ends the test
         type([...typed, ''])
-        if (s.mode === 'time' && i > words.length - 50) setTest({ words: [...words, ...randomWords(s.lang, 200, s)] })
+        if (s.mode === 'time' && i > words.length - 50) setTest({ words: [...words, ...randomWords(s.lang, 200, wordOpts(s)).map(w => (usesPlain(s) ? plain(w) : w))] })
         return
       }
       c.keys++; c.secKeys++
@@ -419,6 +433,8 @@ export default function App() {
     const sw = (on: boolean) => (on ? 'desactivar' : 'activar')
     add('opciones', `${sw(s.punct)} puntuación`, () => restart({ punct: !s.punct }))
     add('opciones', `${sw(s.numbers)} números`, () => restart({ numbers: !s.numbers }))
+    for (const p of POOLS) add('lista', `${p === 200 ? '200' : '1k'} palabras más comunes`, () => restart({ pool: p }))
+    add('opciones', `${sw(s.plain)} español sin acentos`, () => restart({ plain: !s.plain }))
     for (const r of Object.keys(RULES) as (keyof Rules)[])
       add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
     add('preferencias', 'ajustes · tamaño, fuente, cursor y tema', () => setSettingsOpen(true))
@@ -578,10 +594,18 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
           : <span className="note">haz unos tests para detectar tus teclas débiles</span>)}
       </div>
       {s.mode !== 'custom' && (
-        <div className="seg p3" aria-label="idioma" data-pill>
-          <span className="seg-pill" aria-hidden />
+        <div className="seg p3" aria-label="idioma">
           <span className="seg-label" aria-hidden>idioma</span>
-          {(Object.keys(LANGS) as Lang[]).map(l => opt(l === s.lang, LANGS[l], () => restart({ lang: l })))}
+          <span className="pill-group" data-pill>
+            <span className="seg-pill" aria-hidden />
+            {(Object.keys(LANGS) as Lang[]).map(l => opt(l === s.lang, LANGS[l], () => restart({ lang: l })))}
+          </span>
+          {usesOpts(s.mode) && s.lang !== 'code' && (
+            <span className="pill-group lista" data-pill title="palabras más comunes del idioma">
+              <span className="seg-pill" aria-hidden />
+              {POOLS.map(p => opt(p === s.pool, p === 200 ? '200' : '1k', () => restart({ pool: p })))}
+            </span>
+          )}
         </div>
       )}
       </div>
@@ -591,6 +615,7 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
           <span className="seg-label" aria-hidden>extras</span>
           {opt(s.punct, '@ puntuación', () => restart({ punct: !s.punct }), 'mayúsculas y puntuación')}
           {opt(s.numbers, '# números', () => restart({ numbers: !s.numbers }))}
+          {s.lang === 'es' && opt(s.plain, 'sin acentos', () => restart({ plain: !s.plain }), 'á → a, ü → u; la ñ se queda')}
         </div>
       )}
       {s.mode !== 'daily' && s.mode !== 'zen' && (
@@ -636,7 +661,8 @@ function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme:
   const newPb = r.failed === undefined && r.wpm > r.prevPb
   const mode = r.mode ?? 'time'
   const shownWpm = useCountUp(r.wpm), shownAcc = useCountUp(r.acc)
-  const detail = mode === 'time' ? `${r.duration}s` : mode === 'words' ? `${r.value} palabras · ${r.duration}s` : `${r.duration}s`
+  const detail = (mode === 'time' ? `${r.duration}s` : mode === 'words' ? `${r.value} palabras · ${r.duration}s` : `${r.duration}s`)
+    + (r.pool ? ` · top ${r.pool}` : '') + (r.plain ? ' · sin acentos' : '')
   return (
     <section className="result">
       {r.failed !== undefined && (

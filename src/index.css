@@ -222,14 +222,16 @@ kbd {
 }
 .seg:empty { display: none; }
 /* sliding selection: one pill per single-choice group glides between options */
-.seg[data-pill] { position: relative; isolation: isolate; }
+[data-pill] { position: relative; isolation: isolate; }
+.pill-group { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.pill-group.lista { padding-left: 8px; margin-left: 4px; border-left: 1px solid var(--border); }
 .seg-pill {
   position: absolute; left: 0; top: 0; z-index: -1; pointer-events: none; opacity: 0;
   background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm);
   box-shadow: 0 1px 2px rgb(0 0 0 / .18);
   transition: transform 460ms cubic-bezier(.22, 1, .36, 1), width 460ms cubic-bezier(.22, 1, .36, 1), height 460ms cubic-bezier(.22, 1, .36, 1), opacity 200ms var(--ease);
 }
-.seg[data-pill] button.on { background: transparent; border-color: transparent; animation: none; }
+[data-pill] button.on { background: transparent; border-color: transparent; animation: none; }
 .seg-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); padding: 0 6px 0 8px; }
 .seg button { padding: 4px 10px; min-height: 30px; }
 /* options spread evenly along each track, at their natural size */
