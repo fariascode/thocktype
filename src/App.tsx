@@ -890,7 +890,7 @@ function ResultView({ r, theme, myName, onNext, onDrill, onDrillWords, rank }: {
   const detail = (mode === 'time' ? `${r.duration}s` : mode === 'words' ? `${r.value} palabras · ${r.duration}s` : `${r.duration}s`)
     + (r.pool ? ` · top ${r.pool}` : '') + (r.plain ? ' · sin acentos' : '')
   return (
-    <section className="result">
+    <section className="result result-view">
       {r.unsaved && r.failed === undefined && (
         <div className="failed" role="status"><b>práctica libre</b> · este test no se guardó en tu historial, récords ni nivel.</div>
       )}

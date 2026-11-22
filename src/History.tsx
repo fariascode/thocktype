@@ -17,7 +17,7 @@ export default function History({ h, theme, keys, bigrams, onDrill }: Props) {
   const tags = useMemo(() => tagStats(h), [h])
   if (!h.length) return <p className="hint">aún no hay tests. ¡a escribir!</p>
   return (
-    <section className="result">
+    <section className="result history">
       <Records h={h} />
       <div className="card">
         <small>actividad · últimos 6 meses · racha {streak(h)} días · más larga {longestStreak(h)} días</small>
