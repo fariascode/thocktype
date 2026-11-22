@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadBoard, type Board, type BoardRow } from './leaderboard'
+import { BASE_LANGS, CODE_LANGS, LANGS, isCode, type Lang } from './words'
 
-type Props = { uid?: string; hasUsername: boolean; lang: 'es' | 'en' | 'code'; onOpenProfile: (username: string) => void }
-const LANGS = { es: 'español', en: 'english', code: 'código' } as const
+type Props = { uid?: string; hasUsername: boolean; lang: Lang; onOpenProfile: (username: string) => void }
 
 // All-time / weekly leaderboard for 15 s and 60 s tests. Your own row is always included, even outside the top 50.
 export default function LeaderboardPage({ uid, hasUsername, lang, onOpenProfile }: Props) {
@@ -30,8 +30,15 @@ export default function LeaderboardPage({ uid, hasUsername, lang, onOpenProfile 
         </div>
         <div className="board-filters">
           <div className="seg">{chip('value', 15, '15 s')}{chip('value', 60, '60 s')}</div>
-          <div className="seg">{(Object.keys(LANGS) as Board['lang'][]).map(l => chip('lang', l, LANGS[l]))}</div>
-          {b.lang !== 'code' && <div className="seg">{chip('pool', 200, 'top 200')}{chip('pool', null, '1k')}</div>}
+          <div className="seg">
+            {BASE_LANGS.map(l => <button key={l} className={(l === 'code' ? isCode(b.lang) : b.lang === l) ? 'on' : ''} onClick={() => setB({ ...b, lang: l })}>{LANGS[l]}</button>)}
+          </div>
+          {isCode(b.lang) && (
+            <select className="code-select" value={b.lang} aria-label="lenguaje de programación" onChange={e => setB({ ...b, lang: e.target.value as Lang })}>
+              {Object.entries(CODE_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          )}
+          {!isCode(b.lang) && <div className="seg">{chip('pool', 200, 'top 200')}{chip('pool', null, '1k')}</div>}
           <div className="seg">{chip('week', false, 'siempre')}{chip('week', true, 'esta semana')}</div>
         </div>
 

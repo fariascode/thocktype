@@ -9,6 +9,7 @@ export type ResultRow = {
 }
 
 const LANGS = ['es', 'en', 'code']
+const RESULT_LANGS = [...LANGS, 'js', 'ts', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb', 'kt', 'swift', 'sql', 'html', 'css', 'sh'] // keep in sync with words.ts and the results check in schema.sql
 const inRange = (n: number, lo: number, hi: number) => Number.isFinite(n) && n >= lo && n <= hi
 
 // null when the result breaks a server limit, so one odd local result can't make a whole upload fail
@@ -22,7 +23,7 @@ export function toRow(uid: string, r: Result): ResultRow | null {
     ...(r.pool ? { pool: r.pool } : {}), ...(r.plain ? { plain: true } : {}), ...(r.tags?.length ? { tags: r.tags } : {}),
   }
   const ok = inRange(row.wpm, 0, 350) && inRange(row.raw, 0, 450) && inRange(row.acc, 0, 100) && inRange(row.cons, 0, 100)
-    && inRange(row.duration, 1, 3600) && LANGS.includes(row.lang) && !Number.isNaN(Date.parse(row.date))
+    && inRange(row.duration, 1, 3600) && RESULT_LANGS.includes(row.lang) && !Number.isNaN(Date.parse(row.date))
   return ok ? row : null
 }
 
