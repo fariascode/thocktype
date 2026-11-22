@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { LANGS, POOLS, bigramWords, plain, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
@@ -8,7 +9,7 @@ import { chime, thock } from './sound'
 import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
 import { totalXp, xpFor } from './level'
-import { useCountUp, useLayoutMotion } from './motion'
+import { reducedMotion, useCountUp, useLayoutMotion } from './motion'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
 import Keymap from './Keymap'
@@ -213,6 +214,13 @@ export default function App() {
     return () => mq?.removeEventListener('change', follow)
   }, [s])
 
+  // settings changes; a new theme crossfades the whole page instead of swapping colors at once
+  const update = (next: Settings) => {
+    const vt = (document as Document & { startViewTransition?: (cb: () => void) => unknown }).startViewTransition
+    if (next.theme === s.theme || !vt || reducedMotion()) { setS(next); return }
+    vt.call(document, () => { flushSync(() => setS(next)); applyAppearance(next) })
+  }
+
   const fresh = () => ({ start: 0, keys: 0, good: 0, secKeys: 0, samples: [] as Sample[], hits: {} as Record<string, number>, errs: {} as Record<string, number>, bigrams: {} as Bigrams, lastAt: 0, wordStart: 0 })
   // mutable test data read inside the timer and animation loop
   const t = useRef({ ...fresh(), typed, words })
@@ -415,21 +423,48 @@ export default function App() {
     return () => { document.fonts?.removeEventListener('loadingdone', bump); window.removeEventListener('resize', bump) }
   }, [])
   const ghost = useRef<HTMLSpanElement>(null)
+  // Caret and text glide toward their targets in one animation loop. CSS transitions restart on every key and stutter
+  // when you type fast; chasing the target each frame (exponential smoothing) stays fluid at any speed.
+  const glide = useRef({ cx: 0, cy: 0, tcx: 0, tcy: 0, ix: 0, iy: 0, tix: 0, tiy: 0, raf: 0, last: 0, snap: true, tauC: 40, tauI: 110 })
+  useEffect(() => () => cancelAnimationFrame(glide.current.raf), [])
   useLayoutEffect(() => {
     const box = inner.current
     const word = box?.querySelectorAll<HTMLElement>('.word')[typed.length - 1]
     if (!box || !word || !caret.current) return
+    const g = glide.current
     const p = charPos(word, typed[typed.length - 1].length)
-    caret.current.style.transform = `translate(${p.x}px, ${p.y}px)`
+    g.tcx = p.x; g.tcy = p.y
+    const still = reducedMotion()
     if (s.tape === 'on') { // tape: one line sliding left so the caret stays at the chosen margin
       const lead = (box.parentElement!.clientWidth * Number(s.tapeMargin)) / 100
-      box.style.transform = `translateX(${Math.min(0, lead - p.x)}px)`
-      return
+      g.tix = Math.min(0, lead - p.x); g.tiy = 0
+      // same speed for text and caret, so the caret stays perfectly still while the line glides under it
+      g.tauC = g.tauI = still || !s.smoothScroll ? 0 : 70
+    } else {
+      // keep one typed line above the current one; with only 2 lines the current one goes on top so the next stays visible
+      g.tix = 0; g.tiy = -Math.max(0, word.offsetTop - (s.lines === '2' ? 0 : word.offsetHeight))
+      g.tauC = still || s.caretMotion === 'instant' ? 0 : s.caretMotion === 'fast' ? 16 : 40
+      g.tauI = still || !s.smoothScroll ? 0 : 130
     }
-    // keep one typed line above the current one; with only 2 lines the current one goes on top so the next stays visible
-    const shift = Math.max(0, word.offsetTop - (s.lines === '2' ? 0 : word.offsetHeight))
-    box.style.transform = `translateY(${-shift}px)`
-  }, [typed, view, phase, editing, s.size, s.font, s.lines, s.width, s.tape, s.tapeMargin, fontTick])
+    if (typed.length === 1 && typed[0] === '') g.snap = true // new test: start in place, no slide from the old spot
+    const step = (now: number) => {
+      const dt = Math.min(48, now - g.last) // a long pause (hidden tab) must not overshoot
+      g.last = now
+      const k = (tau: number) => (g.snap || tau <= 0 ? 1 : 1 - Math.exp(-dt / tau))
+      const kc = k(g.tauC), ki = k(g.tauI)
+      g.snap = false
+      g.cx += (g.tcx - g.cx) * kc; g.cy += (g.tcy - g.cy) * kc
+      g.ix += (g.tix - g.ix) * ki; g.iy += (g.tiy - g.iy) * ki
+      const near = (a: number, b: number) => Math.abs(a - b) < 0.05
+      if (near(g.cx, g.tcx) && near(g.cy, g.tcy) && near(g.ix, g.tix) && near(g.iy, g.tiy)) {
+        g.cx = g.tcx; g.cy = g.tcy; g.ix = g.tix; g.iy = g.tiy; g.raf = 0
+      } else g.raf = requestAnimationFrame(step)
+      caret.current?.style.setProperty('transform', `translate3d(${g.cx}px, ${g.cy}px, 0)`)
+      inner.current?.style.setProperty('transform', `translate3d(${g.ix}px, ${g.iy}px, 0)`)
+    }
+    if (g.snap) { g.last = performance.now(); cancelAnimationFrame(g.raf); step(g.last) } // place now, before paint
+    else if (!g.raf) { g.last = performance.now(); g.raf = requestAnimationFrame(step) }
+  }, [typed, view, phase, editing, s.size, s.font, s.lines, s.width, s.tape, s.tapeMargin, s.caretMotion, s.smoothScroll, fontTick, round])
 
   // TypeRacer-style ghost: a second caret running at the chosen pace
   useEffect(() => {
@@ -485,7 +520,7 @@ export default function App() {
     for (const [k, l] of Object.entries(GHOST_SOURCES)) add('fantasma', `el fantasma corre a: ${l}`, () => setS({ ...s, ghost: true, ghostSource: k as GhostSource }))
     add('vista', s.tape === 'on' ? 'volver a líneas' : 'modo cinta (una sola línea)', () => setS({ ...s, tape: s.tape === 'on' ? 'off' : 'on' }))
     for (const [k, l] of Object.entries(KEYMAPS)) add('vista', `teclado en pantalla: ${l}`, () => setS({ ...s, keymap: k as KeymapMode }))
-    add('preferencias', `tema ${isLight(s.theme) ? 'oscuro' : 'claro'}`, () => setS({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))
+    add('preferencias', `tema ${isLight(s.theme) ? 'oscuro' : 'claro'}`, () => update({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))
     return cmds
   }
 
@@ -604,11 +639,11 @@ export default function App() {
       )}
 
       {!profileName && view === 'test' && phase !== 'done' && !editing && (
-        <StatusBar s={s} set={setS} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
+        <StatusBar s={s} set={update} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
       {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
         onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
-      {settingsOpen && <SettingsPanel a={s} onChange={next => setS({ ...s, ...next })} onPreviewSound={(k, v) => thock(false, k, v)} onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsPanel a={s} onChange={next => update({ ...s, ...next })} onPreviewSound={(k, v) => thock(false, k, v)} onClose={() => setSettingsOpen(false)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
