@@ -1,3 +1,3 @@
 {
-  "rewrites": [{ "source": "/u/:name", "destination": "/" }]
+  "rewrites": [{ "source": "/u/:name", "destination": "/" }, { "source": "/ranking", "destination": "/" }]
 }
