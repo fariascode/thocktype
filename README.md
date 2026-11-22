@@ -48,6 +48,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 - **Coach de combinaciones:** encuentra los pares de letras que te frenan y arma una práctica con ellos.
 - **Teclas débiles:** un mapa de calor del teclado por test y de todo tu historial, y un modo práctica cargado de esas letras.
 - **Fantasma configurable:** puede correr a tu récord, al promedio de tus últimos 10 tests, a lo mejor de las últimas 24 h, a tu test anterior o a una velocidad fija. Mientras escribes ves *▲ 12 letras* si vas adelante o *▼ 5* si vas atrás.
+- **Palabra por palabra y repetición:** al terminar ves la velocidad y los errores de cada palabra (las lentas subrayadas), lo que escribiste en realidad, puedes **repetir tu test** a 1× o 2× con tu récord corriendo al lado y practicar tus palabras más lentas en un clic.
 - **En vivo:** wpm, precisión y **ráfaga** (la velocidad de tu última palabra), cada uno opcional.
 - **Práctica libre:** un botón para entrenar sin que el test cuente en tu historial, tus récords ni tu nivel.
 
