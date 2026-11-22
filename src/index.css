@@ -238,7 +238,7 @@ button:disabled { opacity: .4; cursor: default; transform: none; }
 
 /* ── Header ───────────────────────────────────────────────────────────── */
 header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-h1 { font-size: 22px; font-weight: 700; letter-spacing: -.04em; cursor: pointer; user-select: none; }
+h1 { font-size: 28px; font-weight: 700; letter-spacing: -.04em; cursor: pointer; user-select: none; }
 h1 span { color: var(--text-3); font-weight: 400; transition: color var(--t) var(--ease); }
 h1:hover span { color: var(--text-2); }
 nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
@@ -612,6 +612,27 @@ button.on { animation: on-pop 260ms var(--spring); }
   .history .cal-day { line-height: 20px; }
 }
 
+/* account dropdown under the avatar */
+.acct-menu {
+  position: fixed; z-index: 30; width: min(340px, calc(100vw - 24px)); gap: 14px; padding: 18px;
+  box-shadow: 0 18px 50px rgb(0 0 0 / .45); transform-origin: 100% 0; animation: dialog-in 260ms var(--spring) both;
+}
+.acct-stats { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 6px; }
+.acct-stats > div { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--surface-2) 70%, transparent); min-width: 0; }
+.acct-stats small { font-size: 10.5px; }
+.acct-stats b { font-family: var(--mono); font-size: 18px; font-weight: 600; color: var(--text-1); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.acct-stats span { font-size: 11px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acct-level .lv-bar { margin-top: 5px; }
+.acct-items { display: flex; flex-direction: column; gap: 1px; margin: 0 -8px; }
+.acct-items button { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: flex-start; text-align: left; padding: 9px 10px; color: var(--text-1); font-size: 14px; font-weight: 500; }
+.acct-items button svg { color: var(--text-3); flex-shrink: 0; transition: color var(--t-fast) var(--ease); }
+.acct-items button:hover svg { color: var(--accent); }
+.acct-hint { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text-3); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-items hr { border: 0; border-top: 1px solid var(--border); margin: 6px 8px; }
+.acct-items .acct-out { color: var(--text-2); }
+.acct-items .acct-out:hover { color: var(--err); }
+.acct-items .acct-out:hover svg { color: var(--err); }
+
 /* theme switch: the old page fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
 
@@ -830,19 +851,6 @@ button.on { animation: on-pop 260ms var(--spring); }
 .acct-sync .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
 .acct-sync.syncing .dot { background: var(--text-3); animation: blink 1s ease-in-out infinite; }
 .acct-sync.error .dot { background: var(--err); }
-.acct-actions { display: flex; flex-direction: column; gap: 6px; }
-.acct-actions button {
-  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 12px; min-height: 52px;
-  color: var(--text-1); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md);
-}
-.acct-actions button:hover { border-color: var(--text-3); background: var(--surface-2); transform: translateY(-1px); }
-.acct-actions button > span:not(.chev) { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
-.acct-actions b { font-weight: 600; font-size: 14px; }
-.acct-actions small { text-transform: none; letter-spacing: 0; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.acct-actions svg { color: var(--accent); flex-shrink: 0; }
-.acct-actions .chev { color: var(--text-3); font-size: 20px; line-height: 1; }
-.acct-actions .danger svg { color: var(--err); }
-.acct-actions .danger:hover { border-color: var(--err); }
 .auth-title { display: flex; align-items: center; gap: 6px; }
 .auth-title button { font-size: 18px; padding: 2px 8px; min-height: 30px; margin-left: -8px; }
 .auth-msg:empty { display: none; } /* only takes space when there is something to say */
