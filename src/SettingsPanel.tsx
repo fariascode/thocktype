@@ -10,6 +10,7 @@ export type Prefs = Appearance & {
   progress: Progress; sound: boolean; soundKind: SoundKind; volume: number; live: boolean; ghost: boolean
   ghostSource: GhostSource; ghostWpm: number; liveAcc: boolean; liveBurst: boolean; keymap: Keymap
   synced: boolean // signed in: settings follow the account
+  timeWarn: boolean
 }
 type Flag = { [K in keyof Prefs]: Prefs[K] extends boolean ? K : never }[keyof Prefs]
 type Props = {
@@ -17,6 +18,40 @@ type Props = {
   presets: string[]; onSavePreset: (name: string) => void; onApplyPreset: (name: string) => void; onDeletePreset: (name: string) => void
 }
 const MAX_PRESETS = 12
+
+// search index: [tab, label shown on the section, extra words people may type]
+const INDEX: [Tab, string, string][] = [
+  ['tema', 'monocromáticos', 'tema sistema automático claro oscuro carbón papel tinta contraste blanco negro'],
+  ['tema', 'de color', 'tema colores lila lavanda sakura matcha ámbar océano catppuccin rosé pine nord gruvbox tokyo night everforest dracula monokai solarized'],
+  ['texto', 'fuente', 'tipografía letra cascadia jetbrains plex space fira source geist roboto ubuntu inconsolata local instalada'],
+  ['texto', 'tamaño del texto', 'letra grande chico enorme zoom'],
+  ['texto', 'líneas', 'renglones visibles 2 3 4'],
+  ['texto', 'ancho', 'estrecho normal ancho anchura'],
+  ['cursor', 'estilo', 'cursor caret línea bloque subrayado contorno'],
+  ['cursor', 'movimiento', 'cursor suave rápido instantáneo animación smooth'],
+  ['cursor', 'fantasma', 'pace caret ritmo récord promedio velocidad fija test anterior ventaja'],
+  ['vista', 'desplazamiento', 'cinta tape una línea scroll horizontal margen'],
+  ['vista', 'resaltar', 'highlight letra palabra'],
+  ['vista', 'palabras escritas', 'atenuar ocultar efecto typed'],
+  ['vista', 'teclado en pantalla', 'keymap teclas siguiente reacción'],
+  ['vista', 'movimiento', 'cambio de línea suave scroll animación'],
+  ['vivo', 'progreso del test', 'tiempo contador barra número oculto'],
+  ['vivo', 'mostrar mientras escribes', 'wpm velocidad precisión ráfaga burst en vivo'],
+  ['vivo', 'color de los números', 'tenue normal acento'],
+  ['vivo', 'otros', 'modo enfoque focus cabecera gráficas desde cero eje'],
+  ['sonido', 'sonido al teclear', 'audio teclas clic'],
+  ['sonido', 'tipo de sonido', 'thock click máquina de escribir suave'],
+  ['sonido', 'volumen', 'audio fuerte bajo'],
+  ['sonido', 'aviso de tiempo', 'últimos segundos alarma pitido final'],
+  ['perfiles', 'guardar los ajustes actuales', 'perfil preset configuración guardar'],
+  ['perfiles', 'tus perfiles', 'perfil preset aplicar borrar'],
+]
+const fold = (t: string) => t.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+// every word you type must appear somewhere in the label, the tab name or the extra words
+const search = (q: string) => {
+  const words = fold(q).split(/\s+/).filter(Boolean)
+  return INDEX.filter(([tab, label, extra]) => { const hay = fold(`${label} ${TABS[tab]} ${extra}`); return words.every(w => hay.includes(w)) })
+}
 
 const TABS = { tema: 'tema', texto: 'texto', cursor: 'cursor', vista: 'vista', vivo: 'en vivo', sonido: 'sonido', perfiles: 'perfiles' } as const
 type Tab = keyof typeof TABS
@@ -31,6 +66,17 @@ let lastTab: Tab = 'tema' // reopening the panel returns to the tab you were on
 // Changes apply instantly (to the preview and to the page behind), and are saved per device
 export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, presets, onSavePreset, onApplyPreset, onDeletePreset }: Props) {
   const [presetName, setPresetName] = useState('')
+  const [query, setQuery] = useState('')
+  // jump to the tab of a search result and briefly highlight that option
+  const reveal = (t: Tab, label: string) => {
+    setQuery(''); setTab(t)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const hit = [...(card.current?.querySelectorAll('.set-page small, .set-page .set-toggle b') ?? [])].find(e => e.textContent?.startsWith(label))
+      const target = hit?.closest('section, .set-toggle') as HTMLElement | null
+      target?.scrollIntoView({ block: 'nearest' })
+      target?.classList.remove('flash'); void target?.offsetWidth; target?.classList.add('flash')
+    }))
+  }
   const [justSaved, setJustSaved] = useState('')
   const savePreset = (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,6 +119,9 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, pr
         onMouseDown={e => e.stopPropagation()} onKeyDown={e => e.key === 'Escape' && onClose()}>
         <div className="settings-head">
           <h2>ajustes <small>{a.synced ? 'se guardan en tu cuenta' : 'se guardan en este dispositivo'}</small></h2>
+          <input className="set-input set-search" type="search" placeholder="buscar: cinta, fantasma…" aria-label="buscar ajuste"
+            value={query} onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { const first = search(query)[0]; if (e.key === 'Enter' && first) reveal(first[0], first[1]) }} />
           <button onClick={onClose} aria-label="cerrar" autoFocus>✕</button>
         </div>
 
@@ -81,6 +130,15 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, pr
           <span className="pv-next">e<span className="caret static" /></span>scribe limpio
         </div>
 
+        {query.trim() ? (
+          <div className="set-page set-results" role="listbox" aria-label="resultados">
+            {search(query).length ? search(query).map(([t, label]) => (
+              <button key={t + label} role="option" aria-selected={false} onClick={() => reveal(t, label)}>
+                <b>{label}</b><small>{TABS[t]}</small>
+              </button>
+            )) : <p className="set-help">ningún ajuste coincide con «{query}»</p>}
+          </div>
+        ) : <>
         <div className="set-tabs" role="tablist" data-pill>
           <span className="seg-pill" aria-hidden />
           {(Object.keys(TABS) as Tab[]).map(t => (
@@ -170,7 +228,10 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, pr
             </section>
           </>}
           {tab === 'sonido' && <>
-            <div className="set-toggles">{toggle('sound', 'sonido al teclear', 'un golpe sintetizado por tecla; más grave al fallar')}</div>
+            <div className="set-toggles">
+              {toggle('sound', 'sonido al teclear', 'un golpe sintetizado por tecla; más grave al fallar')}
+              {toggle('timeWarn', 'aviso de tiempo', 'un pitido suave en los últimos 5 segundos de los tests de tiempo')}
+            </div>
             <section><small>tipo de sonido · toca para escucharlo</small>
               {group('soundKind', SOUNDS, undefined, undefined, k => onPreviewSound(k as SoundKind, a.volume))}
             </section>
@@ -181,6 +242,7 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, pr
             </section>
           </>}
         </div>
+        </>}
       </div>
     </div>
   )

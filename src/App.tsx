@@ -5,7 +5,8 @@ import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
   loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, COUNTS, dayKey, type KeyStats, type Mode, type Result,
 } from './stats'
-import { chime, thock } from './sound'
+import { chime, thock, tick } from './sound'
+import TagPicker from './TagPicker'
 import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
 import { totalXp, xpFor } from './level'
@@ -53,6 +54,8 @@ type Settings = {
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
   save: boolean // false = "práctica libre": results are not recorded
+  tags: string[]; activeTags: string[] // your labels and the ones saved with the next tests
+  timeWarn: boolean // beep during the last 5 seconds of a timed test
   presets: Preset[]
   v: number // settings format version, for one-time migrations
 }
@@ -70,7 +73,7 @@ const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
   custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [],
   ghostSource: 'pb', ghostWpm: 80, liveAcc: false, liveBurst: false, keymap: 'off', ghostStyle: 'line', liveColor: 'dim',
-  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, presets: [], v: 2,
+  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, tags: [], activeTags: [], timeWarn: false, presets: [], v: 2,
 }
 const SKEY = 'thocktype.settings'
 // fills in options added after the copy was saved (local or from the cloud)
@@ -170,6 +173,7 @@ export default function App() {
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [tagsOpen, setTagsOpen] = useState(false)
   // Caps Lock: browsers only report it on key events, so refresh it on every press/release
   const [caps, setCaps] = useState(false)
   useEffect(() => {
@@ -305,6 +309,7 @@ export default function App() {
       value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0,
       ...variant(s),
       rules: (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k]),
+      ...(s.activeTags.length ? { tags: s.activeTags.filter(t => s.tags.includes(t)) } : {}),
     }
     if (!done.length) { setPhase('idle'); return } // nothing typed (zen): don't record
     if (failed !== undefined || !s.save) { // sudden death or free practice: show the result, keep it out of history and records
@@ -347,16 +352,17 @@ export default function App() {
       setLiveAcc(c.keys ? Math.round((c.good / c.keys) * 100) : 100)
       if (pace) setGhostDelta(Math.round(correctChars(targets, c.typed) - (pace * 5 * sec) / 60))
       setClock(sec)
+      if (s.mode === 'time' && s.timeWarn && s.duration - sec <= 5 && s.duration - sec > 0) tick(s.volume)
       if (s.mode === 'time' && sec >= s.duration) finish(c.typed)
     }, 1000)
     return () => clearInterval(id)
-  }, [phase, s.mode, s.duration, finish, zen, pace])
+  }, [phase, s.mode, s.duration, s.timeWarn, s.volume, finish, zen, pace])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
-      if (palette || auth || settingsOpen || profileName) return // dialogs handle their own keys; profiles aren't for typing
+      if (palette || auth || settingsOpen || tagsOpen || profileName) return // dialogs handle their own keys; profiles aren't for typing
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
@@ -428,7 +434,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, profileName, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -546,6 +552,9 @@ export default function App() {
       add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
     add('preferencias', 'ajustes · tamaño, fuente, cursor y tema', () => setSettingsOpen(true))
     for (const p of s.presets) add('perfiles', `perfil: ${p.name}`, () => restart(p.data))
+    for (const t of s.tags) add('etiquetas', `${s.activeTags.includes(t) ? 'quitar' : 'activar'} etiqueta #${t}`,
+      () => setS({ ...s, activeTags: s.activeTags.includes(t) ? s.activeTags.filter(x => x !== t) : [...s.activeTags, t] }))
+    add('etiquetas', 'crear o editar etiquetas', () => { restart(); setTagsOpen(true) })
     add('opciones', `${s.save ? 'activar' : 'desactivar'} práctica libre (no guardar resultados)`, () => update({ ...s, save: !s.save }))
     add('cuenta', session ? 'cerrar sesión' : 'iniciar sesión', () => (session ? supabase.auth.signOut() : setAuth('login')))
     add('preferencias', `${sw(s.sound)} sonido`, () => setS({ ...s, sound: !s.sound }))
@@ -610,7 +619,7 @@ export default function App() {
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
       ) : (
         <>
-          <div className="timer">
+          <div className={`timer ${s.mode === 'time' && phase === 'running' && s.duration - clock <= 5 ? 'warn' : ''}`}>
             {phase === 'running'
               ? <>
                 {progress}
@@ -624,6 +633,10 @@ export default function App() {
               </>
               : <span className="live">{!s.save ? 'práctica libre · no se guarda' : zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
             {caps && <span className="caps" role="status">⇪ mayúsculas activadas</span>}
+            {phase !== 'running' && (
+              <TagPicker tags={s.tags} active={s.activeTags} open={tagsOpen} onOpen={setTagsOpen}
+                onChange={(tags, activeTags) => setS({ ...s, tags, activeTags })} />
+            )}
           </div>
           {s.progress === 'bar' && !zen && (
             <div className="progress-bar" aria-hidden><span style={{ transform: `scaleX(${phase === 'running' ? done01 : 0})`, transitionDuration: s.mode === 'time' ? '1s' : '300ms' }} /></div>
@@ -818,7 +831,7 @@ function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme:
         <div><small>raw</small>{r.raw}</div>
         <div><small>consistencia</small>{r.cons}%</div>
         <div title="correctos / incorrectos / extra / faltantes"><small>caracteres</small>{r.chars.correct}/{r.chars.incorrect}/{r.chars.extra}/{r.chars.missed}</div>
-        <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}{r.rules?.length ? ` · ${r.rules.map(k => RULES[k as keyof Rules][0]).join(', ')}` : ''}</div>
+        <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}{r.rules?.length ? ` · ${r.rules.map(k => RULES[k as keyof Rules][0]).join(', ')}` : ''}{r.tags?.length ? ` · ${r.tags.map(t => '#' + t).join(' ')}` : ''}</div>
       </div>
       {r.xpBefore !== undefined && <XpCard before={r.xpBefore} gained={xpFor(r)} />}
       <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />

@@ -10,6 +10,7 @@ assert.equal(row.value, 30)
 assert.deepEqual(fromRow(row), { ...r, mode: 'time', value: 30, punct: false, numbers: false, rules: undefined })
 assert.equal('pool' in row, false) // defaults are not sent
 assert.deepEqual(fromRow(toRow('u1', { ...r, pool: 200, plain: true })!), { ...r, mode: 'time', value: 30, punct: false, numbers: false, rules: undefined, pool: 200, plain: true })
+assert.deepEqual(fromRow(toRow('u1', { ...r, tags: ['noche'] })!).tags, ['noche'])
 assert.equal(toRow('u1', { ...r, wpm: 363 }), null) // over the server limit: skipped, not fatal
 assert.equal(toRow('u1', { ...r, lang: 'fr' }), null)
 

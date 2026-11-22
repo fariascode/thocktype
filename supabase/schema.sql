@@ -47,6 +47,7 @@ create table public.results (
   rules text[] not null default '{}',
   pool smallint check (pool in (200, 1000)), -- null = whole word list
   plain boolean not null default false,      -- spanish without accents
+  tags text[] not null default '{}' check (cardinality(tags) <= 20), -- your own labels
   unique (user_id, date)
 );
 create index results_user_date on public.results (user_id, date desc);

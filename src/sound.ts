@@ -31,6 +31,19 @@ export function thock(error = false, kind: SoundKind = 'thock', volume = 1) {
   } catch { /* audio unavailable: stay silent */ }
 }
 
+// last seconds of a timed test: a short, soft high beep
+export function tick(volume = 1) {
+  try {
+    ctx ??= new AudioContext()
+    const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime
+    o.type = 'sine'; o.frequency.value = 1320
+    g.gain.setValueAtTime(0.12 * volume, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.08)
+    o.connect(g).connect(ctx.destination)
+    o.start(t); o.stop(t + 0.09)
+  } catch { /* audio unavailable: stay silent */ }
+}
+
 // personal best: two soft rising sine notes (a fifth apart)
 export function chime() {
   try {

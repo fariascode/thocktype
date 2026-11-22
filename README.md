@@ -56,6 +56,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 - **Celebración** cuando superas tu récord: banner, conteo de la mejora y un sonido opcional.
 - **Nivel de cuenta:** cada test da XP, y hay títulos cada 10 niveles, de *novato* a *leyenda*.
 - **Totales:** tests completados, tiempo escribiendo, promedio, promedio de los últimos 10 y precisión media.
+- **Etiquetas:** marca tus tests ("teclado nuevo", "de noche", "cansado") y compara en el historial cuánto rindes con cada una frente a tu promedio.
 - **Racha** de días seguidos, **calendario de actividad** de 6 meses y gráficas de tu evolución.
 
 ### Comunidad
@@ -64,7 +65,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 - **Compartir** tu resultado como imagen o como texto.
 
 ### Personalización
-Ajustes ⚙ en siete pestañas. Con sesión iniciada se **guardan en tu cuenta** y te siguen a cualquier dispositivo:
+Ajustes ⚙ en siete pestañas, con **buscador** (escribe "cinta" o "pitido" y te lleva a la opción). Con sesión iniciada se **guardan en tu cuenta** y te siguen a cualquier dispositivo:
 
 | Pestaña | Opciones |
 |---|---|
@@ -73,7 +74,7 @@ Ajustes ⚙ en siete pestañas. Con sesión iniciada se **guardan en tu cuenta**
 | **cursor** | Estilo (línea, bloque, subrayado o contorno), movimiento (suave, rápido o instantáneo) y fantasma con su propio estilo |
 | **vista** | **Modo cinta** (una sola línea que se desliza), resaltar la letra o la palabra, palabras escritas normales, atenuadas u ocultas, **teclado en pantalla** que marca la siguiente tecla o reacciona a lo que presionas, y cambio de línea suave |
 | **en vivo** | Progreso como número, barra u oculto, qué números mostrar y su color, **modo enfoque** y gráficas desde cero |
-| **sonido** | Cuatro sonidos sintetizados (thock, click, máquina y suave) y volumen |
+| **sonido** | Cuatro sonidos sintetizados (thock, click, máquina y suave), volumen y **aviso de tiempo** en los últimos 5 segundos (el contador también late) |
 | **perfiles** | Guarda combinaciones de ajustes con nombre (hasta 12) y cámbialas con un clic o desde `ctrl + k` |
 
 ### En cualquier lugar
