@@ -39,14 +39,15 @@
 }
 
 /* typing area size and font (per device, from the settings panel) */
-:root { --type-size: clamp(20px, 2.4vw, 27px); --type-font: var(--mono); }
+/* sizes match the old ones up to ~1366 px wide, then keep growing on big monitors */
+:root { --type-size: clamp(20px, 1.25vw + 10px, 34px); --type-font: var(--mono); }
 :root[data-lines='2'] { --lines: 2; }
 :root[data-lines='4'] { --lines: 4; }
 :root[data-width='narrow'] .typing { max-width: 720px; margin-inline: auto; }
-:root[data-width='wide'] main { max-width: 1360px; }
-:root[data-size='s'] { --type-size: clamp(16px, 1.8vw, 20px); }
-:root[data-size='l'] { --type-size: clamp(24px, 3.1vw, 34px); }
-:root[data-size='xl'] { --type-size: clamp(28px, 4vw, 44px); }
+:root[data-width='wide'] main { max-width: min(96vw, 2200px); }
+:root[data-size='s'] { --type-size: clamp(16px, .9vw + 8px, 26px); }
+:root[data-size='l'] { --type-size: clamp(24px, 1.6vw + 12px, 44px); }
+:root[data-size='xl'] { --type-size: clamp(28px, 2vw + 16px, 56px); }
 :root[data-font='jetbrains'] { --type-font: 'JetBrains Mono', var(--mono); }
 :root[data-font='plex'] { --type-font: 'IBM Plex Mono', var(--mono); }
 :root[data-font='space'] { --type-font: 'Space Mono', var(--mono); }
@@ -211,7 +212,7 @@ body {
   transition: background-color var(--t) var(--ease), color var(--t) var(--ease);
 }
 main {
-  max-width: 1080px; margin: 0 auto; min-height: 100vh;
+  max-width: clamp(1080px, 80vw, 1760px); margin: 0 auto; min-height: 100vh; /* ~80% of big screens */
   padding: clamp(20px, 4vw, 48px) clamp(16px, 4vw, 40px) 24px;
   display: flex; flex-direction: column; gap: clamp(24px, 4vh, 40px);
   overflow-x: clip; /* typing line never pushes the page sideways */
@@ -578,6 +579,20 @@ button.on { animation: on-pop 260ms var(--spring); }
 @media (max-width: 640px) { .rk-extra { display: none; } }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .badge { font-size: 12.5px; color: var(--text-1); border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border)); background: color-mix(in srgb, var(--accent) 10%, transparent); padding: 4px 10px; border-radius: 999px; }
+
+/* wide screens: results and history in two columns, so the extra width shows more instead of stretching cards */
+@media (min-width: 1500px) {
+  /* dense: a half-width card moves up to fill the gap next to another one */
+  .result-view, .history { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; grid-auto-flow: row dense; }
+  .result-view > *, .history > * { grid-column: 1 / -1; }
+  .result-view > .big, .result-view > .card:has(> .chart), .result-view > .coach, .result-view > .card:has(.heat),
+  .history > .card:has(.cal-wrap), .history > .card:has(> .chart), .history > .coach, .history > .card:has(.heat) { grid-column: auto; }
+  .result-view > .big { align-self: center; }
+  /* the activity calendar fills its half: bigger squares */
+  .history .cal { grid-template-rows: repeat(7, 20px); grid-auto-columns: 20px; gap: 4px; }
+  .history .cal .cell { width: 20px; height: 20px; border-radius: 4px; }
+  .history .cal-day { line-height: 20px; }
+}
 
 /* theme switch: the old page fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
