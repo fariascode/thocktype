@@ -146,6 +146,7 @@ export default function AuthModal({ view, session, syncState, me, onView, onClos
               {view === 'login' && <button onClick={() => go('signup')}>crear cuenta</button>}
               {view !== 'magic' && view !== 'newpass' && <button onClick={() => go('magic')}>entrar sin contraseña</button>}
               {view === 'login' && <button onClick={() => go('reset')}>olvidé mi contraseña</button>}
+              <a className="auth-privacy" href="/privacidad.html">privacidad</a>
             </div>
           </>
         )}

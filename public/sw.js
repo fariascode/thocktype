@@ -1,6 +1,6 @@
 // ThockType service worker: works offline after the first visit.
 // Bump VERSION when this file's caching rules change; built assets are content-hashed, so they need no bump.
-const VERSION = 'v1'
+const VERSION = 'v2'
 const CACHE = `thocktype-${VERSION}`
 const SHELL = ['/', '/manifest.webmanifest', '/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png']
 
@@ -38,7 +38,8 @@ self.addEventListener('fetch', e => {
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req)
-        .then(res => { put('/', res.clone()); return res })
+        // only app pages refresh the offline shell; static pages like /privacidad.html must not replace it
+        .then(res => { if (url.pathname === '/' || url.pathname.startsWith('/u/')) put('/', res.clone()); return res })
         .catch(() => caches.match('/')),
     )
     return
