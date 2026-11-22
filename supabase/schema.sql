@@ -115,3 +115,6 @@ create table public.user_settings (
 alter table public.user_settings enable row level security;
 create policy "own settings only" on public.user_settings for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ── Global leaderboard and anti-cheat ──────────────────────────────────────
+-- run supabase/leaderboard.sql after this file
