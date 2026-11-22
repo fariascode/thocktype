@@ -59,7 +59,7 @@ export function encodeDuel(d: Duel): string | null {
 export function decodeDuel(code: string): Duel | null {
   try {
     const o = JSON.parse(unb64(code))
-    const ok = o.v === 1 && /^(es|en|code|js|ts|py|java|c|cpp|cs|go|rs|php|rb|kt|swift|sql|html|css|sh)$/.test(o.l) && ['time', 'words', 'quote'].includes(o.m)
+    const ok = o.v === 1 && /^(es|en|code|pt|fr|de|it|nl|pl|js|ts|py|java|c|cpp|cs|go|rs|php|rb|kt|swift|sql|html|css|sh)$/.test(o.l) && ['time', 'words', 'quote'].includes(o.m)
       && typeof o.w === 'string' && o.w.length <= 6000 && typeof o.k === 'string' && o.k.length <= 20000
       && Number.isFinite(o.s) && o.s >= 0 && o.s <= 350 && Number.isFinite(o.a) && o.a >= 0 && o.a <= 100 && Number.isFinite(o.x)
     if (!ok) return null

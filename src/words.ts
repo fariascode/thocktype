@@ -20,16 +20,33 @@ export const CODE_LANGS = {
   code: 'mixto', js: 'JavaScript', ts: 'TypeScript', py: 'Python', java: 'Java', c: 'C', cpp: 'C++', cs: 'C#', go: 'Go',
   rs: 'Rust', php: 'PHP', rb: 'Ruby', kt: 'Kotlin', swift: 'Swift', sql: 'SQL', html: 'HTML', css: 'CSS', sh: 'Bash',
 } as const
-export const LANGS = { es: 'español', en: 'english', ...CODE_LANGS, code: 'código' } as const
+// more natural languages; their word lists (from FrequencyWords) load on first use
+export const EXTRA_LANGS = { pt: 'português', fr: 'français', de: 'deutsch', it: 'italiano', nl: 'nederlands', pl: 'polski' } as const
+export const LANGS = { es: 'español', en: 'english', ...EXTRA_LANGS, ...CODE_LANGS, code: 'código' } as const
 export type Lang = keyof typeof LANGS
 export const BASE_LANGS = ['es', 'en', 'code'] as const // what the language chips show
-export const isCode = (l: string) => l !== 'es' && l !== 'en'
+export const isCode = (l: string) => l in CODE_LANGS
+
+// frequency lists (10k words) for 5k/10k levels and the extra languages, downloaded only when needed
+const freq: Partial<Record<string, string[]>> = {}
+const FREQ = new Set(['es', 'en', ...Object.keys(EXTRA_LANGS)])
+export function loadFreq(lang: string): Promise<void> {
+  if (freq[lang] || !FREQ.has(lang)) return Promise.resolve()
+  return import(`./data/freq/${lang}.ts`).then(m => { freq[lang] = (m.default as string).split(' ') })
+}
+// the words a test draws from: es/en keep their hand-made lists for 200/1k; bigger levels and other languages use frequency lists
+function listFor(lang: string, pool?: number): string[] | undefined {
+  if (lists[lang] && (!pool || pool <= 1000)) return pool ? lists[lang].slice(0, pool) : lists[lang]
+  return freq[lang]?.slice(0, pool ?? 1000)
+}
+export const listReady = (lang: string, pool?: number) => !!listFor(lang, pool)
 
 export function randomQuote(lang: Lang) {
   if (isCode(lang) && lang !== 'code' && codeQuotes[lang]) { // a snippet in that language
     const text = pick(codeQuotes[lang])
     return { words: text.split(' '), by: LANGS[lang] }
   }
+  if (lang in EXTRA_LANGS) return { words: randomWords(lang, 30), by: `${LANGS[lang]} · palabras frecuentes` } // no quotes yet in these
   const pool = quotes[isCode(lang) ? 'code' : (lang as 'es' | 'en')]
   const q = pool[Math.floor(Math.random() * pool.length)]
   return { words: q.text.split(' '), by: q.by }
@@ -55,15 +72,16 @@ export function bigramWords(lang: Lang, pairs: string[], n: number): string[] {
 }
 
 function drill(lang: Lang, score: (w: string) => number, n: number): string[] {
-  const pool = lists[lang].filter(w => score(w) > 0).sort((a, b) => score(b) - score(a))
+  const all = listFor(lang) ?? []
+  const pool = all.filter(w => score(w) > 0).sort((a, b) => score(b) - score(a))
   if (!pool.length) return randomWords(lang, n)
   const top = pool.slice(0, Math.max(20, Math.ceil(pool.length / 2))) // favour words with several weak letters
-  return Array.from({ length: n }, () => (Math.random() < 0.8 ? pick(top) : pick(lists[lang])))
+  return Array.from({ length: n }, () => (Math.random() < 0.8 ? pick(top) : pick(all)))
 }
 
 // pool: draw only from the N most frequent words (lists are ordered by frequency); undefined = whole list
 export type WordOpts = { punct?: boolean; numbers?: boolean; pool?: number }
-export const POOLS = [200, 1000] as const
+export const POOLS = [200, 1000, 5000, 10000] as const
 
 // "sin acentos": drops acute accents and diaeresis (á→a, ü→u) but keeps ñ, which is its own letter
 export const plain = (w: string) => w.normalize('NFD').replace(/[\u0301\u0308]/g, '').normalize('NFC')
@@ -71,7 +89,8 @@ export const plain = (w: string) => w.normalize('NFD').replace(/[\u0301\u0308]/g
 // punct: capitals + punctuation (ignored for code, which already has symbols); numbers: mixes in numbers
 // rng: pass a seeded generator to get the same words for everyone (daily challenge)
 export function randomWords(lang: Lang, n: number, { punct = false, numbers = false, pool }: WordOpts = {}, rng = Math.random): string[] {
-  const list = pool ? lists[lang].slice(0, pool) : lists[lang]
+  const list = listFor(lang, pool)
+  if (!list) return [] // not loaded yet: call loadFreq first
   const out: string[] = []
   let capNext = true
   for (let i = 0; i < n; i++) {

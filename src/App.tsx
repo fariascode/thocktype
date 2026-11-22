@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { BASE_LANGS, CODE_LANGS, LANGS, POOLS, bigramWords, isCode, plain, randomBlock, randomQuote, randomWords, weakWords, type Lang } from './words'
+import { BASE_LANGS, CODE_LANGS, EXTRA_LANGS, LANGS, POOLS, bigramWords, isCode, listReady, loadFreq, plain, randomBlock, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
   loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, COUNTS, dayKey, type KeyStats, type Mode, type Result,
@@ -105,13 +105,17 @@ const usesOpts = (m: Mode) => m === 'time' || m === 'words'
 // 200-word lists: generated words in a natural language (code tokens have no frequency order)
 // the list a test actually uses: with "código" chosen, the selected programming language (the daily challenge stays shared)
 const tl = (s: Settings): Lang => (s.lang === 'code' && s.mode !== 'daily' ? s.codeLang : s.lang)
-const pool200 = (s: Settings) => usesOpts(s.mode) && s.lang !== 'code' && s.pool === 200
+// level of a generated test: 200 / 1k / 5k / 10k most frequent words (1k is the default list, stored as no pool)
+const poolOf = (s: Settings) => (usesOpts(s.mode) && !isCode(tl(s)) && s.pool !== 1000 ? s.pool : undefined)
+const POOL_LABEL: Record<number, string> = { 200: '200', 1000: '1k', 5000: '5k', 10000: '10k' }
+// a natural language for spoken and wiki text (code falls back to Spanish)
+const textLang = (s: Settings) => (isCode(s.lang) ? 'es' : s.lang)
 // accents can be dropped for spanish anywhere except the shared daily challenge and your own text
 const usesPlain = (s: Settings) => s.lang === 'es' && s.plain && s.mode !== 'daily' && s.mode !== 'custom'
-const wordOpts = (s: Settings) => ({ punct: s.punct, numbers: s.numbers, pool: pool200(s) ? 200 : undefined })
+const wordOpts = (s: Settings) => ({ punct: s.punct, numbers: s.numbers, pool: poolOf(s) })
 const variant = (s: Settings) => ({
   punct: usesOpts(s.mode) && s.punct, numbers: usesOpts(s.mode) && s.numbers,
-  pool: pool200(s) ? 200 : undefined, plain: usesPlain(s) || undefined,
+  pool: poolOf(s), plain: usesPlain(s) || undefined,
 })
 const testKey = (s: Settings) => modeKey({
   lang: tl(s), mode: s.mode, duration: 0,
@@ -119,12 +123,15 @@ const testKey = (s: Settings) => modeKey({
 })
 
 // breaks: a code block's line breaks (word index → indent of the next line); kw: that language's keywords
-type Test = { words: string[]; by?: string; url?: string; error?: string; breaks?: Record<number, number>; kw?: string[] }
+type Test = { words: string[]; by?: string; url?: string; error?: string; breaks?: Record<number, number>; kw?: string[]; loading?: boolean }
 function buildTest(s: Settings, keys: KeyStats): Test {
   const t = generate(s, keys)
   return usesPlain(s) ? { ...t, words: t.words.map(plain) } : t
 }
-function generate(s: Settings, keys: KeyStats): { words: string[]; by?: string } {
+function generate(s: Settings, keys: KeyStats): Test {
+  // big levels and extra languages download their list first (see the loader effect in App)
+  const usesList = !['custom', 'zen', 'wiki'].includes(s.mode) && !isCode(tl(s))
+  if (usesList && !listReady(tl(s), s.mode === 'daily' ? undefined : poolOf(s))) return { words: [], loading: true }
   const opts = wordOpts(s)
   switch (s.mode) {
     case 'practice': return {
@@ -135,7 +142,7 @@ function generate(s: Settings, keys: KeyStats): { words: string[]; by?: string }
     case 'quote': return isCode(tl(s)) ? randomBlock(tl(s)) : randomQuote(tl(s))
     case 'wiki': return { words: [] } // filled in by the article loader below
     case 'dictation': { // a sentence to hear: lowercase, no punctuation, accents kept (that's the spelling practice)
-      const q = randomQuote(s.lang === 'en' ? 'en' : 'es')
+      const q = randomQuote(textLang(s) as Lang)
       return { words: q.words.map(w => w.toLowerCase().replace(/[^\p{L}\p{N}'-]/gu, '')).filter(Boolean), by: q.by }
     }
     case 'custom': return { words: s.custom.trim().split(/\s+/).filter(Boolean) }
@@ -244,25 +251,35 @@ export default function App() {
 
   const zen = s.mode === 'zen'
   const dictation = s.mode === 'dictation'
+  const spokenLang = textLang(s) // language of wiki articles and dictation
+
+  // levels 5k/10k and extra languages: download the word list, then build the test
+  useEffect(() => {
+    if (!test.loading) return
+    let live = true
+    loadFreq(tl(s)).then(() => { if (live) setTest(buildTest(s, keyStats)) })
+      .catch(() => { if (live) setTest({ words: [], error: 'sin conexión: no se pudo descargar la lista de palabras' }) })
+    return () => { live = false }
+  }, [test, s, keyStats])
 
   // wiki: fetch a random article whenever a new wiki test starts empty
   useEffect(() => {
     if (s.mode !== 'wiki' || test.words.length || test.error) return
     let live = true
-    randomArticle(s.lang === 'en' ? 'en' : 'es')
+    randomArticle(spokenLang)
       .then(a => { if (live) setTest(a ?? { words: [], error: 'no encontré un artículo con texto suficiente' }) })
       .catch(() => { if (live) setTest({ words: [], error: 'sin conexión con Wikipedia' }) })
     return () => { live = false }
-  }, [s.mode, s.lang, test])
+  }, [s.mode, spokenLang, test])
   const finite = s.mode !== 'time' && !zen
 
   // dictation: read the text in chunks of a few words; the next chunk is read when you reach it, enter repeats
   const CHUNK = 4
   const chunk = Math.floor(Math.max(0, typed.length - 1) / CHUNK)
-  const sayChunk = useCallback(() => speak(words.slice(chunk * CHUNK, chunk * CHUNK + CHUNK).join(' '), s.lang), [words, chunk, s.lang])
+  const sayChunk = useCallback(() => speak(words.slice(chunk * CHUNK, chunk * CHUNK + CHUNK).join(' '), spokenLang), [words, chunk, spokenLang])
   useEffect(() => { // a new dictation test reads its first chunk (after the click that started it, so the browser allows audio)
     if (!dictation || !words.length) return
-    const id = setTimeout(() => speak(words.slice(0, CHUNK).join(' '), s.lang), 350)
+    const id = setTimeout(() => speak(words.slice(0, CHUNK).join(' '), spokenLang), 350)
     return () => clearTimeout(id)
   }, [dictation, round, words.length === 0]) // eslint-disable-line react-hooks/exhaustive-deps -- once per new text
   useEffect(() => { if (dictation && phase === 'running' && chunk > 0) sayChunk() }, [chunk]) // eslint-disable-line react-hooks/exhaustive-deps -- only when you reach a new chunk
@@ -621,7 +638,8 @@ export default function App() {
     const sw = (on: boolean) => (on ? 'desactivar' : 'activar')
     add('opciones', `${sw(s.punct)} puntuación`, () => restart({ punct: !s.punct }))
     add('opciones', `${sw(s.numbers)} números`, () => restart({ numbers: !s.numbers }))
-    for (const p of POOLS) add('lista', `${p === 200 ? '200' : '1k'} palabras más comunes`, () => restart({ pool: p }))
+    for (const p of POOLS) add('nivel', `${POOL_LABEL[p]} palabras más comunes`, () => restart({ pool: p }))
+    for (const [k, l] of Object.entries(EXTRA_LANGS)) add('idioma', l, () => restart({ lang: k as Lang }))
     add('opciones', `${sw(s.plain)} español sin acentos`, () => restart({ plain: !s.plain }))
     for (const r of Object.keys(RULES) as (keyof Rules)[])
       add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
@@ -725,6 +743,8 @@ export default function App() {
                 {ruleTags}
               </>
               : duel ? <span className="live duel-note">⚔ duelo · {duel.name ?? 'alguien'} hizo {duel.wpm} wpm · {duel.acc}% · ¿le ganas? <button onClick={leaveDuel}>salir</button></span>
+              : test.loading ? <span className="live">descargando palabras…</span>
+              : test.error && s.mode !== 'wiki' ? <span className="live">{test.error} · <button className="inline-btn" onClick={() => restart()}>reintentar</button></span>
               : s.mode === 'wiki' && !words.length ? <span className="live">{test.error ? <>{test.error} · <button className="inline-btn" onClick={() => restart()}>reintentar</button></> : 'buscando un artículo en Wikipedia…'}</span>
               : dictation ? <span className="live">{canSpeak() ? 'dictado · escucha y escribe · enter repite la frase' : 'tu navegador no puede leer en voz alta'}</span>
               : <span className="live">{!s.save ? 'práctica libre · no se guarda' : zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
@@ -855,6 +875,11 @@ function StatusBar({ s, set, restart, edit, weak, today, sayChunk }: {
           <span className="pill-group" data-pill>
             <span className="seg-pill" aria-hidden />
             {BASE_LANGS.map(l => opt(l === s.lang, LANGS[l], () => restart({ lang: l })))}
+            <select className={`code-select more-langs ${s.lang in EXTRA_LANGS ? 'on' : ''}`} value={s.lang in EXTRA_LANGS ? s.lang : ''} aria-label="más idiomas"
+              onChange={e => e.target.value && restart({ lang: e.target.value as Lang })}>
+              <option value="" disabled>más ▾</option>
+              {Object.entries(EXTRA_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
           </span>
           {s.lang === 'code' && s.mode !== 'daily' && (
             <select className="code-select" value={s.codeLang} aria-label="lenguaje de programación" onChange={e => restart({ codeLang: e.target.value as Lang })}>
@@ -864,7 +889,8 @@ function StatusBar({ s, set, restart, edit, weak, today, sayChunk }: {
           {usesOpts(s.mode) && !isCode(s.lang) && (
             <span className="pill-group lista" data-pill title="palabras más comunes del idioma">
               <span className="seg-pill" aria-hidden />
-              {POOLS.map(p => opt(p === s.pool, p === 200 ? '200' : '1k', () => restart({ pool: p })))}
+              <span className="seg-label" aria-hidden>nivel</span>
+              {POOLS.map(p => opt(p === s.pool, POOL_LABEL[p], () => restart({ pool: p })))}
             </span>
           )}
         </div>

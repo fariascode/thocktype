@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { levelOf, titleFor, totalXp } from './level'
 import { LevelBar } from './LevelUi'
-import { BASE_LANGS, LANGS, isCode, type Lang } from './words'
+import { BASE_LANGS, EXTRA_LANGS, LANGS, isCode, type Lang } from './words'
 import { COUNTS, DURATIONS, formatDuration, lifetime, personalBests, type Result } from './stats'
 
 // personal bests only compare like with like: pick a language and whether @ punctuation / # numbers were on
 const VARIANTS = { all: 'todo', plain: 'normal', punct: '@ puntuación', numbers: '# números' } as const
 type Variant = keyof typeof VARIANTS
-const LISTS = { all: 'todas', 200: 'top 200', full: '1k' } as const
+const LISTS = { all: 'todas', 200: '200', full: '1k', 5000: '5k', 10000: '10k' } as const
 type List = keyof typeof LISTS
 // "código" covers every programming language
 const fits = (r: Result, lang: Lang | 'all', v: Variant, list: List) => (lang === 'all' || (lang === 'code' ? isCode(r.lang) : r.lang === lang))
   && (v === 'all' || (v === 'plain' ? !r.punct && !r.numbers : !!r[v]))
-  && (list === 'all' || (list === 'full' ? !r.pool : r.pool === 200))
+  && (list === 'all' || (list === 'full' ? !r.pool : r.pool === Number(list)))
 
 // Lifetime totals + personal bests per mode, shown in your history and on public profiles
 export default function Records({ h }: { h: Result[] }) {
@@ -52,7 +52,7 @@ export default function Records({ h }: { h: Result[] }) {
         <small>récords personales</small>
         <div className="pb-filters">
           <div className="seg" aria-label="idioma">
-            {([['all', 'todos'], ...BASE_LANGS.map(l => [l, LANGS[l]])] as [Lang | 'all', string][]).map(([k, l]) =>
+            {([['all', 'todos'], ...BASE_LANGS.map(l => [l, LANGS[l]]), ...Object.entries(EXTRA_LANGS)] as [Lang | 'all', string][]).map(([k, l]) =>
               <button key={k} className={k === lang ? 'on' : ''} onClick={() => setLang(k)}>{l}</button>)}
           </div>
           <div className="seg" aria-label="variante">
