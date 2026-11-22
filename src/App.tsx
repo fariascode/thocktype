@@ -15,7 +15,7 @@ import { canSpeak, speak, stopSpeaking } from './speech'
 import { decodeDuel, encodeDuel, type Duel } from './duel'
 import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
-import { totalXp, xpFor } from './level'
+import { levelOf, titleFor, totalXp, xpFor } from './level'
 import { reducedMotion, useCountUp, useLayoutMotion } from './motion'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
@@ -30,6 +30,7 @@ import DailyRanking from './DailyRanking'
 import CommandPalette, { type Command } from './CommandPalette'
 import { APP_URL } from './config'
 import AuthModal, { Icon, type AuthView } from './AuthModal'
+import AccountMenu from './AccountMenu'
 import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
@@ -194,6 +195,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [tagsOpen, setTagsOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
+  const closeAuth = useCallback(() => setAuth(null), [])
   useLayoutMotion(headerRef) // the section pill slides between test / historial / ranking
   // Caps Lock: browsers only report it on key events, so refresh it on every press/release
   const [caps, setCaps] = useState(false)
@@ -205,6 +207,7 @@ export default function App() {
   }, [])
   const [session, setSession] = useState<Session | null>(null)
   const [auth, setAuth] = useState<AuthView | null>(null)
+  const [acctAnchor, setAcctAnchor] = useState<DOMRect | null>(null) // where the account dropdown hangs from
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data } = supabase.auth.onAuthStateChange((event, next) => {
@@ -676,7 +679,7 @@ export default function App() {
             <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="ajustes" aria-label="ajustes">
               <Icon d="M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4" />
             </button>
-            <button className="icon-btn account-btn" onClick={() => setAuth(session ? 'account' : 'login')} title={session ? session.user.email : 'iniciar sesión'} aria-label={session ? 'tu cuenta' : 'iniciar sesión'}>
+            <button className="icon-btn account-btn" onClick={e => { setAcctAnchor(e.currentTarget.getBoundingClientRect()); setAuth(session ? (auth === 'account' ? null : 'account') : 'login') }} title={session ? session.user.email : 'iniciar sesión'} aria-label={session ? 'tu cuenta' : 'iniciar sesión'}>
               {!session ? <Icon d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" />
                 : me?.avatar_url ? <img className="avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
                 : <span className="avatar" aria-hidden>{(me?.username ?? session.user.email ?? '?')[0]}</span>}
@@ -776,8 +779,14 @@ export default function App() {
       {!profileName && !onBoard && view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={update} sayChunk={sayChunk} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
-      {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
-        onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
+      {auth === 'account' && session && (
+        <AccountMenu session={session} me={me} syncState={syncState} anchor={acctAnchor}
+          stats={{ ...(l => ({ level: l.level, progress: l.progress }))(levelOf(xp)), title: titleFor(levelOf(xp).level), tests: history.length, best: Math.max(0, ...history.map(r => r.wpm)), streak: days }}
+          onClose={closeAuth} onEdit={() => setAuth('profile')} onOpenProfile={name => go(`/u/${name}`)}
+          onHistory={() => { go('/'); setView('history') }} onSettings={() => setSettingsOpen(true)} />
+      )}
+      {auth && auth !== 'account' && <AuthModal view={auth} session={session} me={me} onView={setAuth} onClose={() => setAuth(null)}
+        onProfile={setMe} />}
       {settingsOpen && <SettingsPanel a={{ ...s, synced: !!uid }} onChange={next => update({ ...s, ...next })}
         presets={s.presets.map(p => p.name)}
         onSavePreset={name => update({ ...s, presets: [...s.presets.filter(p => p.name !== name), presetOf(name, s)] })}
