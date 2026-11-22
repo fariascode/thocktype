@@ -326,6 +326,9 @@ kbd {
 /* options spread evenly along each track, at their natural size */
 /* (only on the wide grid: when a group wraps on phones, spreading would leave options stranded at both edges) */
 @media (min-width: 900px) { .seg { justify-content: space-between; } }
+/* nine modes share half the bar: tighter buttons keep them on one line */
+@media (min-width: 900px) { .seg.mode button { padding-inline: 7px; } }
+@media (min-width: 900px) and (max-width: 1100px) { .seg.mode button { padding-inline: 4px; font-size: 12px; } }
 /* wide screens: two equal columns, so every group lines up with its neighbour above and below */
 @media (min-width: 900px) {
   .status { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -557,6 +560,12 @@ button.on { animation: on-pop 260ms var(--spring); }
 .duel-result.won b { color: var(--accent); }
 .duel-result span { font-family: var(--mono); font-size: 13px; color: var(--text-2); }
 .duel-btn { border-color: var(--border); color: var(--text-1); }
+
+/* dictation: words you haven't heard yet stay hidden; the current one shows its length as dots */
+.word.unheard { visibility: hidden; }
+.by a { color: inherit; text-decoration-color: var(--border); text-underline-offset: 3px; }
+.by a:hover { color: var(--text-1); }
+.inline-btn { min-height: 0; padding: 0 6px; font-size: 13px; }
 
 /* theme switch: the old page fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }

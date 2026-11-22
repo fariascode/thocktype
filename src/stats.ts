@@ -18,7 +18,7 @@ export function consistency(samples: number[]): number {
   return Math.max(0, Math.min(100, 100 - (sd / mean) * 100))
 }
 
-export type Mode = 'time' | 'words' | 'quote' | 'zen' | 'custom' | 'practice' | 'daily'
+export type Mode = 'time' | 'words' | 'quote' | 'zen' | 'custom' | 'practice' | 'daily' | 'wiki' | 'dictation'
 // duration = seconds the test lasted; value = 30 (s) in time mode or 50 (words) in words mode
 export type Result = {
   date: number; wpm: number; raw: number; acc: number; cons: number; lang: string; duration: number

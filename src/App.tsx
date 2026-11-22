@@ -9,6 +9,8 @@ import { chime, thock, tick } from './sound'
 import TagPicker from './TagPicker'
 import WordReplay from './WordReplay'
 import { stateAt, type LogEntry } from './replay'
+import { randomArticle } from './wiki'
+import { canSpeak, speak, stopSpeaking } from './speech'
 import { decodeDuel, encodeDuel, type Duel } from './duel'
 import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
@@ -42,7 +44,7 @@ import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from 
 const PROFILE_RE = /^\/u\/([a-z0-9_]{3,20})\/?$/
 const COARSE = window.matchMedia?.('(pointer: coarse)').matches ?? false
 
-const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica', daily: 'reto' }
+const MODES: Record<Mode, string> = { time: 'tiempo', words: 'palabras', quote: 'cita', zen: 'zen', custom: 'libre', practice: 'práctica', daily: 'reto', wiki: 'wiki', dictation: 'dictado' }
 const PRACTICE_WORDS = 40
 
 type Settings = {
@@ -111,7 +113,8 @@ const testKey = (s: Settings) => modeKey({
   value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0, ...variant(s),
 })
 
-function buildTest(s: Settings, keys: KeyStats): { words: string[]; by?: string } {
+type Test = { words: string[]; by?: string; url?: string; error?: string }
+function buildTest(s: Settings, keys: KeyStats): Test {
   const t = generate(s, keys)
   return usesPlain(s) ? { ...t, words: t.words.map(plain) } : t
 }
@@ -124,6 +127,11 @@ function generate(s: Settings, keys: KeyStats): { words: string[]; by?: string }
     case 'time': return { words: randomWords(s.lang, 300, opts) }
     case 'words': return { words: randomWords(s.lang, s.count, opts) }
     case 'quote': return randomQuote(s.lang)
+    case 'wiki': return { words: [] } // filled in by the article loader below
+    case 'dictation': { // a sentence to hear: lowercase, no punctuation, accents kept (that's the spelling practice)
+      const q = randomQuote(s.lang === 'en' ? 'en' : 'es')
+      return { words: q.words.map(w => w.toLowerCase().replace(/[^\p{L}\p{N}'-]/gu, '')).filter(Boolean), by: q.by }
+    }
     case 'custom': return { words: s.custom.trim().split(/\s+/).filter(Boolean) }
     case 'zen': return { words: [] }
     case 'daily': return { words: dailyWords(s.lang) }
@@ -155,7 +163,7 @@ export default function App() {
   const [history, setHistory] = useState(loadHistory)
   const [keyStats, setKeyStats] = useState(loadKeys)
   const [daily, setDaily] = useState(loadDaily)
-  const [test, setTest] = useState(() => buildTest(s, keyStats))
+  const [test, setTest] = useState<Test>(() => buildTest(s, keyStats))
   const words = test.words
   const [typed, setTyped] = useState<string[]>([''])
   const [clock, setClock] = useState(0) // seconds elapsed
@@ -224,7 +232,30 @@ export default function App() {
   }, [uid, applySync])
 
   const zen = s.mode === 'zen'
+  const dictation = s.mode === 'dictation'
+
+  // wiki: fetch a random article whenever a new wiki test starts empty
+  useEffect(() => {
+    if (s.mode !== 'wiki' || test.words.length || test.error) return
+    let live = true
+    randomArticle(s.lang === 'en' ? 'en' : 'es')
+      .then(a => { if (live) setTest(a ?? { words: [], error: 'no encontré un artículo con texto suficiente' }) })
+      .catch(() => { if (live) setTest({ words: [], error: 'sin conexión con Wikipedia' }) })
+    return () => { live = false }
+  }, [s.mode, s.lang, test])
   const finite = s.mode !== 'time' && !zen
+
+  // dictation: read the text in chunks of a few words; the next chunk is read when you reach it, enter repeats
+  const CHUNK = 4
+  const chunk = Math.floor(Math.max(0, typed.length - 1) / CHUNK)
+  const sayChunk = useCallback(() => speak(words.slice(chunk * CHUNK, chunk * CHUNK + CHUNK).join(' '), s.lang), [words, chunk, s.lang])
+  useEffect(() => { // a new dictation test reads its first chunk (after the click that started it, so the browser allows audio)
+    if (!dictation || !words.length) return
+    const id = setTimeout(() => speak(words.slice(0, CHUNK).join(' '), s.lang), 350)
+    return () => clearTimeout(id)
+  }, [dictation, round, words.length === 0]) // eslint-disable-line react-hooks/exhaustive-deps -- once per new text
+  useEffect(() => { if (dictation && phase === 'running' && chunk > 0) sayChunk() }, [chunk]) // eslint-disable-line react-hooks/exhaustive-deps -- only when you reach a new chunk
+  useEffect(() => { if (!dictation || phase === 'done') stopSpeaking() }, [dictation, phase])
 
   // settings follow your account: pull on sign-in, push a couple of seconds after you change something
   const savedJson = useRef(JSON.stringify(s))
@@ -390,6 +421,7 @@ export default function App() {
       // in the history Tab keeps moving focus, so keyboard users can reach its buttons (Esc still goes back)
       if ((e.key === 'Tab' && view === 'test') || e.key === 'Escape') { e.preventDefault(); restart(); return }
       if (phase === 'done' || view !== 'test' || editing || e.metaKey || e.altKey) return
+      if (dictation && e.key === 'Enter') { e.preventDefault(); sayChunk(); return }
       if (zen && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); if (phase === 'running') finish(t.current.typed); return }
       const c = t.current
       // read/write through the ref so several keys in one tick (mobile autocorrect) don't overwrite each other
@@ -458,7 +490,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, dictation, sayChunk, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -665,6 +697,8 @@ export default function App() {
                 {ruleTags}
               </>
               : duel ? <span className="live duel-note">⚔ duelo · {duel.name ?? 'alguien'} hizo {duel.wpm} wpm · {duel.acc}% · ¿le ganas? <button onClick={leaveDuel}>salir</button></span>
+              : s.mode === 'wiki' && !words.length ? <span className="live">{test.error ? <>{test.error} · <button className="inline-btn" onClick={() => restart()}>reintentar</button></> : 'buscando un artículo en Wikipedia…'}</span>
+              : dictation ? <span className="live">{canSpeak() ? 'dictado · escucha y escribe · enter repite la frase' : 'tu navegador no puede leer en voz alta'}</span>
               : <span className="live">{!s.save ? 'práctica libre · no se guarda' : zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
             {caps && <span className="caps" role="status">⇪ mayúsculas activadas</span>}
             {phase !== 'running' && (
@@ -696,9 +730,9 @@ export default function App() {
                 const tw = typed[wi] ?? ''
                 const wrong = !zen && wi < typed.length - 1 && tw !== w
                 return (
-                  <span key={wi} className={`word ${wrong ? 'wrong' : ''} ${wi === typed.length - 1 ? 'cur' : wi < typed.length - 1 ? 'done' : ''}`}>
+                  <span key={wi} className={`word ${wrong ? 'wrong' : ''} ${wi === typed.length - 1 ? 'cur' : wi < typed.length - 1 ? 'done' : ''} ${dictation && wi >= typed.length ? 'unheard' : ''}`}>
                     {[...w].map((ch, ci) => (
-                      <span key={ci} className={`c l ${ci < tw.length ? (tw[ci] === ch ? 'ok' : 'bad') : ''}`}>{ch}</span>
+                      <span key={ci} className={`c l ${ci < tw.length ? (tw[ci] === ch ? 'ok' : 'bad') : ''}`}>{dictation && ci >= tw.length ? '·' : ch}</span>
                     ))}
                     {[...tw.slice(w.length)].map((ch, ci) => <span key={'x' + ci} className="c extra">{ch}</span>)}
                   </span>
@@ -712,7 +746,7 @@ export default function App() {
           {s.keymap !== 'off' && !COARSE && (
             <Keymap mode={s.keymap} next={zen ? undefined : (words[typed.length - 1]?.[typed[typed.length - 1].length] ?? ' ')} pressed={pressed} />
           )}
-          {test.by && <p className="by fade">— {test.by}</p>}
+          {test.by && <p className="by fade">— {test.url ? <a href={test.url} target="_blank" rel="noreferrer">{test.by}</a> : test.by}</p>}
           <p className="hint fade">
             {COARSE ? <button onClick={() => restart()}>↻ reiniciar</button> : <><kbd>tab</kbd> reiniciar</>}
             <a className="hint-link" href="/privacidad.html">privacidad</a>
@@ -721,7 +755,7 @@ export default function App() {
       )}
 
       {!profileName && view === 'test' && phase !== 'done' && !editing && (
-        <StatusBar s={s} set={update} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
+        <StatusBar s={s} set={update} sayChunk={sayChunk} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
       {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
         onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
@@ -736,7 +770,8 @@ export default function App() {
 }
 
 // Editor-style status line: mode block on the left, options as segments, preferences on the right
-function StatusBar({ s, set, restart, edit, weak, today }: {
+function StatusBar({ s, set, restart, edit, weak, today, sayChunk }: {
+  sayChunk: () => void
   s: Settings; set: (s: Settings) => void; restart: (n?: Partial<Settings>) => void; edit: () => void; weak: string[]
   today?: DailyEntry
 }) {
@@ -759,6 +794,8 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
         {s.mode === 'time' && DURATIONS.map(d => opt(d === s.duration, `${d}s`, () => restart({ duration: d })))}
         {s.mode === 'words' && COUNTS.map(c => opt(c === s.count, `${c}`, () => restart({ count: c })))}
         {s.mode === 'quote' && opt(false, 'otra cita', () => restart())}
+        {s.mode === 'wiki' && opt(false, 'otro artículo', () => restart())}
+        {s.mode === 'dictation' && <>{opt(false, '🔊 escuchar · enter', () => sayChunk())}{opt(false, 'otra frase', () => restart())}</>}
         {s.mode === 'custom' && opt(false, 'editar texto', edit)}
         {s.mode === 'zen' && <span className="note">sin límite</span>}
         {s.mode === 'daily' && (
