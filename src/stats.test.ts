@@ -51,3 +51,10 @@ const life = lifetime(pbHist)
 assert.equal(life.tests, 7); assert.equal(life.top, 200); assert.equal(life.seconds, 30 * 6 + 20 + 60 - 30)
 assert.equal(formatDuration(4510), '1 h 15 min'); assert.equal(formatDuration(95), '1 min 35 s'); assert.equal(formatDuration(42), '42 s')
 console.log('personal bests ok')
+
+import { tagStats } from './stats.ts'
+const tagged = [PR({ wpm: 100, tags: ['noche'] }), PR({ wpm: 80, tags: ['noche', 'cansado'] }), PR({ wpm: 60 })]
+const ts = tagStats(tagged) // overall average 80
+assert.deepEqual(ts.map(t => [t.tag, t.tests, t.avg, t.best, t.diff]), [['noche', 2, 90, 100, 10], ['cansado', 1, 80, 80, 0]])
+assert.deepEqual(tagStats([]), [])
+console.log('tags ok')

@@ -25,6 +25,7 @@ export type Result = {
   punct?: boolean; numbers?: boolean; mode?: Mode; value?: number; rules?: string[]
   pool?: number // 200 = only the 200 most common words; unset = the whole list
   plain?: boolean // spanish without accents
+  tags?: string[] // your own labels, e.g. "teclado nuevo", to compare situations
 }
 
 // identifies "the same kind of test" for personal bests; old results (no mode) were time tests
@@ -143,6 +144,18 @@ export function lifetime(h: Result[]) {
     last10: avg(h.slice(-10).map(r => r.wpm)),
     acc: avg(h.map(r => r.acc)),
   }
+}
+
+// how you type with each tag compared to your overall average
+export function tagStats(h: Result[]) {
+  const all = h.length ? h.reduce((a, r) => a + r.wpm, 0) / h.length : 0
+  const by = new Map<string, Result[]>()
+  for (const r of h) for (const t of r.tags ?? []) by.set(t, [...(by.get(t) ?? []), r])
+  return [...by].map(([tag, rs]) => {
+    const avg = rs.reduce((a, r) => a + r.wpm, 0) / rs.length
+    return { tag, tests: rs.length, avg: Math.round(avg), best: Math.max(...rs.map(r => r.wpm)),
+      acc: Math.round(rs.reduce((a, r) => a + r.acc, 0) / rs.length), diff: Math.round(avg - all) }
+  }).sort((a, b) => b.tests - a.tests)
 }
 
 // 4510 s -> "1 h 15 min", 95 s -> "1 min 35 s"

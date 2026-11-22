@@ -5,7 +5,7 @@ import type { DailyEntry } from './daily.ts'
 export type ResultRow = {
   user_id: string; date: string; wpm: number; raw: number; acc: number; cons: number; lang: string
   mode: Mode; value: number | null; duration: number; punct: boolean; numbers: boolean; rules: string[]
-  pool?: number | null; plain?: boolean
+  pool?: number | null; plain?: boolean; tags?: string[]
 }
 
 const LANGS = ['es', 'en', 'code']
@@ -19,7 +19,7 @@ export function toRow(uid: string, r: Result): ResultRow | null {
     lang: r.lang, mode, value: r.value ?? (mode === 'time' ? r.duration : null), duration: Math.max(1, r.duration),
     punct: !!r.punct, numbers: !!r.numbers, rules: r.rules ?? [],
     // only sent when set, so results with the defaults still upload to a database without these columns
-    ...(r.pool ? { pool: r.pool } : {}), ...(r.plain ? { plain: true } : {}),
+    ...(r.pool ? { pool: r.pool } : {}), ...(r.plain ? { plain: true } : {}), ...(r.tags?.length ? { tags: r.tags } : {}),
   }
   const ok = inRange(row.wpm, 0, 350) && inRange(row.raw, 0, 450) && inRange(row.acc, 0, 100) && inRange(row.cons, 0, 100)
     && inRange(row.duration, 1, 3600) && LANGS.includes(row.lang) && !Number.isNaN(Date.parse(row.date))
@@ -31,7 +31,7 @@ export function fromRow(row: ResultRow): Result {
     date: Date.parse(row.date), wpm: row.wpm, raw: row.raw, acc: row.acc, cons: row.cons, lang: row.lang,
     duration: row.duration, mode: row.mode, value: row.value ?? undefined,
     punct: row.punct, numbers: row.numbers, rules: row.rules.length ? row.rules : undefined,
-    ...(row.pool ? { pool: row.pool } : {}), ...(row.plain ? { plain: true } : {}),
+    ...(row.pool ? { pool: row.pool } : {}), ...(row.plain ? { plain: true } : {}), ...(row.tags?.length ? { tags: row.tags } : {}),
   }
 }
 
