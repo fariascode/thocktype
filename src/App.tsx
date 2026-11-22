@@ -87,9 +87,10 @@ function loadSettings(): Settings {
 }
 // a preset keeps every option except your own text, the coach drill and the list of presets itself
 type Preset = { name: string; data: Partial<Settings> }
-const NOT_IN_PRESET = ['custom', 'drill', 'presets', 'v']
-const presetOf = (name: string, s: Settings): Preset =>
-  ({ name, data: Object.fromEntries(Object.entries(s).filter(([k]) => !NOT_IN_PRESET.includes(k))) as Partial<Settings> })
+// tags and "práctica libre" are excluded: applying an old preset must not delete newer tags or silently stop saving tests
+const NOT_IN_PRESET = ['custom', 'drill', 'presets', 'v', 'tags', 'activeTags', 'save']
+const presetData = (s: Partial<Settings>) => Object.fromEntries(Object.entries(s).filter(([k]) => !NOT_IN_PRESET.includes(k))) as Partial<Settings>
+const presetOf = (name: string, s: Settings): Preset => ({ name, data: presetData(s) })
 
 // punctuation/numbers/word-list size only apply to generated words
 const usesOpts = (m: Mode) => m === 'time' || m === 'words'
@@ -551,7 +552,7 @@ export default function App() {
     for (const r of Object.keys(RULES) as (keyof Rules)[])
       add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
     add('preferencias', 'ajustes · tamaño, fuente, cursor y tema', () => setSettingsOpen(true))
-    for (const p of s.presets) add('perfiles', `perfil: ${p.name}`, () => restart(p.data))
+    for (const p of s.presets) add('perfiles', `perfil: ${p.name}`, () => restart(presetData(p.data)))
     for (const t of s.tags) add('etiquetas', `${s.activeTags.includes(t) ? 'quitar' : 'activar'} etiqueta #${t}`,
       () => setS({ ...s, activeTags: s.activeTags.includes(t) ? s.activeTags.filter(x => x !== t) : [...s.activeTags, t] }))
     add('etiquetas', 'crear o editar etiquetas', () => { restart(); setTagsOpen(true) })
@@ -694,7 +695,7 @@ export default function App() {
       {settingsOpen && <SettingsPanel a={{ ...s, synced: !!uid }} onChange={next => update({ ...s, ...next })}
         presets={s.presets.map(p => p.name)}
         onSavePreset={name => update({ ...s, presets: [...s.presets.filter(p => p.name !== name), presetOf(name, s)] })}
-        onApplyPreset={name => { const p = s.presets.find(x => x.name === name); if (p) restart(p.data) }}
+        onApplyPreset={name => { const p = s.presets.find(x => x.name === name); if (p) restart(presetData(p.data)) }}
         onDeletePreset={name => update({ ...s, presets: s.presets.filter(p => p.name !== name) })} onPreviewSound={(k, v) => thock(false, k, v)} onClose={() => setSettingsOpen(false)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
