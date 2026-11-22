@@ -548,6 +548,16 @@ button.on { animation: on-pop 260ms var(--spring); }
 .rp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .rp-chips .tag-chip { font-family: var(--mono); animation: none; }
 
+/* duels */
+.duel-note { display: inline-flex; align-items: baseline; gap: 8px; color: var(--text-2); }
+.duel-note button { min-height: 0; padding: 0 6px; font-size: 12px; }
+.duel-result { gap: 4px; }
+.duel-result b { font-size: 26px; font-weight: 600; letter-spacing: -.02em; color: var(--text-1); }
+.duel-result.won { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.duel-result.won b { color: var(--accent); }
+.duel-result span { font-family: var(--mono); font-size: 13px; color: var(--text-2); }
+.duel-btn { border-color: var(--border); color: var(--text-1); }
+
 /* theme switch: the old page fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
 
