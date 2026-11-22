@@ -7,6 +7,8 @@ import {
 } from './stats'
 import { chime, thock, tick } from './sound'
 import TagPicker from './TagPicker'
+import WordReplay from './WordReplay'
+import type { LogEntry } from './replay'
 import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
 import { totalXp, xpFor } from './level'
@@ -135,6 +137,7 @@ type FullResult = Result & {
   failed?: number // sudden death: index of the word where the test was lost
   xpBefore?: number // account xp before this test (unset when the test didn't count)
   unsaved?: boolean // free practice: shown but not recorded
+  log: LogEntry[]; targets: string[] // for the word-by-word analysis and the replay
 }
 
 // pixel position of character `ci` inside a word element (after the last char if past the end)
@@ -258,7 +261,7 @@ export default function App() {
     vt.call(document, () => { flushSync(() => setS(next)); applyAppearance(next) })
   }
 
-  const fresh = () => ({ start: 0, keys: 0, good: 0, secKeys: 0, samples: [] as Sample[], hits: {} as Record<string, number>, errs: {} as Record<string, number>, bigrams: {} as Bigrams, lastAt: 0, wordStart: 0 })
+  const fresh = () => ({ start: 0, keys: 0, good: 0, secKeys: 0, samples: [] as Sample[], hits: {} as Record<string, number>, errs: {} as Record<string, number>, bigrams: {} as Bigrams, lastAt: 0, wordStart: 0, log: [] as LogEntry[] })
   // mutable test data read inside the timer and animation loop
   const t = useRef({ ...fresh(), typed, words })
   t.current.typed = typed
@@ -296,7 +299,7 @@ export default function App() {
   }, [s.ghost, s.mode, s.ghostSource, s.ghostWpm, pb, history])
 
   const finish = useCallback((typed: string[], failed?: number) => {
-    const { keys, good, samples, hits, errs, start, bigrams } = t.current
+    const { keys, good, samples, hits, errs, start, bigrams, log } = t.current
     const done = typed[typed.length - 1] === '' ? typed.slice(0, -1) : typed
     const targets = zen ? done : words
     const secs = s.mode === 'time' ? s.duration : Math.max(1, (performance.now() - start) / 1000)
@@ -314,7 +317,7 @@ export default function App() {
     }
     if (!done.length) { setPhase('idle'); return } // nothing typed (zen): don't record
     if (failed !== undefined || !s.save) { // sudden death or free practice: show the result, keep it out of history and records
-      setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, failed, unsaved: !s.save })
+      setResult({ ...r, log, targets: zen ? [] : words, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, failed, unsaved: !s.save })
       setPhase('done')
       return
     }
@@ -335,7 +338,7 @@ export default function App() {
       dailyInfo = { n: challengeNumber(), official: !prev, entry }
     }
     if (s.sound && r.wpm > pb) chime()
-    setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo, xpBefore: totalXp(history) })
+    setResult({ ...r, log, targets: zen ? [] : words, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo, xpBefore: totalXp(history) })
     setPhase('done')
   }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync, history])
 
@@ -374,7 +377,10 @@ export default function App() {
       const c = t.current
       // read/write through the ref so several keys in one tick (mobile autocorrect) don't overwrite each other
       const typed = c.typed
-      const type = (next: string[]) => { c.typed = next; setTyped(next) }
+      const type = (next: string[]) => {
+        c.typed = next; setTyped(next)
+        if (!zen) c.log.push([Math.round(performance.now() - c.start), next.length, next[next.length - 1]]) // for the replay
+      }
       const i = typed.length - 1
       const cur = typed[i]
       const target = zen ? undefined : words[i]
@@ -615,7 +621,11 @@ export default function App() {
           </div>
           <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} />
         </> : phase === 'done' && result ? (
-        <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} rank={rank} />
+        <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} rank={rank}
+          onDrillWords={list => { // practice test made only of your slowest words, shuffled
+            restart({ mode: 'practice', drill: [] })
+            setTest({ words: Array.from({ length: PRACTICE_WORDS }, () => list[Math.floor(Math.random() * list.length)]) })
+          }} />
       ) : editing ? (
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
       ) : (
@@ -801,7 +811,9 @@ function CustomEditor({ initial, onUse, onCancel }: { initial: string; onUse: (t
   )
 }
 
-function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void; rank: RankProps }) {
+function ResultView({ r, theme, onNext, onDrill, onDrillWords, rank }: {
+  r: FullResult; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void; onDrillWords: (words: string[]) => void; rank: RankProps
+}) {
   const labels = useMemo(() => r.samples.map((_, i) => i + 1), [r])
   const series = useMemo(() => [
     { label: 'wpm', data: r.samples.map(x => x.wpm) },
@@ -838,6 +850,7 @@ function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme:
       <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
       {r.daily && <DailyCard n={r.daily.n} lang={r.lang as Lang} official={r.daily.official} entry={r.daily.entry} rank={rank} />}
       {r.by && <p className="by">— {r.by}</p>}
+      {mode !== 'zen' && r.log.length > 0 && <WordReplay log={r.log} targets={r.targets} pb={r.prevPb} onDrillWords={onDrillWords} />}
       {mode !== 'zen' && <CoachCard bigrams={r.bigrams} title="coach · este test" onDrill={onDrill} />}
       {mode !== 'zen' && <div className="card"><small>teclas de este test</small><Heatmap hits={r.hits} errs={r.errs} /></div>}
       <p className="hint">{COARSE ? <button onClick={onNext}>↻ siguiente test</button> : <><kbd>tab</kbd> siguiente test</>}</p>
