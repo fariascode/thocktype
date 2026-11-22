@@ -8,6 +8,7 @@ import {
 import { chime, thock, tick } from './sound'
 import TagPicker from './TagPicker'
 import WordReplay from './WordReplay'
+import LeaderboardPage from './LeaderboardPage'
 import { stateAt, type LogEntry } from './replay'
 import { randomArticle } from './wiki'
 import { canSpeak, speak, stopSpeaking } from './speech'
@@ -187,6 +188,7 @@ export default function App() {
   }, [])
   const go = useCallback((p: string) => { if (location.pathname !== p) window.history.pushState(null, '', p); setPath(p) }, [])
   const profileName = path.match(PROFILE_RE)?.[1]
+  const onBoard = path === '/ranking' || path === '/ranking/'
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -414,7 +416,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
-      if (palette || auth || settingsOpen || tagsOpen || profileName) return // dialogs handle their own keys; profiles aren't for typing
+      if (palette || auth || settingsOpen || tagsOpen || profileName || onBoard) return // dialogs handle their own keys; profiles aren't for typing
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
@@ -490,7 +492,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, dictation, sayChunk, s, zen, finite, restart, finish])
+  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, onBoard, dictation, sayChunk, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -597,6 +599,7 @@ export default function App() {
     add('test', 'practicar teclas débiles', () => restart({ mode: 'practice', drill: [] }))
     add('ver', 'historial', () => { go('/'); setView('history') })
     add('ver', 'ranking del reto', () => { go('/'); setView('history') })
+    add('ver', 'ranking global · 15 s y 60 s', () => go('/ranking'))
     if (me?.username) add('ver', 'mi perfil', () => go(`/u/${me.username}`))
     add('ver', 'test', () => restart())
     for (const m of Object.keys(MODES) as Mode[]) add('modo', MODES[m], () => restart({ mode: m }))
@@ -657,17 +660,19 @@ export default function App() {
           <button className="palette-btn" onClick={() => setPalette(true)} title="paleta de comandos (ctrl+k)">
             comandos{!COARSE && <kbd>ctrl k</kbd>}
           </button>
-          <button className={view === 'test' && !profileName ? 'on' : ''} onClick={() => restart()}>test</button>
+          <button className={view === 'test' && !profileName && !onBoard ? 'on' : ''} onClick={() => restart()}>test</button>
           <button className="account-btn" onClick={() => setAuth(session ? 'account' : 'login')} title={session ? session.user.email : 'iniciar sesión'}>
             {!session ? 'entrar'
               : me?.avatar_url ? <img className="avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
               : <span className="avatar" aria-hidden>{(me?.username ?? session.user.email ?? '?')[0]}</span>}
           </button>
-          <button className={view === 'history' && !profileName ? 'on' : ''} onClick={() => { go('/'); setView('history') }}>historial</button>
+          <button className={view === 'history' && !profileName && !onBoard ? 'on' : ''} onClick={() => { go('/'); setView('history') }}>historial</button>
+          <button className={onBoard ? 'on' : ''} onClick={() => go('/ranking')}>ranking</button>
         </nav>
       </header>
 
-      {profileName ? <ProfilePage username={profileName} theme={s.theme} isMe={me?.username === profileName} />
+      {onBoard ? <LeaderboardPage uid={uid} hasUsername={!!me?.username} lang={s.lang} onOpenProfile={name => go(`/u/${name}`)} />
+        : profileName ? <ProfilePage username={profileName} theme={s.theme} isMe={me?.username === profileName} />
         : view === 'history' ? <>
           <div className="card">
             <small>reto #{challengeNumber()} · ranking de hoy · {LANGS[s.lang]}</small>
@@ -754,7 +759,7 @@ export default function App() {
         </>
       )}
 
-      {!profileName && view === 'test' && phase !== 'done' && !editing && (
+      {!profileName && !onBoard && view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={update} sayChunk={sayChunk} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
       {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
