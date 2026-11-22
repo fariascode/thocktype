@@ -653,6 +653,12 @@ button.on { animation: on-pop 260ms var(--spring); }
   border-radius: var(--r-sm); padding: 7px 10px; transition: border-color var(--t) var(--ease);
 }
 .set-input:focus, .set-num input:focus { outline: none; border-color: var(--text-2); }
+.preset-name { flex: 1; min-width: 0; }
+.set-help { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--text-3); font-size: 12px; margin: 0; }
+.preset-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; max-height: 196px; overflow-y: auto; }
+.preset-list li { display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 12px; border: 1px solid var(--border); border-radius: var(--r-sm); }
+.preset-list li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); font-size: 14px; }
+.preset-list li.fresh { animation: seg-in 360ms var(--ease) backwards; border-color: var(--text-3); }
 .set-num { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-3); }
 .set-num input { width: 72px; font-family: var(--mono); }
 /* capped so "enorme" doesn't push the options off screen; the page behind shows the real size */

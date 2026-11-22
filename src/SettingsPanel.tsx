@@ -9,11 +9,16 @@ import {
 export type Prefs = Appearance & {
   progress: Progress; sound: boolean; soundKind: SoundKind; volume: number; live: boolean; ghost: boolean
   ghostSource: GhostSource; ghostWpm: number; liveAcc: boolean; liveBurst: boolean; keymap: Keymap
+  synced: boolean // signed in: settings follow the account
 }
 type Flag = { [K in keyof Prefs]: Prefs[K] extends boolean ? K : never }[keyof Prefs]
-type Props = { a: Prefs; onChange: (next: Partial<Prefs>) => void; onClose: () => void; onPreviewSound: (k: SoundKind, volume: number) => void }
+type Props = {
+  a: Prefs; onChange: (next: Partial<Prefs>) => void; onClose: () => void; onPreviewSound: (k: SoundKind, volume: number) => void
+  presets: string[]; onSavePreset: (name: string) => void; onApplyPreset: (name: string) => void; onDeletePreset: (name: string) => void
+}
+const MAX_PRESETS = 12
 
-const TABS = { tema: 'tema', texto: 'texto', cursor: 'cursor', vista: 'vista', vivo: 'en vivo', sonido: 'sonido' } as const
+const TABS = { tema: 'tema', texto: 'texto', cursor: 'cursor', vista: 'vista', vivo: 'en vivo', sonido: 'sonido', perfiles: 'perfiles' } as const
 type Tab = keyof typeof TABS
 const COLOR_THEMES = (Object.keys(THEMES) as Theme[]).filter(t => !(MONO_THEMES as readonly Theme[]).includes(t))
 const swatch = (t: Theme) => (
@@ -24,7 +29,15 @@ const swatch = (t: Theme) => (
 let lastTab: Tab = 'tema' // reopening the panel returns to the tab you were on
 
 // Changes apply instantly (to the preview and to the page behind), and are saved per device
-export default function SettingsPanel({ a, onChange, onClose, onPreviewSound }: Props) {
+export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, presets, onSavePreset, onApplyPreset, onDeletePreset }: Props) {
+  const [presetName, setPresetName] = useState('')
+  const [justSaved, setJustSaved] = useState('')
+  const savePreset = (e: React.FormEvent) => {
+    e.preventDefault()
+    const name = presetName.trim()
+    if (!name || (presets.length >= MAX_PRESETS && !presets.includes(name))) return
+    onSavePreset(name); setPresetName(''); setJustSaved(name)
+  }
   useEffect(() => { (Object.keys(FONTS) as Font[]).forEach(loadFont) }, []) // so each option shows in its own font
   const [tab, setTabState] = useState<Tab>(lastTab)
   const card = useRef<HTMLDivElement>(null)
@@ -59,7 +72,7 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound }: 
       <div ref={card} className="settings card" role="dialog" aria-modal="true" aria-label="ajustes"
         onMouseDown={e => e.stopPropagation()} onKeyDown={e => e.key === 'Escape' && onClose()}>
         <div className="settings-head">
-          <h2>ajustes <small>se guardan en este dispositivo</small></h2>
+          <h2>ajustes <small>{a.synced ? 'se guardan en tu cuenta' : 'se guardan en este dispositivo'}</small></h2>
           <button onClick={onClose} aria-label="cerrar" autoFocus>✕</button>
         </div>
 
@@ -129,6 +142,31 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound }: 
             <section><small>color de los números</small>{group('liveColor', LIVE_COLORS)}</section>
             <section><small>otros</small>
               <div className="set-options">{flag('focus', 'modo enfoque', 'oculta también la cabecera mientras escribes')}{flag('graphZero', 'gráficas desde cero', 'el eje de las gráficas empieza en 0')}</div>
+            </section>
+          </>}
+          {tab === 'perfiles' && <>
+            <section><small>guardar los ajustes actuales</small>
+              <form className="set-row" onSubmit={savePreset}>
+                <input className="set-input preset-name" placeholder="nombre, p. ej. sprint 15s" maxLength={30} aria-label="nombre del perfil"
+                  value={presetName} onChange={e => setPresetName(e.target.value)} />
+                <button className="on" type="submit" disabled={!presetName.trim() || (presets.length >= MAX_PRESETS && !presets.includes(presetName.trim()))}>
+                  {presets.includes(presetName.trim()) ? 'reemplazar' : 'guardar'}
+                </button>
+              </form>
+              <small className="set-help">guarda modo, idioma, reglas, tema, cursor, vista y sonido. Se aplica con un clic o desde ctrl+k → «perfil».</small>
+            </section>
+            <section><small>tus perfiles · {presets.length}/{MAX_PRESETS}</small>
+              {presets.length ? (
+                <ul className="preset-list">
+                  {presets.map(name => (
+                    <li key={name} className={justSaved === name ? 'fresh' : ''}>
+                      <span>{name}</span>
+                      <button onClick={() => { onApplyPreset(name); onClose() }}>aplicar</button>
+                      <button onClick={() => onDeletePreset(name)} aria-label={`borrar ${name}`}>✕</button>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="set-help">aún no tienes perfiles</p>}
             </section>
           </>}
           {tab === 'sonido' && <>
