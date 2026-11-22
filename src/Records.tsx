@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { levelOf, titleFor, totalXp } from './level'
 import { LevelBar } from './LevelUi'
-import { LANGS, type Lang } from './words'
+import { BASE_LANGS, LANGS, isCode, type Lang } from './words'
 import { COUNTS, DURATIONS, formatDuration, lifetime, personalBests, type Result } from './stats'
 
 // personal bests only compare like with like: pick a language and whether @ punctuation / # numbers were on
@@ -9,7 +9,8 @@ const VARIANTS = { all: 'todo', plain: 'normal', punct: '@ puntuación', numbers
 type Variant = keyof typeof VARIANTS
 const LISTS = { all: 'todas', 200: 'top 200', full: '1k' } as const
 type List = keyof typeof LISTS
-const fits = (r: Result, lang: Lang | 'all', v: Variant, list: List) => (lang === 'all' || r.lang === lang)
+// "código" covers every programming language
+const fits = (r: Result, lang: Lang | 'all', v: Variant, list: List) => (lang === 'all' || (lang === 'code' ? isCode(r.lang) : r.lang === lang))
   && (v === 'all' || (v === 'plain' ? !r.punct && !r.numbers : !!r[v]))
   && (list === 'all' || (list === 'full' ? !r.pool : r.pool === 200))
 
@@ -51,7 +52,7 @@ export default function Records({ h }: { h: Result[] }) {
         <small>récords personales</small>
         <div className="pb-filters">
           <div className="seg" aria-label="idioma">
-            {([['all', 'todos'], ...Object.entries(LANGS)] as [Lang | 'all', string][]).map(([k, l]) =>
+            {([['all', 'todos'], ...BASE_LANGS.map(l => [l, LANGS[l]])] as [Lang | 'all', string][]).map(([k, l]) =>
               <button key={k} className={k === lang ? 'on' : ''} onClick={() => setLang(k)}>{l}</button>)}
           </div>
           <div className="seg" aria-label="variante">

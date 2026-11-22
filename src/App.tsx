@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { LANGS, POOLS, bigramWords, plain, randomQuote, randomWords, weakWords, type Lang } from './words'
+import { BASE_LANGS, CODE_LANGS, LANGS, POOLS, bigramWords, isCode, plain, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
   loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, COUNTS, dayKey, type KeyStats, type Mode, type Result,
@@ -62,6 +62,7 @@ type Settings = {
   rules: Rules
   save: boolean // false = "práctica libre": results are not recorded
   tags: string[]; activeTags: string[] // your labels and the ones saved with the next tests
+  codeLang: Lang // programming language used when lang is "code" ("code" itself = the mixed list)
   timeWarn: boolean // beep during the last 5 seconds of a timed test
   presets: Preset[]
   v: number // settings format version, for one-time migrations
@@ -80,7 +81,7 @@ const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
   custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [],
   ghostSource: 'pb', ghostWpm: 80, liveAcc: false, liveBurst: false, keymap: 'off', ghostStyle: 'line', liveColor: 'dim',
-  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, tags: [], activeTags: [], timeWarn: false, presets: [], v: 2,
+  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, tags: [], activeTags: [], codeLang: 'code', timeWarn: false, presets: [], v: 2,
 }
 const SKEY = 'thocktype.settings'
 // fills in options added after the copy was saved (local or from the cloud)
@@ -102,6 +103,8 @@ const presetOf = (name: string, s: Settings): Preset => ({ name, data: presetDat
 // punctuation/numbers/word-list size only apply to generated words
 const usesOpts = (m: Mode) => m === 'time' || m === 'words'
 // 200-word lists: generated words in a natural language (code tokens have no frequency order)
+// the list a test actually uses: with "código" chosen, the selected programming language (the daily challenge stays shared)
+const tl = (s: Settings): Lang => (s.lang === 'code' && s.mode !== 'daily' ? s.codeLang : s.lang)
 const pool200 = (s: Settings) => usesOpts(s.mode) && s.lang !== 'code' && s.pool === 200
 // accents can be dropped for spanish anywhere except the shared daily challenge and your own text
 const usesPlain = (s: Settings) => s.lang === 'es' && s.plain && s.mode !== 'daily' && s.mode !== 'custom'
@@ -111,7 +114,7 @@ const variant = (s: Settings) => ({
   pool: pool200(s) ? 200 : undefined, plain: usesPlain(s) || undefined,
 })
 const testKey = (s: Settings) => modeKey({
-  lang: s.lang, mode: s.mode, duration: 0,
+  lang: tl(s), mode: s.mode, duration: 0,
   value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0, ...variant(s),
 })
 
@@ -124,11 +127,11 @@ function generate(s: Settings, keys: KeyStats): { words: string[]; by?: string }
   const opts = wordOpts(s)
   switch (s.mode) {
     case 'practice': return {
-      words: s.drill.length ? bigramWords(s.lang, s.drill, PRACTICE_WORDS) : weakWords(s.lang, weakKeys(keys), PRACTICE_WORDS),
+      words: s.drill.length ? bigramWords(tl(s), s.drill, PRACTICE_WORDS) : weakWords(tl(s), weakKeys(keys), PRACTICE_WORDS),
     }
-    case 'time': return { words: randomWords(s.lang, 300, opts) }
-    case 'words': return { words: randomWords(s.lang, s.count, opts) }
-    case 'quote': return randomQuote(s.lang)
+    case 'time': return { words: randomWords(tl(s), 300, opts) }
+    case 'words': return { words: randomWords(tl(s), s.count, opts) }
+    case 'quote': return randomQuote(tl(s))
     case 'wiki': return { words: [] } // filled in by the article loader below
     case 'dictation': { // a sentence to hear: lowercase, no punctuation, accents kept (that's the spelling practice)
       const q = randomQuote(s.lang === 'en' ? 'en' : 'es')
@@ -332,7 +335,7 @@ export default function App() {
     const d = duelRef.current
     if (!d) return
     window.history.replaceState(null, '', '/')
-    restart({ mode: d.mode, lang: d.lang as Lang, ...(d.mode === 'time' ? { duration: d.value } : d.mode === 'words' ? { count: d.value } : {}) })
+    restart({ mode: d.mode, ...(isCode(d.lang) ? { lang: 'code' as Lang, codeLang: d.lang as Lang } : { lang: d.lang as Lang }), ...(d.mode === 'time' ? { duration: d.value } : d.mode === 'words' ? { count: d.value } : {}) })
     duelRef.current = d; setDuel(d); setTest({ words: d.words })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- once, on load
   const leaveDuel = () => { duelRef.current = null; setDuel(null); restart() }
@@ -363,7 +366,7 @@ export default function App() {
       raw: Math.round(wpm(done.join(' ').length, secs)),
       acc: keys ? Math.round((good / keys) * 100) : 0,
       cons: Math.round(consistency(samples.map(x => x.raw))),
-      lang: s.lang, duration: Math.round(secs), mode: s.mode,
+      lang: tl(s), duration: Math.round(secs), mode: s.mode,
       value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0,
       ...variant(s),
       rules: (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k]),
@@ -467,7 +470,7 @@ export default function App() {
         if (s.sound) thock(!ok, s.soundKind, s.volume)
         if (finite && i === words.length - 1) { finish(typed); return } // space on the last word ends the test
         type([...typed, ''])
-        if (s.mode === 'time' && i > words.length - 50) setTest({ words: [...words, ...randomWords(s.lang, 200, wordOpts(s)).map(w => (usesPlain(s) ? plain(w) : w))] })
+        if (s.mode === 'time' && i > words.length - 50) setTest({ words: [...words, ...randomWords(tl(s), 200, wordOpts(s)).map(w => (usesPlain(s) ? plain(w) : w))] })
         return
       }
       c.keys++; c.secKeys++
@@ -610,7 +613,8 @@ export default function App() {
     for (const m of Object.keys(MODES) as Mode[]) add('modo', MODES[m], () => restart({ mode: m }))
     for (const d of DURATIONS) add('tiempo', `${d} segundos`, () => restart({ mode: 'time', duration: d }))
     for (const c of COUNTS) add('palabras', `${c} palabras`, () => restart({ mode: 'words', count: c }))
-    for (const l of Object.keys(LANGS) as Lang[]) add('idioma', LANGS[l], () => restart({ lang: l }))
+    for (const l of BASE_LANGS) add('idioma', LANGS[l], () => restart({ lang: l }))
+    for (const [k, l] of Object.entries(CODE_LANGS)) add('lenguaje', `código: ${l}`, () => restart({ lang: 'code', codeLang: k as Lang }))
     add('texto libre', 'editar mi texto', () => { restart({ mode: 'custom' }); setEditing(true) })
     const sw = (on: boolean) => (on ? 'desactivar' : 'activar')
     add('opciones', `${sw(s.punct)} puntuación`, () => restart({ punct: !s.punct }))
@@ -688,7 +692,7 @@ export default function App() {
         </div>
       </header>
 
-      {onBoard ? <LeaderboardPage uid={uid} hasUsername={!!me?.username} lang={s.lang} onOpenProfile={name => go(`/u/${name}`)} />
+      {onBoard ? <LeaderboardPage uid={uid} hasUsername={!!me?.username} lang={tl(s)} onOpenProfile={name => go(`/u/${name}`)} />
         : profileName ? <ProfilePage username={profileName} theme={s.theme} isMe={me?.username === profileName} />
         : view === 'history' ? <>
           <div className="card">
@@ -844,9 +848,14 @@ function StatusBar({ s, set, restart, edit, weak, today, sayChunk }: {
           <span className="seg-label" aria-hidden>idioma</span>
           <span className="pill-group" data-pill>
             <span className="seg-pill" aria-hidden />
-            {(Object.keys(LANGS) as Lang[]).map(l => opt(l === s.lang, LANGS[l], () => restart({ lang: l })))}
+            {BASE_LANGS.map(l => opt(l === s.lang, LANGS[l], () => restart({ lang: l })))}
           </span>
-          {usesOpts(s.mode) && s.lang !== 'code' && (
+          {s.lang === 'code' && s.mode !== 'daily' && (
+            <select className="code-select" value={s.codeLang} aria-label="lenguaje de programación" onChange={e => restart({ codeLang: e.target.value as Lang })}>
+              {Object.entries(CODE_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          )}
+          {usesOpts(s.mode) && !isCode(s.lang) && (
             <span className="pill-group lista" data-pill title="palabras más comunes del idioma">
               <span className="seg-pill" aria-hidden />
               {POOLS.map(p => opt(p === s.pool, p === 200 ? '200' : '1k', () => restart({ pool: p })))}

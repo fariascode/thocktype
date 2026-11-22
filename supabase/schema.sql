@@ -38,7 +38,7 @@ create table public.results (
   raw smallint not null check (raw between 0 and 450),
   acc smallint not null check (acc between 0 and 100),
   cons smallint not null check (cons between 0 and 100),
-  lang text not null check (lang in ('es', 'en', 'code')),
+  lang text not null check (lang in ('es', 'en', 'code', 'js', 'ts', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb', 'kt', 'swift', 'sql', 'html', 'css', 'sh')),
   mode text not null check (mode in ('time', 'words', 'quote', 'zen', 'custom', 'practice', 'daily', 'wiki', 'dictation')),
   value smallint,
   duration smallint not null check (duration between 1 and 3600),

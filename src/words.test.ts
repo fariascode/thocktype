@@ -33,3 +33,18 @@ import en from './data/en.ts'
 const first200 = new Set([...new Set(en.split(/\s+/).filter(Boolean))].slice(0, 200))
 assert.ok(rw('en', 500, { pool: 200 }).every(x => first200.has(x))) // drawn only from the 200 most frequent
 console.log('pools ok')
+
+import { isCode, LANGS as L, randomQuote as rq, randomWords as rw2 } from './words.ts'
+import codeLangs from './data/codeLangs.ts'
+for (const k of Object.keys(codeLangs)) {
+  assert.ok(k in L, `${k} has a label`)
+  const w = rw2(k as keyof typeof L, 50)
+  assert.equal(w.length, 50); assert.ok(w.every(x => x && !/\s/.test(x)), `${k} words are single tokens`)
+  assert.ok(rq(k as keyof typeof L).words.length > 2, `${k} has snippets`)
+}
+assert.ok(isCode('py') && isCode('code') && !isCode('es'))
+assert.equal(rw2('py', 30, { punct: true }).some(x => /^[A-Z]/.test(x) && !/^(True|False|None)$/.test(x)), false) // no capitalizing code
+console.log('code languages ok')
+const sym = rw2('py', 2000).filter(x => !/\p{L}/u.test(x)).length / 2000
+assert.ok(sym < 0.12, `symbol-only tokens are a minority (${sym})`)
+console.log('code balance ok')

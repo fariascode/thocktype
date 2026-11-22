@@ -633,6 +633,15 @@ button.on { animation: on-pop 260ms var(--spring); }
 .acct-items .acct-out:hover { color: var(--err); }
 .acct-items .acct-out:hover svg { color: var(--err); }
 
+/* programming language picker (next to "código") */
+.code-select {
+  font: inherit; font-size: 13px; color: var(--text-1); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 4px 26px 4px 10px; min-height: 30px; cursor: pointer; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-3) 50%), linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+  background-position: calc(100% - 13px) 50%, calc(100% - 9px) 50%; background-size: 4px 4px; background-repeat: no-repeat;
+}
+.code-select:focus-visible { outline: 2px solid var(--text-2); outline-offset: 2px; }
+
 /* theme switch: the old page fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
 
