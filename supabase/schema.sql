@@ -103,3 +103,14 @@ create policy "avatar update own folder" on storage.objects for update to authen
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "avatar delete own folder" on storage.objects for delete to authenticated
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ── Settings ─────────────────────────────────────────────────────────────
+-- each user's settings and presets, private (never readable by others), so they follow you between devices
+create table public.user_settings (
+  user_id uuid primary key default auth.uid() references public.profiles on delete cascade,
+  data jsonb not null check (pg_column_size(data) < 65536),
+  updated_at timestamptz not null default now()
+);
+alter table public.user_settings enable row level security;
+create policy "own settings only" on public.user_settings for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);

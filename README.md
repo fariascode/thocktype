@@ -49,6 +49,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 - **Teclas débiles:** un mapa de calor del teclado por test y de todo tu historial, y un modo práctica cargado de esas letras.
 - **Fantasma configurable:** puede correr a tu récord, al promedio de tus últimos 10 tests, a lo mejor de las últimas 24 h, a tu test anterior o a una velocidad fija. Mientras escribes ves *▲ 12 letras* si vas adelante o *▼ 5* si vas atrás.
 - **En vivo:** wpm, precisión y **ráfaga** (la velocidad de tu última palabra), cada uno opcional.
+- **Práctica libre:** un botón para entrenar sin que el test cuente en tu historial, tus récords ni tu nivel.
 
 ### Progreso
 - **Récords personales** por modo, con wpm, precisión, raw, consistencia y fecha. Se pueden filtrar por idioma, lista y variante.
@@ -63,7 +64,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 - **Compartir** tu resultado como imagen o como texto.
 
 ### Personalización
-Ajustes ⚙, por dispositivo, en seis pestañas:
+Ajustes ⚙ en siete pestañas. Con sesión iniciada se **guardan en tu cuenta** y te siguen a cualquier dispositivo:
 
 | Pestaña | Opciones |
 |---|---|
@@ -73,6 +74,7 @@ Ajustes ⚙, por dispositivo, en seis pestañas:
 | **vista** | **Modo cinta** (una sola línea que se desliza), resaltar la letra o la palabra, palabras escritas normales, atenuadas u ocultas, **teclado en pantalla** que marca la siguiente tecla o reacciona a lo que presionas, y cambio de línea suave |
 | **en vivo** | Progreso como número, barra u oculto, qué números mostrar y su color, **modo enfoque** y gráficas desde cero |
 | **sonido** | Cuatro sonidos sintetizados (thock, click, máquina y suave) y volumen |
+| **perfiles** | Guarda combinaciones de ajustes con nombre (hasta 12) y cámbialas con un clic o desde `ctrl + k` |
 
 ### En cualquier lugar
 - **Cuentas** con Google, un enlace por correo, o correo y contraseña.
@@ -147,6 +149,6 @@ public/              íconos, manifest, service worker e imagen para compartir
 ## Privacidad
 
 - **Sin cuenta, nada sale de tu navegador:** tus tests, ajustes y estadísticas se guardan solo en tu navegador.
-- **Con cuenta, se suben tus tests y tus estadísticas de teclas** para sincronizar tus dispositivos. Tus ajustes siguen guardándose solo en cada dispositivo.
+- **Con cuenta, se suben tus tests, tus estadísticas de teclas y tus ajustes** para sincronizar tus dispositivos. Tus ajustes solo los puedes leer tú.
 - **Tu perfil puede ser privado:** en ese caso nadie más ve tus resultados.
 - No hay anuncios ni rastreadores. Las fuentes que no sean Cascadia Code se descargan de Google Fonts solo si las eliges.

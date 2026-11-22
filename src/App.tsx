@@ -27,6 +27,7 @@ import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
+import { markChanged, pushSettings, syncSettings } from './settingsSync'
 import ProfilePage from './ProfilePage'
 import { GHOST_SOURCES, KEYMAPS, applyAppearance, isLight, type Appearance, type GhostSource, type Keymap as KeymapMode, type Caret, type CaretMotion, type Font, type Lines, type Progress, type SoundKind, type Width, type Size, type Theme } from './appearance'
 import SettingsPanel from './SettingsPanel'
@@ -51,6 +52,8 @@ type Settings = {
   tape: Appearance['tape']; tapeMargin: Appearance['tapeMargin']; smoothScroll: boolean; graphZero: boolean; localFont: string
   drill: string[] // coach letter pairs to practice; empty = practice weak keys
   rules: Rules
+  save: boolean // false = "práctica libre": results are not recorded
+  presets: Preset[]
   v: number // settings format version, for one-time migrations
 }
 type Rules = { noBack: boolean; blind: boolean; brake: boolean; sudden: boolean }
@@ -67,17 +70,23 @@ const DEFAULTS: Settings = {
   lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
   custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [],
   ghostSource: 'pb', ghostWpm: 80, liveAcc: false, liveBurst: false, keymap: 'off', ghostStyle: 'line', liveColor: 'dim',
-  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, v: 2,
+  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, presets: [], v: 2,
 }
 const SKEY = 'thocktype.settings'
-function loadSettings(): Settings {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SKEY) || '{}')
-    // v1 saved JetBrains Mono as the default, not as a choice: move those to the new signature font
-    if ((saved.v ?? 1) < 2 && saved.font === 'jetbrains') saved.font = 'cascadia'
-    return { ...DEFAULTS, ...saved, rules: { ...NO_RULES, ...saved.rules }, v: 2 }
-  } catch { return DEFAULTS }
+// fills in options added after the copy was saved (local or from the cloud)
+function normalize(saved: Partial<Settings> & { v?: number }): Settings {
+  // v1 saved JetBrains Mono as the default, not as a choice: move those to the new signature font
+  if ((saved.v ?? 1) < 2 && saved.font === 'jetbrains') saved.font = 'cascadia'
+  return { ...DEFAULTS, ...saved, rules: { ...NO_RULES, ...saved.rules }, presets: Array.isArray(saved.presets) ? saved.presets : [], v: 2 }
 }
+function loadSettings(): Settings {
+  try { return normalize(JSON.parse(localStorage.getItem(SKEY) || '{}')) } catch { return DEFAULTS }
+}
+// a preset keeps every option except your own text, the coach drill and the list of presets itself
+type Preset = { name: string; data: Partial<Settings> }
+const NOT_IN_PRESET = ['custom', 'drill', 'presets', 'v']
+const presetOf = (name: string, s: Settings): Preset =>
+  ({ name, data: Object.fromEntries(Object.entries(s).filter(([k]) => !NOT_IN_PRESET.includes(k))) as Partial<Settings> })
 
 // punctuation/numbers/word-list size only apply to generated words
 const usesOpts = (m: Mode) => m === 'time' || m === 'words'
@@ -121,6 +130,7 @@ type FullResult = Result & {
   daily?: { n: number; official: boolean; entry: DailyEntry } // set for the daily challenge
   failed?: number // sudden death: index of the word where the test was lost
   xpBefore?: number // account xp before this test (unset when the test didn't count)
+  unsaved?: boolean // free practice: shown but not recorded
 }
 
 // pixel position of character `ci` inside a word element (after the last char if past the end)
@@ -203,6 +213,28 @@ export default function App() {
   const zen = s.mode === 'zen'
   const finite = s.mode !== 'time' && !zen
 
+  // settings follow your account: pull on sign-in, push a couple of seconds after you change something
+  const savedJson = useRef(JSON.stringify(s))
+  const fromCloud = useRef(false)
+  useEffect(() => {
+    if (!uid) return
+    syncSettings(uid, normalize(JSON.parse(savedJson.current))).then(remote => {
+      if (!remote) return
+      const next = normalize(remote as Partial<Settings>)
+      if (JSON.stringify(next) !== savedJson.current) { fromCloud.current = true; setS(next) }
+    }).catch(() => { /* offline or table missing: settings stay on this device */ })
+  }, [uid])
+  useEffect(() => {
+    const json = JSON.stringify(s)
+    if (json === savedJson.current) return
+    savedJson.current = json
+    if (fromCloud.current) { fromCloud.current = false; return } // applying the cloud copy is not a new change
+    markChanged()
+    if (!uid) return
+    const id = setTimeout(() => pushSettings(uid, s).catch(() => { /* retried on the next change or sign-in */ }), 2000)
+    return () => clearTimeout(id)
+  }, [s, uid])
+
   useEffect(() => {
     applyAppearance(s)
     try { localStorage.setItem(SKEY, JSON.stringify(s)) } catch { /* storage blocked */ }
@@ -275,8 +307,8 @@ export default function App() {
       rules: (Object.keys(RULES) as (keyof Rules)[]).filter(k => activeRules(s)[k]),
     }
     if (!done.length) { setPhase('idle'); return } // nothing typed (zen): don't record
-    if (failed !== undefined) { // sudden death: show what happened, keep it out of history and records
-      setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, failed })
+    if (failed !== undefined || !s.save) { // sudden death or free practice: show the result, keep it out of history and records
+      setResult({ ...r, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, failed, unsaved: !s.save })
       setPhase('done')
       return
     }
@@ -513,6 +545,8 @@ export default function App() {
     for (const r of Object.keys(RULES) as (keyof Rules)[])
       add('reglas', `${sw(s.rules[r])} ${RULES[r][0]} · ${RULES[r][1]}`, () => restart({ rules: { ...s.rules, [r]: !s.rules[r] } }))
     add('preferencias', 'ajustes · tamaño, fuente, cursor y tema', () => setSettingsOpen(true))
+    for (const p of s.presets) add('perfiles', `perfil: ${p.name}`, () => restart(p.data))
+    add('opciones', `${s.save ? 'activar' : 'desactivar'} práctica libre (no guardar resultados)`, () => update({ ...s, save: !s.save }))
     add('cuenta', session ? 'cerrar sesión' : 'iniciar sesión', () => (session ? supabase.auth.signOut() : setAuth('login')))
     add('preferencias', `${sw(s.sound)} sonido`, () => setS({ ...s, sound: !s.sound }))
     add('preferencias', `${sw(s.live)} wpm en vivo`, () => setS({ ...s, live: !s.live }))
@@ -588,7 +622,7 @@ export default function App() {
                 </span>}
                 {ruleTags}
               </>
-              : <span className="live">{zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
+              : <span className="live">{!s.save ? 'práctica libre · no se guarda' : zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
             {caps && <span className="caps" role="status">⇪ mayúsculas activadas</span>}
           </div>
           {s.progress === 'bar' && !zen && (
@@ -644,7 +678,11 @@ export default function App() {
       )}
       {auth && <AuthModal view={auth} session={session} syncState={syncState} me={me} onView={setAuth} onClose={() => setAuth(null)}
         onProfile={setMe} onOpenProfile={name => go(`/u/${name}`)} />}
-      {settingsOpen && <SettingsPanel a={s} onChange={next => update({ ...s, ...next })} onPreviewSound={(k, v) => thock(false, k, v)} onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsPanel a={{ ...s, synced: !!uid }} onChange={next => update({ ...s, ...next })}
+        presets={s.presets.map(p => p.name)}
+        onSavePreset={name => update({ ...s, presets: [...s.presets.filter(p => p.name !== name), presetOf(name, s)] })}
+        onApplyPreset={name => { const p = s.presets.find(x => x.name === name); if (p) restart(p.data) }}
+        onDeletePreset={name => update({ ...s, presets: s.presets.filter(p => p.name !== name) })} onPreviewSound={(k, v) => thock(false, k, v)} onClose={() => setSettingsOpen(false)} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
@@ -723,6 +761,7 @@ function StatusBar({ s, set, restart, edit, weak, today }: {
       )}
       <div className="seg prefs p6" aria-label="preferencias">
           <span className="seg-label" aria-hidden>interfaz</span>
+        {opt(!s.save, 'práctica libre', () => set({ ...s, save: !s.save }), 'entrena sin guardar resultados')}
         {opt(s.sound, 'sonido', () => set({ ...s, sound: !s.sound }))}
         {opt(s.live, 'wpm', () => set({ ...s, live: !s.live }), 'wpm en vivo')}
         {opt(s.ghost, 'fantasma', () => set({ ...s, ghost: !s.ghost }), 'un segundo cursor corre a tu ritmo elegido (ajustes → cursor)')}
@@ -754,13 +793,16 @@ function ResultView({ r, theme, onNext, onDrill, rank }: { r: FullResult; theme:
     { label: 'wpm', data: r.samples.map(x => x.wpm) },
     { label: 'raw', data: r.samples.map(x => x.raw), dim: true },
   ], [r])
-  const newPb = r.failed === undefined && r.wpm > r.prevPb
+  const newPb = r.failed === undefined && !r.unsaved && r.wpm > r.prevPb
   const mode = r.mode ?? 'time'
   const shownWpm = useCountUp(r.wpm), shownAcc = useCountUp(r.acc)
   const detail = (mode === 'time' ? `${r.duration}s` : mode === 'words' ? `${r.value} palabras · ${r.duration}s` : `${r.duration}s`)
     + (r.pool ? ` · top ${r.pool}` : '') + (r.plain ? ' · sin acentos' : '')
   return (
     <section className="result">
+      {r.unsaved && r.failed === undefined && (
+        <div className="failed" role="status"><b>práctica libre</b> · este test no se guardó en tu historial, récords ni nivel.</div>
+      )}
       {r.failed !== undefined && (
         <div className="failed" role="alert">
           <b>muerte súbita</b> · fallaste en la palabra {r.failed + 1}. Este intento no cuenta para tu historial ni tus récords.
