@@ -39,7 +39,7 @@ create table public.results (
   acc smallint not null check (acc between 0 and 100),
   cons smallint not null check (cons between 0 and 100),
   lang text not null check (lang in ('es', 'en', 'code')),
-  mode text not null check (mode in ('time', 'words', 'quote', 'zen', 'custom', 'practice', 'daily')),
+  mode text not null check (mode in ('time', 'words', 'quote', 'zen', 'custom', 'practice', 'daily', 'wiki', 'dictation')),
   value smallint,
   duration smallint not null check (duration between 1 and 3600),
   punct boolean not null default false,

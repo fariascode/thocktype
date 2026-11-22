@@ -34,7 +34,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 ## Funciones
 
 ### Escribir
-- **Modos:** tiempo (15/30/60/120 s), palabras (10/25/50/100), cita, zen (sin límite; `shift+enter` termina), texto libre (pega el tuyo), práctica y reto diario.
+- **Modos:** tiempo (15/30/60/120 s), palabras (10/25/50/100), cita, **wiki** (un artículo aleatorio de Wikipedia, limpio para teclear y con su enlace), **dictado** (la app lee en voz alta y escribes lo que oyes: ortografía y acentos de oído), zen (sin límite; `shift+enter` termina), texto libre (pega el tuyo), práctica y reto diario.
 - **Idiomas:** español, inglés y código (JS/TS, Python, SQL, CSS, shell).
 - **Listas:** las **200** o las **1k** palabras más comunes, más `@ puntuación`, `# números` y **español sin acentos**, que deja la ñ.
 - **Reglas combinables:**
