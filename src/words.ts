@@ -2,17 +2,34 @@ import es from './data/es.ts'
 import en from './data/en.ts'
 import code from './data/code.ts'
 import quotes from './data/quotes.ts'
+import codeLangs from './data/codeLangs.ts'
+import codeQuotes from './data/codeQuotes.ts'
 
 // unique, whitespace-separated (lists can span several lines)
 const words = (txt: string) => [...new Set(txt.split(/\s+/).filter(Boolean))]
 
-const lists: Record<string, string[]> = { es: words(es), en: words(en), code: words(code) }
+const lists: Record<string, string[]> = {
+  es: words(es), en: words(en), code: words(code),
+  ...Object.fromEntries(Object.entries(codeLangs).map(([k, v]) => [k, words(v)])),
+}
 
-export const LANGS = { es: 'español', en: 'english', code: 'código' } as const
+// programming languages; "code" is the original mixed list
+export const CODE_LANGS = {
+  code: 'mixto', js: 'JavaScript', ts: 'TypeScript', py: 'Python', java: 'Java', c: 'C', cpp: 'C++', cs: 'C#', go: 'Go',
+  rs: 'Rust', php: 'PHP', rb: 'Ruby', kt: 'Kotlin', swift: 'Swift', sql: 'SQL', html: 'HTML', css: 'CSS', sh: 'Bash',
+} as const
+export const LANGS = { es: 'español', en: 'english', ...CODE_LANGS, code: 'código' } as const
 export type Lang = keyof typeof LANGS
+export const BASE_LANGS = ['es', 'en', 'code'] as const // what the language chips show
+export const isCode = (l: string) => l !== 'es' && l !== 'en'
 
 export function randomQuote(lang: Lang) {
-  const q = quotes[lang][Math.floor(Math.random() * quotes[lang].length)]
+  if (isCode(lang) && lang !== 'code' && codeQuotes[lang]) { // a snippet in that language
+    const text = pick(codeQuotes[lang])
+    return { words: text.split(' '), by: LANGS[lang] }
+  }
+  const pool = quotes[isCode(lang) ? 'code' : (lang as 'es' | 'en')]
+  const q = pool[Math.floor(Math.random() * pool.length)]
   return { words: q.text.split(' '), by: q.by }
 }
 
@@ -50,8 +67,10 @@ export function randomWords(lang: Lang, n: number, { punct = false, numbers = fa
   let capNext = true
   for (let i = 0; i < n; i++) {
     let w = pick(list, rng)
+    // code: tokens with no letters (=, {}, %) show up about a third as often as words, like in real code
+    if (isCode(lang)) for (let k = 0; k < 2 && !/\p{L}/u.test(w); k++) w = pick(list, rng)
     if (numbers && Math.random() < 0.12) w = String(Math.floor(Math.random() * 10 ** (1 + Math.floor(Math.random() * 4))))
-    if (punct && lang !== 'code') {
+    if (punct && !isCode(lang)) {
       if (capNext) w = w[0].toUpperCase() + w.slice(1)
       capNext = false
       const r = Math.random()
