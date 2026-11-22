@@ -29,7 +29,7 @@ import DailyCard, { type RankProps } from './DailyCard'
 import DailyRanking from './DailyRanking'
 import CommandPalette, { type Command } from './CommandPalette'
 import { APP_URL } from './config'
-import AuthModal, { type AuthView } from './AuthModal'
+import AuthModal, { Icon, type AuthView } from './AuthModal'
 import { supabase } from './supabase'
 import type { Session } from '@supabase/supabase-js'
 import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
@@ -193,6 +193,8 @@ export default function App() {
   const [palette, setPalette] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [tagsOpen, setTagsOpen] = useState(false)
+  const headerRef = useRef<HTMLElement>(null)
+  useLayoutMotion(headerRef) // the section pill slides between test / historial / ranking
   // Caps Lock: browsers only report it on key events, so refresh it on every press/release
   const [caps, setCaps] = useState(false)
   useEffect(() => {
@@ -648,27 +650,39 @@ export default function App() {
 
   return (
     <main className={phase === 'running' ? 'running' : ''}>
-      <header>
-        <h1 onClick={() => restart()}>thock<span>type</span></h1>
-        <nav>
-          {!todayDaily && s.mode !== 'daily' && (
-            <button className="daily-pill" onClick={() => restart({ mode: 'daily' })} title="el mismo texto para todos hoy">reto #{challengeNumber()}</button>
-          )}
-          {history.length > 0 && <LevelChip xp={xp} onClick={() => { go('/'); setView('history') }} />}
-          {days > 0 && <span className="streak" title="días seguidos practicando">racha {days}d</span>}
-          <button className="gear" onClick={() => setSettingsOpen(true)} title="ajustes" aria-label="ajustes">⚙</button>
-          <button className="palette-btn" onClick={() => setPalette(true)} title="paleta de comandos (ctrl+k)">
-            comandos{!COARSE && <kbd>ctrl k</kbd>}
-          </button>
-          <button className={view === 'test' && !profileName && !onBoard ? 'on' : ''} onClick={() => restart()}>test</button>
-          <button className="account-btn" onClick={() => setAuth(session ? 'account' : 'login')} title={session ? session.user.email : 'iniciar sesión'}>
-            {!session ? 'entrar'
-              : me?.avatar_url ? <img className="avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
-              : <span className="avatar" aria-hidden>{(me?.username ?? session.user.email ?? '?')[0]}</span>}
-          </button>
-          <button className={view === 'history' && !profileName && !onBoard ? 'on' : ''} onClick={() => { go('/'); setView('history') }}>historial</button>
-          <button className={onBoard ? 'on' : ''} onClick={() => go('/ranking')}>ranking</button>
-        </nav>
+      {/* three groups, one style each: where you are · how you're doing · actions */}
+      <header ref={headerRef}>
+        <div className="hdr-left">
+          <h1 onClick={() => restart()}>thock<span>type</span></h1>
+          <nav className="hdr-nav" data-pill aria-label="secciones">
+            <span className="seg-pill" aria-hidden />
+            <button className={view === 'test' && !profileName && !onBoard ? 'on' : ''} onClick={() => restart()}>test</button>
+            <button className={view === 'history' && !profileName && !onBoard ? 'on' : ''} onClick={() => { go('/'); setView('history') }}>historial</button>
+            <button className={onBoard ? 'on' : ''} onClick={() => go('/ranking')}>ranking</button>
+          </nav>
+        </div>
+        <div className="hdr-right">
+          <div className="hdr-stats">
+            {!todayDaily && s.mode !== 'daily' && (
+              <button className="hdr-stat daily" onClick={() => restart({ mode: 'daily' })} title="el reto de hoy: el mismo texto para todos">reto #{challengeNumber()}</button>
+            )}
+            {history.length > 0 && <LevelChip xp={xp} onClick={() => { go('/'); setView('history') }} />}
+            {days > 0 && <span className="hdr-stat" title="días seguidos practicando">racha {days}d</span>}
+          </div>
+          <div className="hdr-actions">
+            <button className="icon-btn" onClick={() => setPalette(true)} title={COARSE ? 'comandos' : 'comandos · ctrl k'} aria-label="paleta de comandos">
+              <Icon d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14zM20 20l-4-4" />
+            </button>
+            <button className="icon-btn" onClick={() => setSettingsOpen(true)} title="ajustes" aria-label="ajustes">
+              <Icon d="M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4" />
+            </button>
+            <button className="icon-btn account-btn" onClick={() => setAuth(session ? 'account' : 'login')} title={session ? session.user.email : 'iniciar sesión'} aria-label={session ? 'tu cuenta' : 'iniciar sesión'}>
+              {!session ? <Icon d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" />
+                : me?.avatar_url ? <img className="avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
+                : <span className="avatar" aria-hidden>{(me?.username ?? session.user.email ?? '?')[0]}</span>}
+            </button>
+          </div>
+        </div>
       </header>
 
       {onBoard ? <LeaderboardPage uid={uid} hasUsername={!!me?.username} lang={s.lang} onOpenProfile={name => go(`/u/${name}`)} />

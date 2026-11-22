@@ -24,7 +24,7 @@ const ES: [RegExp, string][] = [
   [/provider is not enabled/i, 'el inicio con Google aún no está activado'],
 ]
 // small line icons, drawn with currentColor so they follow every theme
-const Icon = ({ d }: { d: string }) => (
+export const Icon = ({ d }: { d: string }) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
 )
 const ICONS = {
