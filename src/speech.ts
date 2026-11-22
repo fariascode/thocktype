@@ -6,9 +6,10 @@ export function speak(text: string, lang: string, rate = 0.9) {
   const synth = window.speechSynthesis
   synth.cancel() // a new chunk replaces whatever is still being read
   const u = new SpeechSynthesisUtterance(text)
-  u.lang = lang === 'en' ? 'en-US' : 'es-ES'
+  const tags: Record<string, string> = { es: 'es-ES', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', nl: 'nl-NL', pl: 'pl-PL' }
+  u.lang = tags[lang] ?? 'es-ES'
   // prefer a local voice of the right language; the browser picks one if none matches
-  const voices = synth.getVoices().filter(v => v.lang.toLowerCase().startsWith(lang === 'en' ? 'en' : 'es'))
+  const voices = synth.getVoices().filter(v => v.lang.toLowerCase().startsWith(u.lang.slice(0, 2)))
   u.voice = voices.find(v => v.localService) ?? voices[0] ?? null
   u.rate = rate
   synth.speak(u)

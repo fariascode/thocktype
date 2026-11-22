@@ -8,7 +8,7 @@ export type ResultRow = {
   pool?: number | null; plain?: boolean; tags?: string[]
 }
 
-const LANGS = ['es', 'en', 'code']
+const LANGS = ['es', 'en', 'code', 'pt', 'fr', 'de', 'it', 'nl', 'pl'] // daily challenge languages
 const RESULT_LANGS = [...LANGS, 'js', 'ts', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb', 'kt', 'swift', 'sql', 'html', 'css', 'sh'] // keep in sync with words.ts and the results check in schema.sql
 const inRange = (n: number, lo: number, hi: number) => Number.isFinite(n) && n >= lo && n <= hi
 

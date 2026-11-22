@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadBoard, type Board, type BoardRow } from './leaderboard'
-import { BASE_LANGS, CODE_LANGS, LANGS, isCode, type Lang } from './words'
+import { BASE_LANGS, CODE_LANGS, EXTRA_LANGS, LANGS, isCode, type Lang } from './words'
 
 type Props = { uid?: string; hasUsername: boolean; lang: Lang; onOpenProfile: (username: string) => void }
 
@@ -33,12 +33,17 @@ export default function LeaderboardPage({ uid, hasUsername, lang, onOpenProfile 
           <div className="seg">
             {BASE_LANGS.map(l => <button key={l} className={(l === 'code' ? isCode(b.lang) : b.lang === l) ? 'on' : ''} onClick={() => setB({ ...b, lang: l })}>{LANGS[l]}</button>)}
           </div>
+          <select className={`code-select ${b.lang in EXTRA_LANGS ? 'on' : ''}`} value={b.lang in EXTRA_LANGS ? b.lang : ''} aria-label="más idiomas"
+            onChange={e => e.target.value && setB({ ...b, lang: e.target.value as Lang })}>
+            <option value="" disabled>más ▾</option>
+            {Object.entries(EXTRA_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
           {isCode(b.lang) && (
             <select className="code-select" value={b.lang} aria-label="lenguaje de programación" onChange={e => setB({ ...b, lang: e.target.value as Lang })}>
               {Object.entries(CODE_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
           )}
-          {!isCode(b.lang) && <div className="seg">{chip('pool', 200, 'top 200')}{chip('pool', null, '1k')}</div>}
+          {!isCode(b.lang) && <div className="seg">{chip('pool', 200, '200')}{chip('pool', null, '1k')}{chip('pool', 5000, '5k')}{chip('pool', 10000, '10k')}</div>}
           <div className="seg">{chip('week', false, 'siempre')}{chip('week', true, 'esta semana')}</div>
         </div>
 

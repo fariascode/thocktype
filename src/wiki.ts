@@ -18,7 +18,7 @@ export function cleanExtract(text: string): string[] | null {
 export type Article = { words: string[]; by: string; url: string }
 
 // five random articles per request; the first one long enough wins (a few tries for stub-heavy days)
-export async function randomArticle(lang: 'es' | 'en'): Promise<Article | null> {
+export async function randomArticle(lang: string): Promise<Article | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const url = `https://${lang}.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=random&grnnamespace=0&grnlimit=5`
       + '&prop=extracts|info&inprop=url&exintro=1&explaintext=1&exlimit=5'

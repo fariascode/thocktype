@@ -6,7 +6,7 @@ export type BoardRow = {
   place: number; username: string; display_name: string | null; avatar_url: string | null
   wpm: number; acc: number; raw: number; cons: number; date: string; is_me: boolean
 }
-export type Board = { lang: Lang; value: 15 | 60; pool: 200 | null; week: boolean }
+export type Board = { lang: Lang; value: 15 | 60; pool: 200 | 5000 | 10000 | null; week: boolean } // null = 1k
 
 export async function loadBoard(b: Board): Promise<BoardRow[]> {
   const { data, error } = await supabase.rpc('leaderboard', {

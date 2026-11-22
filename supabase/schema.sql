@@ -38,14 +38,14 @@ create table public.results (
   raw smallint not null check (raw between 0 and 450),
   acc smallint not null check (acc between 0 and 100),
   cons smallint not null check (cons between 0 and 100),
-  lang text not null check (lang in ('es', 'en', 'code', 'js', 'ts', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb', 'kt', 'swift', 'sql', 'html', 'css', 'sh')),
+  lang text not null check (lang in ('es', 'en', 'code', 'pt', 'fr', 'de', 'it', 'nl', 'pl', 'js', 'ts', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'php', 'rb', 'kt', 'swift', 'sql', 'html', 'css', 'sh')),
   mode text not null check (mode in ('time', 'words', 'quote', 'zen', 'custom', 'practice', 'daily', 'wiki', 'dictation')),
   value smallint,
   duration smallint not null check (duration between 1 and 3600),
   punct boolean not null default false,
   numbers boolean not null default false,
   rules text[] not null default '{}',
-  pool smallint check (pool in (200, 1000)), -- null = whole word list
+  pool smallint check (pool in (200, 1000, 5000, 10000)), -- null = whole word list
   plain boolean not null default false,      -- spanish without accents
   tags text[] not null default '{}' check (cardinality(tags) <= 20), -- your own labels
   unique (user_id, date)
@@ -63,7 +63,7 @@ create policy "delete own results" on public.results for delete using (auth.uid(
 create table public.daily (
   user_id uuid not null default auth.uid() references public.profiles on delete cascade,
   day date not null,
-  lang text not null check (lang in ('es', 'en', 'code')),
+  lang text not null check (lang in ('es', 'en', 'code', 'pt', 'fr', 'de', 'it', 'nl', 'pl')),
   wpm smallint not null check (wpm between 0 and 300),
   acc smallint not null check (acc between 0 and 100),
   grid text not null check (char_length(grid) <= 64),

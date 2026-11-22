@@ -35,8 +35,8 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 
 ### Escribir
 - **Modos:** tiempo (15/30/60/120 s), palabras (10/25/50/100), cita, **wiki** (un artículo aleatorio de Wikipedia, limpio para teclear y con su enlace), **dictado** (la app lee en voz alta y escribes lo que oyes: ortografía y acentos de oído), zen (sin límite; `shift+enter` termina), texto libre (pega el tuyo), práctica y reto diario.
-- **Idiomas:** español, inglés y **17 lenguajes de programación** (JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, PHP, Ruby, Kotlin, Swift, SQL, HTML, CSS y Bash, más una lista mixta), cada uno con sus palabras clave, funciones y símbolos, **bloques de código reales de varias líneas** (Enter baja de línea y la sangría se pone sola, palabras clave resaltadas), y récords y ranking propios.
-- **Listas:** las **200** o las **1k** palabras más comunes, más `@ puntuación`, `# números` y **español sin acentos**, que deja la ñ.
+- **Idiomas:** español, inglés, **português, français, deutsch, italiano, nederlands y polski**, y **17 lenguajes de programación** (JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, PHP, Ruby, Kotlin, Swift, SQL, HTML, CSS y Bash, más una lista mixta), cada uno con sus palabras clave, funciones y símbolos, **bloques de código reales de varias líneas** (Enter baja de línea y la sangría se pone sola, palabras clave resaltadas), y récords y ranking propios.
+- **Niveles:** las **200, 1k, 5k o 10k** palabras más comunes de cada idioma, más `@ puntuación`, `# números` y **español sin acentos**, que deja la ñ.
 - **Reglas combinables:**
   - *sin borrar:* no puedes usar backspace.
   - *ciego:* no ves tus errores hasta el final.
@@ -149,6 +149,11 @@ public/              íconos, manifest, service worker e imagen para compartir
 3. En **Authentication → Providers**, activa *Email* y, si quieres, *Google*.
 4. En **Authentication → URL Configuration**, agrega la dirección de tu sitio y `http://localhost:5280`.
 5. En [`src/config.ts`](src/config.ts), cambia `APP_URL`, `SUPABASE_URL` y `SUPABASE_KEY`. Usa la **clave publicable**: es segura en el navegador porque cada tabla está protegida con Row Level Security. Nunca uses la clave secreta.
+
+## Créditos
+
+- Listas de frecuencia de **5k/10k** y de los idiomas extra: [FrequencyWords](https://github.com/hermitdave/FrequencyWords) de Hermit Dave (subtítulos de OpenSubtitles 2018), licencia [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Filtradas a solo letras y sin groserías con [`scripts/buildfreq.cjs`](scripts/buildfreq.cjs); las listas derivadas en `src/data/freq/` mantienen esa licencia.
+- Artículos del modo wiki: [Wikipedia](https://www.wikipedia.org), CC BY-SA, con enlace al artículo en cada test.
 
 ## Privacidad
 

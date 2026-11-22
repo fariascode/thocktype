@@ -48,3 +48,13 @@ console.log('code languages ok')
 const sym = rw2('py', 2000).filter(x => !/\p{L}/u.test(x)).length / 2000
 assert.ok(sym < 0.12, `symbol-only tokens are a minority (${sym})`)
 console.log('code balance ok')
+
+import { loadFreq, listReady, randomWords as rw3 } from './words.ts'
+assert.equal(listReady('fr'), false)
+await loadFreq('fr'); await loadFreq('es')
+assert.ok(listReady('fr') && listReady('fr', 10000) && listReady('es', 5000))
+assert.ok(rw3('fr', 50).every(w => /^\p{L}+$/u.test(w)), 'french words are letters only')
+const top1k = rw3('fr', 500)
+assert.ok(new Set(rw3('fr', 2000, { pool: 10000 })).size > new Set(top1k).size, '10k draws from more words than 1k')
+assert.ok(listReady('es', 200) && rw3('es', 5, { pool: 200 }).length === 5, 'es 200 still uses the hand-made list')
+console.log('levels ok')
