@@ -486,6 +486,11 @@ button.on { animation: on-pop 260ms var(--spring); }
 .xp-card.level-up small { color: var(--accent); font-weight: 600; }
 @keyframes level-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
 
+.hint-link, .auth-privacy { color: var(--text-3); font-size: 12px; text-decoration: none; }
+.hint-link { margin-left: 16px; }
+.auth-privacy { align-self: center; padding: 6px 10px; }
+.hint-link:hover, .auth-privacy:hover { color: var(--text-1); }
+
 /* theme switch: the old page fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
 

@@ -634,6 +634,7 @@ export default function App() {
           {test.by && <p className="by fade">— {test.by}</p>}
           <p className="hint fade">
             {COARSE ? <button onClick={() => restart()}>↻ reiniciar</button> : <><kbd>tab</kbd> reiniciar</>}
+            <a className="hint-link" href="/privacidad.html">privacidad</a>
           </p>
         </>
       )}
