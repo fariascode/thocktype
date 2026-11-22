@@ -57,8 +57,7 @@
 :root[data-font='ubuntu'] { --type-font: 'Ubuntu Mono', var(--mono); }
 :root[data-font='inconsolata'] { --type-font: 'Inconsolata', var(--mono); }
 /* caret motion: suave (default glide), rápido (short glide), instantáneo (jumps) */
-:root[data-caret-motion='fast'] .caret { transition-duration: 40ms; }
-:root[data-caret-motion='instant'] .caret { transition: none; }
+/* caret motion and line scrolling are animated in JS (App.tsx, "glide"), so they stay fluid at any typing speed */
 :root[data-font='local'] { --type-font: var(--local-font), var(--mono); }
 /* pace caret ("fantasma") styles, dimmer than your own caret */
 :root[data-ghost-style='block'] .ghost { width: .6em; border-radius: 3px; background: color-mix(in srgb, var(--text-3) 35%, transparent); opacity: 1; }
@@ -76,7 +75,6 @@
 /* tape: a single line that slides left; the caret stays at the chosen margin */
 :root[data-tape='on'] .words { height: 1.7em; }
 :root[data-tape='on'] .inner { flex-wrap: nowrap; width: max-content; }
-:root[data-smooth-scroll='off'] .inner { transition: none; }
 /* on-screen keyboard during the test */
 .keymap { display: flex; flex-direction: column; gap: 5px; align-items: center; margin-top: 18px; }
 .keymap .key { width: 30px; height: 30px; font-size: 12px; color: var(--text-3); background: transparent; transition: background-color 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease); }
@@ -260,7 +258,7 @@ nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 }
 .words { animation: words-in 380ms var(--ease) backwards; }
 @keyframes words-in { from { opacity: 0; transform: translateY(5px); filter: blur(3px); } }
-.inner { position: relative; display: flex; flex-wrap: wrap; transition: transform 140ms var(--ease); }
+.inner { position: relative; display: flex; flex-wrap: wrap; will-change: transform; }
 .word { margin-right: .6em; }
 .word.wrong { text-decoration: underline; text-decoration-color: var(--text-3); text-decoration-thickness: 1px; text-underline-offset: .3em; }
 .ok { color: var(--text-1); }
@@ -268,7 +266,7 @@ nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 .extra { color: var(--text-2); text-decoration: line-through; opacity: .55; }
 .caret, .ghost {
   position: absolute; left: 0; top: .14em; width: 2px; height: 1.15em; border-radius: 2px;
-  background: var(--accent); pointer-events: none; transition: transform 90ms linear;
+  background: var(--accent); pointer-events: none; will-change: transform;
 }
 .ghost { background: var(--text-3); opacity: .7; transition: none; }
 .caret.blink { animation: blink 1.1s ease-in-out infinite; }
@@ -487,6 +485,9 @@ button.on { animation: on-pop 260ms var(--spring); }
 .xp-card.level-up { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); animation: level-glow 1600ms 300ms var(--ease) backwards; }
 .xp-card.level-up small { color: var(--accent); font-weight: 600; }
 @keyframes level-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+
+/* theme switch: the old page fades into the new one */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
