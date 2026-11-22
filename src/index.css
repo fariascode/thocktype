@@ -642,6 +642,13 @@ button.on { animation: on-pop 260ms var(--spring); }
 }
 .code-select:focus-visible { outline: 2px solid var(--text-2); outline-offset: 2px; }
 
+/* code blocks: real line breaks (a full-width zero-height item), auto indentation, brighter keywords */
+.words .nl { flex-basis: 100%; height: 0; position: relative; }
+.words .word.eol::after { content: '↵'; margin-left: .25em; font-size: .7em; color: var(--text-3); opacity: .45; } /* Enter goes here, like an editor's whitespace marks */
+.words .word.kw .c:not(.ok):not(.bad) { color: var(--text-2); }
+:root[data-tape='on'] .words.block { height: calc(1.7em * var(--lines, 3)); }
+:root[data-tape='on'] .words.block .inner { flex-wrap: wrap; width: auto; }
+
 /* theme switch: the old page fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
 

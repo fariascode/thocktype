@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { BASE_LANGS, CODE_LANGS, LANGS, POOLS, bigramWords, isCode, plain, randomQuote, randomWords, weakWords, type Lang } from './words'
+import { BASE_LANGS, CODE_LANGS, LANGS, POOLS, bigramWords, isCode, plain, randomBlock, randomQuote, randomWords, weakWords, type Lang } from './words'
 import {
   bestWpm, modeKey, charStats, consistency, correctChars, loadHistory, saveResult, streak, wpm,
   loadKeys, mergeKeys, saveKeys, weakKeys, DURATIONS, COUNTS, dayKey, type KeyStats, type Mode, type Result,
@@ -118,7 +118,8 @@ const testKey = (s: Settings) => modeKey({
   value: s.mode === 'time' ? s.duration : s.mode === 'words' ? s.count : 0, ...variant(s),
 })
 
-type Test = { words: string[]; by?: string; url?: string; error?: string }
+// breaks: a code block's line breaks (word index → indent of the next line); kw: that language's keywords
+type Test = { words: string[]; by?: string; url?: string; error?: string; breaks?: Record<number, number>; kw?: string[] }
 function buildTest(s: Settings, keys: KeyStats): Test {
   const t = generate(s, keys)
   return usesPlain(s) ? { ...t, words: t.words.map(plain) } : t
@@ -131,7 +132,7 @@ function generate(s: Settings, keys: KeyStats): { words: string[]; by?: string }
     }
     case 'time': return { words: randomWords(tl(s), 300, opts) }
     case 'words': return { words: randomWords(tl(s), s.count, opts) }
-    case 'quote': return randomQuote(tl(s))
+    case 'quote': return isCode(tl(s)) ? randomBlock(tl(s)) : randomQuote(tl(s))
     case 'wiki': return { words: [] } // filled in by the article loader below
     case 'dictation': { // a sentence to hear: lowercase, no punctuation, accents kept (that's the spelling practice)
       const q = randomQuote(s.lang === 'en' ? 'en' : 'es')
@@ -454,10 +455,11 @@ export default function App() {
         return
       }
       // dead keys (´ ¨ ^) arrive as 'Dead' and are ignored; the composed letter (á) comes next
-      if (e.key.length !== 1 || e.ctrlKey) return
+      const lineBreak = e.key === 'Enter' && test.breaks?.[i] !== undefined // code blocks: Enter ends the line
+      if ((e.key.length !== 1 && !lineBreak) || e.ctrlKey) return
       e.preventDefault()
       if (phase === 'idle') { c.start = performance.now(); setPhase('running') }
-      if (e.key === ' ') {
+      if (e.key === ' ' || lineBreak) {
         if (cur === '') return
         if (rules.brake && cur !== target) { if (s.sound) thock(true, s.soundKind, s.volume); return } // must finish the word correctly first
         c.keys++; c.secKeys++
@@ -500,7 +502,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, onBoard, dictation, sayChunk, s, zen, finite, restart, finish])
+  }, [typed, words, test, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, onBoard, dictation, sayChunk, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -539,7 +541,7 @@ export default function App() {
     const p = charPos(word, typed[typed.length - 1].length)
     g.tcx = p.x; g.tcy = p.y
     const still = reducedMotion()
-    if (s.tape === 'on') { // tape: one line sliding left so the caret stays at the chosen margin
+    if (s.tape === 'on' && !test.breaks) { // tape: one line sliding left (code blocks keep their lines)
       const lead = (box.parentElement!.clientWidth * Number(s.tapeMargin)) / 100
       g.tix = Math.min(0, lead - p.x); g.tiy = 0
       // same speed for text and caret, so the caret stays perfectly still while the line glides under it
@@ -568,7 +570,7 @@ export default function App() {
     }
     if (g.snap) { g.last = performance.now(); cancelAnimationFrame(g.raf); step(g.last) } // place now, before paint
     else if (!g.raf) { g.last = performance.now(); g.raf = requestAnimationFrame(step) }
-  }, [typed, view, phase, editing, s.size, s.font, s.lines, s.width, s.tape, s.tapeMargin, s.caretMotion, s.smoothScroll, fontTick, round])
+  }, [typed, view, phase, editing, s.size, s.font, s.lines, s.width, s.tape, s.tapeMargin, s.caretMotion, s.smoothScroll, fontTick, round, test.breaks])
 
   // TypeRacer-style ghost: a second caret running at the chosen pace
   useEffect(() => {
@@ -750,18 +752,22 @@ export default function App() {
               {!touchFocus && <button className="tap-hint" onClick={() => touch.current?.focus()}>toca para escribir</button>}
             </>
           )}
-          <div key={round} className={`words ${activeRules(s).blind ? 'blind' : ''}`}>
+          <div key={round} className={`words ${activeRules(s).blind ? 'blind' : ''} ${test.breaks ? 'block' : ''}`}>
             <div className="inner" ref={inner}>
               {shown.map((w, wi) => {
                 const tw = typed[wi] ?? ''
                 const wrong = !zen && wi < typed.length - 1 && tw !== w
                 return (
-                  <span key={wi} className={`word ${wrong ? 'wrong' : ''} ${wi === typed.length - 1 ? 'cur' : wi < typed.length - 1 ? 'done' : ''} ${dictation && wi >= typed.length ? 'unheard' : ''}`}>
+                  <Fragment key={wi}>
+                  <span className={`word ${wrong ? 'wrong' : ''} ${wi === typed.length - 1 ? 'cur' : wi < typed.length - 1 ? 'done' : ''} ${dictation && wi >= typed.length ? 'unheard' : ''} ${test.kw?.includes(w) ? 'kw' : ''} ${test.breaks?.[wi] !== undefined ? 'eol' : ''}`}
+                    style={test.breaks?.[wi - 1] ? { marginLeft: `${test.breaks[wi - 1] * 0.6}em` } : undefined}>
                     {[...w].map((ch, ci) => (
                       <span key={ci} className={`c l ${ci < tw.length ? (tw[ci] === ch ? 'ok' : 'bad') : ''}`}>{dictation && ci >= tw.length ? '·' : ch}</span>
                     ))}
                     {[...tw.slice(w.length)].map((ch, ci) => <span key={'x' + ci} className="c extra">{ch}</span>)}
                   </span>
+                  {test.breaks?.[wi] !== undefined && <span className="nl" aria-hidden />}
+                  </Fragment>
                 )
               })}
               <span className={`caret ${phase === 'idle' ? 'blink' : ''}`} ref={caret} />
@@ -818,14 +824,14 @@ function StatusBar({ s, set, restart, edit, weak, today, sayChunk }: {
       <div className="seg mode p1" aria-label="modo" data-pill>
         <span className="seg-pill" aria-hidden />
         {(Object.keys(MODES) as Mode[]).map(m => (
-          <button key={m} className={m === s.mode ? 'on' : ''} onClick={() => restart({ mode: m })}>{MODES[m]}</button>
+          <button key={m} className={m === s.mode ? 'on' : ''} onClick={() => restart({ mode: m })}>{m === 'quote' && isCode(tl(s)) ? 'bloque' : MODES[m]}</button>
         ))}
       </div>
       <div className="seg p2" aria-label="duración" data-pill key={s.mode}>
         <span className="seg-pill" aria-hidden />
         {s.mode === 'time' && DURATIONS.map(d => opt(d === s.duration, `${d}s`, () => restart({ duration: d })))}
         {s.mode === 'words' && COUNTS.map(c => opt(c === s.count, `${c}`, () => restart({ count: c })))}
-        {s.mode === 'quote' && opt(false, 'otra cita', () => restart())}
+        {s.mode === 'quote' && opt(false, isCode(tl(s)) ? 'otro bloque' : 'otra cita', () => restart())}
         {s.mode === 'wiki' && opt(false, 'otro artículo', () => restart())}
         {s.mode === 'dictation' && <>{opt(false, '🔊 escuchar · enter', () => sayChunk())}{opt(false, 'otra frase', () => restart())}</>}
         {s.mode === 'custom' && opt(false, 'editar texto', edit)}
