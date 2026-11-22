@@ -4,6 +4,8 @@ import code from './data/code.ts'
 import quotes from './data/quotes.ts'
 import codeLangs from './data/codeLangs.ts'
 import codeQuotes from './data/codeQuotes.ts'
+import codeBlocks from './data/codeBlocks.ts'
+import { parseBlock } from './codeBlock.ts'
 
 // unique, whitespace-separated (lists can span several lines)
 const words = (txt: string) => [...new Set(txt.split(/\s+/).filter(Boolean))]
@@ -34,6 +36,13 @@ export function randomQuote(lang: Lang) {
 }
 
 const pick = <T,>(a: T[], rng = Math.random) => a[Math.floor(rng() * a.length)]
+
+// "bloque" mode: a real multi-line function in that language ("code" = any language)
+export function randomBlock(lang: Lang) {
+  const key = codeBlocks[lang] ? lang : pick(Object.keys(codeBlocks)) as Lang
+  const b = parseBlock(pick(codeBlocks[key].code))
+  return { ...b, by: LANGS[key], kw: codeBlocks[key].kw.split(' ').filter(Boolean) }
+}
 
 // Keybr-style drill: words rich in the given weak letters, with some plain words so it still reads naturally
 export function weakWords(lang: Lang, weak: string[], n: number): string[] {

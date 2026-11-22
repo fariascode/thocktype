@@ -35,7 +35,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 
 ### Escribir
 - **Modos:** tiempo (15/30/60/120 s), palabras (10/25/50/100), cita, **wiki** (un artículo aleatorio de Wikipedia, limpio para teclear y con su enlace), **dictado** (la app lee en voz alta y escribes lo que oyes: ortografía y acentos de oído), zen (sin límite; `shift+enter` termina), texto libre (pega el tuyo), práctica y reto diario.
-- **Idiomas:** español, inglés y **17 lenguajes de programación** (JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, PHP, Ruby, Kotlin, Swift, SQL, HTML, CSS y Bash, más una lista mixta), cada uno con sus palabras clave, funciones y símbolos, fragmentos reales en el modo cita, y récords y ranking propios.
+- **Idiomas:** español, inglés y **17 lenguajes de programación** (JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, PHP, Ruby, Kotlin, Swift, SQL, HTML, CSS y Bash, más una lista mixta), cada uno con sus palabras clave, funciones y símbolos, **bloques de código reales de varias líneas** (Enter baja de línea y la sangría se pone sola, palabras clave resaltadas), y récords y ranking propios.
 - **Listas:** las **200** o las **1k** palabras más comunes, más `@ puntuación`, `# números` y **español sin acentos**, que deja la ñ.
 - **Reglas combinables:**
   - *sin borrar:* no puedes usar backspace.
