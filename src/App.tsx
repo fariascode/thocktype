@@ -8,7 +8,8 @@ import {
 import { chime, thock, tick } from './sound'
 import TagPicker from './TagPicker'
 import WordReplay from './WordReplay'
-import type { LogEntry } from './replay'
+import { stateAt, type LogEntry } from './replay'
+import { decodeDuel, encodeDuel, type Duel } from './duel'
 import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
 import { totalXp, xpFor } from './level'
@@ -137,6 +138,7 @@ type FullResult = Result & {
   failed?: number // sudden death: index of the word where the test was lost
   xpBefore?: number // account xp before this test (unset when the test didn't count)
   unsaved?: boolean // free practice: shown but not recorded
+  vs?: { name?: string; wpm: number; acc: number } // duel: the challenger's result
   log: LogEntry[]; targets: string[] // for the word-by-word analysis and the replay
 }
 
@@ -164,6 +166,9 @@ export default function App() {
   const [pressed, setPressed] = useState<{ key: string; ok: boolean; n: number }>() // last key, for the reacting keymap
   const [phase, setPhase] = useState<'idle' | 'running' | 'done'>('idle')
   const [result, setResult] = useState<FullResult | null>(null)
+  // duel opened from a link (?duelo=…): same words, the challenger's real run as the ghost
+  const [duel, setDuel] = useState<Duel | null>(() => { const c = new URLSearchParams(location.search).get('duelo'); return c ? decodeDuel(c) : null })
+  const duelRef = useRef(duel)
   const [round, setRound] = useState(0) // bumps on every new test so the text fades in fresh
   const [view, setView] = useState<'test' | 'history'>('test')
   const [path, setPath] = useState(location.pathname)
@@ -270,7 +275,8 @@ export default function App() {
   const restart = useCallback((next: Partial<Settings> = {}) => {
     const ns = { ...s, ...next }
     setS(ns)
-    setTest(buildTest(ns, keyStats))
+    if (Object.keys(next).length) { duelRef.current = null; setDuel(null) } // changing an option leaves the duel
+    setTest(duelRef.current ? { words: duelRef.current.words } : buildTest(ns, keyStats))
     setRound(n => n + 1)
     setTyped([''])
     setClock(0)
@@ -282,6 +288,16 @@ export default function App() {
     setEditing(false)
     t.current = { ...t.current, ...fresh() }
   }, [s, keyStats, go])
+
+  // opened from a duel link: switch to the challenger's mode and words, then clean the address bar
+  useEffect(() => {
+    const d = duelRef.current
+    if (!d) return
+    window.history.replaceState(null, '', '/')
+    restart({ mode: d.mode, lang: d.lang as Lang, ...(d.mode === 'time' ? { duration: d.value } : d.mode === 'words' ? { count: d.value } : {}) })
+    duelRef.current = d; setDuel(d); setTest({ words: d.words })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- once, on load
+  const leaveDuel = () => { duelRef.current = null; setDuel(null); restart() }
 
   const key = testKey(s)
   const pb = useMemo(() => bestWpm(history, key), [history, key])
@@ -317,7 +333,7 @@ export default function App() {
     }
     if (!done.length) { setPhase('idle'); return } // nothing typed (zen): don't record
     if (failed !== undefined || !s.save) { // sudden death or free practice: show the result, keep it out of history and records
-      setResult({ ...r, log, targets: zen ? [] : words, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, failed, unsaved: !s.save })
+      setResult({ ...r, vs: duel ? { name: duel.name, wpm: duel.wpm, acc: duel.acc } : undefined, log, targets: zen ? [] : words, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, failed, unsaved: !s.save })
       setPhase('done')
       return
     }
@@ -338,9 +354,9 @@ export default function App() {
       dailyInfo = { n: challengeNumber(), official: !prev, entry }
     }
     if (s.sound && r.wpm > pb) chime()
-    setResult({ ...r, log, targets: zen ? [] : words, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo, xpBefore: totalXp(history) })
+    setResult({ ...r, vs: duel ? { name: duel.name, wpm: duel.wpm, acc: duel.acc } : undefined, log, targets: zen ? [] : words, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo, xpBefore: totalXp(history) })
     setPhase('done')
-  }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync, history])
+  }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync, history, duel])
 
   // 1s tick: sample speed, count the clock
   useEffect(() => {
@@ -354,13 +370,14 @@ export default function App() {
       c.secKeys = 0
       setLiveWpm(sample.wpm)
       setLiveAcc(c.keys ? Math.round((c.good / c.keys) * 100) : 100)
-      if (pace) setGhostDelta(Math.round(correctChars(targets, c.typed) - (pace * 5 * sec) / 60))
+      if (duel) setGhostDelta(correctChars(targets, c.typed) - correctChars(targets, stateAt(duel.log, sec * 1000)))
+      else if (pace) setGhostDelta(Math.round(correctChars(targets, c.typed) - (pace * 5 * sec) / 60))
       setClock(sec)
       if (s.mode === 'time' && s.timeWarn && s.duration - sec <= 5 && s.duration - sec > 0) tick(s.volume)
       if (s.mode === 'time' && sec >= s.duration) finish(c.typed)
     }, 1000)
     return () => clearInterval(id)
-  }, [phase, s.mode, s.duration, s.timeWarn, s.volume, finish, zen, pace])
+  }, [phase, s.mode, s.duration, s.timeWarn, s.volume, finish, zen, pace, duel])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -516,13 +533,18 @@ export default function App() {
     const g = ghost.current
     if (!g) return
     g.style.display = 'none'
-    if (phase !== 'running' || !pace) return
+    if (phase !== 'running' || (!pace && !duel)) return
     let raf = 0
     const loop = () => {
       const c = t.current
-      let chars = (pace * 5 * (performance.now() - c.start)) / 60000
-      let wi = 0
-      while (wi < c.words.length - 1 && chars > c.words[wi].length) { chars -= c.words[wi].length + 1; wi++ }
+      let chars: number, wi = 0
+      if (duel) { // the challenger's actual run, pauses and mistakes included
+        const st = stateAt(duel.log, performance.now() - c.start)
+        wi = Math.max(0, st.length - 1); chars = st[wi]?.length ?? 0
+      } else {
+        chars = (pace * 5 * (performance.now() - c.start)) / 60000
+        while (wi < c.words.length - 1 && chars > c.words[wi].length) { chars -= c.words[wi].length + 1; wi++ }
+      }
       const word = inner.current?.querySelectorAll<HTMLElement>('.word')[wi]
       if (word) {
         const p = charPos(word, Math.max(0, Math.floor(chars)), '.l')
@@ -533,7 +555,7 @@ export default function App() {
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [phase, pace])
+  }, [phase, pace, duel])
 
   const commands = (): Command[] => {
     const cmds: Command[] = []
@@ -621,7 +643,7 @@ export default function App() {
           </div>
           <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} />
         </> : phase === 'done' && result ? (
-        <ResultView r={result} theme={s.theme} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} rank={rank}
+        <ResultView r={result} theme={s.theme} myName={me?.display_name || me?.username || undefined} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} rank={rank}
           onDrillWords={list => { // practice test made only of your slowest words, shuffled
             restart({ mode: 'practice', drill: [] })
             setTest({ words: Array.from({ length: PRACTICE_WORDS }, () => list[Math.floor(Math.random() * list.length)]) })
@@ -637,11 +659,12 @@ export default function App() {
                 {s.live && <span className="live">{liveWpm} wpm</span>}
                 {s.liveAcc && <span className="live">{liveAcc}%</span>}
                 {s.liveBurst && burst > 0 && <span className="live" title="velocidad de tu última palabra">ráfaga {burst}</span>}
-                {pace > 0 && clock > 0 && <span className={`live delta ${ghostDelta >= 0 ? 'ahead' : 'behind'}`} title={`frente a un fantasma a ${pace} wpm`}>
-                  {ghostDelta >= 0 ? '▲' : '▼'} {Math.abs(ghostDelta)} letras
+                {(pace > 0 || duel) && clock > 0 && <span className={`live delta ${ghostDelta >= 0 ? 'ahead' : 'behind'}`} title={duel ? 'frente a quien te retó' : `frente a un fantasma a ${pace} wpm`}>
+                  {ghostDelta >= 0 ? '▲' : '▼'} {Math.abs(ghostDelta)} letras{duel ? ` vs ${duel.name ?? 'rival'}` : ''}
                 </span>}
                 {ruleTags}
               </>
+              : duel ? <span className="live duel-note">⚔ duelo · {duel.name ?? 'alguien'} hizo {duel.wpm} wpm · {duel.acc}% · ¿le ganas? <button onClick={leaveDuel}>salir</button></span>
               : <span className="live">{!s.save ? 'práctica libre · no se guarda' : zen ? 'escribe libremente · shift+enter para terminar' : pb ? `récord ${pb} wpm` : ''}</span>}
             {caps && <span className="caps" role="status">⇪ mayúsculas activadas</span>}
             {phase !== 'running' && (
@@ -811,8 +834,8 @@ function CustomEditor({ initial, onUse, onCancel }: { initial: string; onUse: (t
   )
 }
 
-function ResultView({ r, theme, onNext, onDrill, onDrillWords, rank }: {
-  r: FullResult; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void; onDrillWords: (words: string[]) => void; rank: RankProps
+function ResultView({ r, theme, myName, onNext, onDrill, onDrillWords, rank }: {
+  r: FullResult; myName?: string; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void; onDrillWords: (words: string[]) => void; rank: RankProps
 }) {
   const labels = useMemo(() => r.samples.map((_, i) => i + 1), [r])
   const series = useMemo(() => [
@@ -847,7 +870,14 @@ function ResultView({ r, theme, onNext, onDrill, onDrillWords, rank }: {
         <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}{r.rules?.length ? ` · ${r.rules.map(k => RULES[k as keyof Rules][0]).join(', ')}` : ''}{r.tags?.length ? ` · ${r.tags.map(t => '#' + t).join(' ')}` : ''}</div>
       </div>
       {r.xpBefore !== undefined && <XpCard before={r.xpBefore} gained={xpFor(r)} />}
-      <ShareBar r={r} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
+      {r.vs && (
+        <div className={`card duel-result ${r.wpm > r.vs.wpm ? 'won' : ''}`} role="status">
+          <small>⚔ duelo contra {r.vs.name ?? 'tu rival'}</small>
+          <b>{r.wpm > r.vs.wpm ? `ganaste por ${r.wpm - r.vs.wpm} wpm` : r.wpm === r.vs.wpm ? 'empate' : `perdiste por ${r.vs.wpm - r.wpm} wpm`}</b>
+          <span>tú {r.wpm} wpm · {r.acc}% — {r.vs.name ?? 'rival'} {r.vs.wpm} wpm · {r.vs.acc}%</span>
+        </div>
+      )}
+      <ShareBar r={r} myName={myName} modeLabel={`${MODES[mode]} · ${LANGS[r.lang as Lang]} · ${detail}`} />
       {r.daily && <DailyCard n={r.daily.n} lang={r.lang as Lang} official={r.daily.official} entry={r.daily.entry} rank={rank} />}
       {r.by && <p className="by">— {r.by}</p>}
       {mode !== 'zen' && r.log.length > 0 && <WordReplay log={r.log} targets={r.targets} pb={r.prevPb} onDrillWords={onDrillWords} />}
@@ -858,7 +888,7 @@ function ResultView({ r, theme, onNext, onDrill, onDrillWords, rank }: {
   )
 }
 
-function ShareBar({ r, modeLabel }: { r: FullResult; modeLabel: string }) {
+function ShareBar({ r, modeLabel, myName }: { r: FullResult; modeLabel: string; myName?: string }) {
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
   const text = `ThockType · ${r.wpm} wpm · ${r.acc}% precisión · ${modeLabel}\n${APP_URL}`
@@ -875,10 +905,27 @@ function ShareBar({ r, modeLabel }: { r: FullResult; modeLabel: string }) {
     } catch { flash('no se pudo crear la imagen') }
     setBusy(false)
   }
+  // duel link: same words + your keystrokes; time tests keep only the words you reached plus a margin
+  const mode = r.mode ?? 'time'
+  const duelable = r.log.length > 0 && r.failed === undefined && (mode === 'time' || mode === 'words' || mode === 'quote')
+  const challenge = async () => {
+    const reached = stateAt(r.log, Infinity).length
+    const code = encodeDuel({
+      name: myName, lang: r.lang, mode: mode as Duel['mode'], value: r.value ?? 0, log: r.log, wpm: r.wpm, acc: r.acc,
+      words: mode === 'time' ? r.targets.slice(0, reached + 40) : r.targets,
+    })
+    if (!code) { flash('no se pudo crear el duelo'); return }
+    const url = `${APP_URL}/?duelo=${code}`
+    const msg = `⚔ Te reto en ThockType: hice ${r.wpm} wpm (${modeLabel}). ¿Me ganas?`
+    if (navigator.share && COARSE) { try { await navigator.share({ text: msg, url }); return } catch { /* cancelled: fall back to copying */ } }
+    flash((await copyText(`${msg}
+${url}`)) ? 'link del duelo copiado' : 'no se pudo copiar')
+  }
   return (
     <div className="share">
       <button onClick={onImage} disabled={busy}>{busy ? 'creando…' : '↗ compartir imagen'}</button>
       <button onClick={async () => flash((await copyText(text)) ? 'texto copiado' : 'no se pudo copiar')}>⧉ copiar texto</button>
+      {duelable && <button className="duel-btn" onClick={challenge}>⚔ {r.vs ? 'mandar revancha' : 'retar a alguien'}</button>}
       <span className="share-status" role="status">{status}</span>
     </div>
   )
