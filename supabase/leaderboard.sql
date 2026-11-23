@@ -3,7 +3,7 @@
 -- How it protects the ranking:
 -- * The SERVER decides whether a result can be ranked (column `ranked`, set by a trigger on every insert).
 --   The app cannot set it, and users can't update results at all (there is no update policy).
--- * A result is rankable only if it is humanly plausible: a 15 s or 60 s test that lasted exactly that long,
+-- * A result is rankable only if it is humanly plausible: a 15, 30 or 60 s test that lasted exactly that long,
 --   net speed not above raw speed, speed under a ceiling, decent accuracy and consistency, not dated in the
 --   future, and no other test of yours overlapping it in time (you can't finish two 15 s tests 5 s apart).
 -- * Anyone can be hidden from every ranking by adding their id to `leaderboard_bans` (only from this dashboard:
@@ -16,9 +16,9 @@ alter table public.results add column if not exists ranked boolean not null defa
 
 create or replace function public.result_is_rankable(r public.results) returns boolean
 language sql stable set search_path = public as $$
-  select r.mode = 'time' and r.value in (15, 60) and r.duration = r.value
+  select r.mode = 'time' and r.value in (15, 30, 60) and r.duration = r.value
     and r.wpm <= r.raw
-    and r.wpm <= case r.value when 15 then 300 else 250 end
+    and r.wpm <= case r.value when 15 then 300 when 30 then 280 else 250 end
     and r.acc >= 75 and r.cons >= 40
     and r.date <= now() + interval '5 minutes'
     and not exists (
@@ -76,13 +76,13 @@ language sql stable security definer set search_path = public as $$
   order by k.place
 $$;
 
--- boards (15/60 s · es/en/code · top 200 words) where this user is in this week's top 10, for the profile badge
+-- boards (15/30/60 s · es/en/code · top 200 words) where this user is in this week's top 10, for the profile badge
 create or replace function public.weekly_top(p_username text)
 returns table (lang text, value int, place bigint)
 language sql stable security definer set search_path = public as $$
   select l.lang, v.value, lb.place
   from (values ('es'), ('en'), ('code')) l(lang)
-  cross join (values (15), (60)) v(value)
+  cross join (values (15), (30), (60)) v(value)
   cross join lateral public.leaderboard(l.lang, v.value, case when l.lang = 'code' then null else 200 end, now() - interval '7 days', 10) lb
   where lb.username = p_username and lb.place <= 10
 $$;

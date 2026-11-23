@@ -61,7 +61,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 - **Racha** de días seguidos, **calendario de actividad** de 6 meses y gráficas de tu evolución.
 
 ### Comunidad
-- **Ranking global** en `/ranking`: 15 s y 60 s, por idioma y lista, de siempre o de la semana, con botón "mi lugar". El servidor decide qué resultados cuentan (duración exacta, velocidad y precisión posibles, sin tests superpuestos) y se puede excluir a tramposos desde Supabase. Quien queda en el top 10 de la semana lleva una insignia 🏆 en su perfil.
+- **Ranking global** en `/ranking`: 15, 30 y 60 s, por idioma y lista, de siempre o de la semana, con botón "mi lugar". El servidor decide qué resultados cuentan (duración exacta, velocidad y precisión posibles, sin tests superpuestos) y se puede excluir a tramposos desde Supabase. Quien queda en el top 10 de la semana lleva una insignia 🏆 en su perfil.
 - **Duelo por link:** al terminar un test, "⚔ retar a alguien" crea un link con el mismo texto y la grabación de tu test. Quien lo abre corre contra **tu fantasma real** (con tus pausas y errores), ve en vivo cuántas letras te lleva y al final puede mandarte la revancha. Sin cuenta y sin servidor: todo viaja en el link.
 - **Reto diario:** un intento oficial al día, resultado para compartir en cuadrícula ■□ y **ranking del día** con tu posición.
 - **Perfiles públicos** en `/u/usuario`: foto, bio, nivel, récords, calendario y coach. Se pueden hacer privados.

@@ -4,9 +4,9 @@ import { BASE_LANGS, CODE_LANGS, EXTRA_LANGS, LANGS, isCode, type Lang } from '.
 
 type Props = { uid?: string; hasUsername: boolean; lang: Lang; onOpenProfile: (username: string) => void }
 
-// All-time / weekly leaderboard for 15 s and 60 s tests. Your own row is always included, even outside the top 50.
+// All-time / weekly leaderboard for 15, 30 and 60 s tests. Your own row is always included, even outside the top 50.
 export default function LeaderboardPage({ uid, hasUsername, lang, onOpenProfile }: Props) {
-  const [b, setB] = useState<Board>({ lang, value: 15, pool: 200, week: false })
+  const [b, setB] = useState<Board>({ lang, value: 30, pool: 200, week: false }) // 30 s is the app's default test
   const [rows, setRows] = useState<BoardRow[] | null | 'error'>(null)
   const list = useRef<HTMLOListElement>(null)
   useEffect(() => {
@@ -29,13 +29,13 @@ export default function LeaderboardPage({ uid, hasUsername, lang, onOpenProfile 
           {me && <button className="on" onClick={jumpToMe}>mi lugar · #{me.place}</button>}
         </div>
         <div className="board-filters">
-          <div className="seg">{chip('value', 15, '15 s')}{chip('value', 60, '60 s')}</div>
+          <div className="seg">{chip('value', 15, '15 s')}{chip('value', 30, '30 s')}{chip('value', 60, '60 s')}</div>
           <div className="seg">
             {BASE_LANGS.map(l => <button key={l} className={(l === 'code' ? isCode(b.lang) : b.lang === l) ? 'on' : ''} onClick={() => setB({ ...b, lang: l })}>{LANGS[l]}</button>)}
           </div>
           <select className={`code-select ${b.lang in EXTRA_LANGS ? 'on' : ''}`} value={b.lang in EXTRA_LANGS ? b.lang : ''} aria-label="más idiomas"
             onChange={e => e.target.value && setB({ ...b, lang: e.target.value as Lang })}>
-            <option value="" disabled>más ▾</option>
+            <option value="" disabled>más</option>
             {Object.entries(EXTRA_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
           {isCode(b.lang) && (
