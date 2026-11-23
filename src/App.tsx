@@ -17,7 +17,7 @@ import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
 import { levelOf, titleFor, totalXp, xpFor } from './level'
 import { reducedMotion, useCountUp, useLayoutMotion } from './motion'
-import { preloadFx, resultIntro } from './fx'
+import { logoIntro, logoWave, preloadFx, resultIntro } from './fx'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
 import Keymap from './Keymap'
@@ -207,6 +207,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [tagsOpen, setTagsOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
+  const logo = useRef<HTMLHeadingElement>(null)
+  useLayoutEffect(() => { if (logo.current) logoIntro(logo.current) }, [])
   const closeAuth = useCallback(() => setAuth(null), [])
   useLayoutMotion(headerRef) // the section pill slides between test / historial / ranking
   // Caps Lock: browsers only report it on key events, so refresh it on every press/release
@@ -681,7 +683,11 @@ export default function App() {
       {/* three groups, one style each: where you are · how you're doing · actions */}
       <header ref={headerRef}>
         <div className="hdr-left">
-          <h1 onClick={() => restart()}>thock<span>type</span></h1>
+          <h1 ref={logo} onClick={() => restart()} onMouseEnter={() => logo.current && logoWave(logo.current)} aria-label="thocktype">
+            {[...'thock'].map((c, i) => <span key={i} className="lg" aria-hidden>{c}</span>)}
+            <span className="lg-type" aria-hidden>{[...'type'].map((c, i) => <span key={i} className="lg">{c}</span>)}</span>
+            <span className="lg-caret" aria-hidden />
+          </h1>
           <nav className="hdr-nav" data-pill aria-label="secciones">
             <span className="seg-pill" aria-hidden />
             <button className={view === 'test' && !profileName && !onBoard ? 'on' : ''} onClick={() => restart()}>test</button>
