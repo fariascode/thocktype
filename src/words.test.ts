@@ -58,3 +58,12 @@ const top1k = rw3('fr', 500)
 assert.ok(new Set(rw3('fr', 2000, { pool: 10000 })).size > new Set(top1k).size, '10k draws from more words than 1k')
 assert.ok(listReady('es', 200) && rw3('es', 5, { pool: 200 }).length === 5, 'es 200 still uses the hand-made list')
 console.log('levels ok')
+
+import quotesExtra from './data/quotesExtra.ts'
+for (const [lang, list] of Object.entries(quotesExtra)) {
+  assert.ok(list.length >= 9, `${lang} has quotes`)
+  for (const q of list) assert.ok(q.by && !/[’‘“”]/.test(q.text) && !q.text.includes('  '), `${lang}: "${q.text}" uses keyboard quotes and single spaces`)
+  const q = rq(lang as keyof typeof L)
+  assert.ok(list.some(x => x.text.split(' ').join(' ') === q.words.join(' ')), `${lang} cita mode draws from its quotes`)
+}
+console.log('extra quotes ok')
