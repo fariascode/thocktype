@@ -1,3 +1,4 @@
+import { t as tr } from './i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { slowest, stateAt, wordStats, type LogEntry } from './replay'
 import { reducedMotion } from './motion'
@@ -58,15 +59,15 @@ export default function WordReplay({ log, targets, pb, onDrillWords }: Props) {
   return (
     <div className="card replay">
       <div className="rp-head">
-        <small>palabra por palabra · toca una para ver el detalle</small>
+        <small>{tr('palabra por palabra · toca una para ver el detalle')}</small>
         <div className="rp-controls">
-          <button onClick={() => (playing ? setPlaying(false) : play())} aria-label={playing ? 'pausar' : 'repetir el test'}>
-            {playing ? '❚❚ pausa' : t !== null && t < total ? '▶ seguir' : '▶ repetir'}
+          <button onClick={() => (playing ? setPlaying(false) : play())} aria-label={tr(playing ? 'pausar' : 'repetir el test')}>
+            {playing ? `❚❚ ${tr('pausa')}` : t !== null && t < total ? `▶ ${tr('seguir')}` : `▶ ${tr('repetir')}`}
           </button>
           {[1, 2].map(x => <button key={x} className={speed === x ? 'on' : ''} onClick={() => setSpeed(x)}>{x}×</button>)}
-          <input type="range" className="set-range rp-scrub" min={0} max={total} value={t ?? total} aria-label="posición de la repetición"
+          <input type="range" className="set-range rp-scrub" min={0} max={total} value={t ?? total} aria-label={tr('posición de la repetición')}
             onChange={e => { setPlaying(false); setT(Number(e.target.value)) }} />
-          {t !== null && <button onClick={() => { setPlaying(false); setT(null) }} aria-label="ver el test terminado">✕</button>}
+          {t !== null && <button onClick={() => { setPlaying(false); setT(null) }} aria-label={tr('ver el test terminado')}>✕</button>}
         </div>
       </div>
 
@@ -78,7 +79,7 @@ export default function WordReplay({ log, targets, pb, onDrillWords }: Props) {
           const wrong = wi < cur && tw !== w
           return (
             <span key={wi} className={`rp-word word ${pace} ${wrong ? 'wrong' : ''} ${wi === cur && t !== null ? 'now' : ''} ${picked === wi ? 'picked' : ''} ${st?.corrected ? 'fixed' : ''}`}
-              onClick={() => st && setPicked(picked === wi ? null : wi)} title={st ? `${st.wpm} wpm${st.errors ? ` · ${st.errors} error${st.errors > 1 ? 'es' : ''}` : ''}` : undefined}>
+              onClick={() => st && setPicked(picked === wi ? null : wi)} title={st ? `${st.wpm} wpm${st.errors ? ` · ${tr('{n} errores', { n: st.errors })}` : ''}` : undefined}>
               {[...w].map((ch, ci) => (
                 <span key={ci} className={`c ${ci < tw.length ? (tw[ci] === ch ? 'ok' : 'bad') : ''} ${wi === cur && ci === tw.length && t !== null ? 'rp-caret' : ''} ${wi === ghostWord && ci === ghostChar ? 'rp-ghost' : ''}`}>{ch}</span>
               ))}
@@ -90,18 +91,18 @@ export default function WordReplay({ log, targets, pb, onDrillWords }: Props) {
 
       <p className="rp-detail" aria-live="polite">
         {s ? <>
-          <b>{s.word}</b> · {s.wpm} wpm {s.wpm < median ? `(${median - s.wpm} menos que tu mediana)` : ''}
-          {s.errors ? ` · ${s.errors} error${s.errors > 1 ? 'es' : ''}${s.corrected ? ', corregido' : ''}` : ' · sin errores'}
-          {s.typed !== s.word && <> · escribiste <b className="rp-typed">{s.typed || '—'}</b></>}
-        </> : t === null ? <>subrayado fuerte: palabras lentas · tenue: rápidas · mediana {median} wpm</>
-          : <>repitiendo · {Math.round(t / 100) / 10}s de {Math.round(total / 100) / 10}s{pb ? ` · la marca ▏ es tu récord (${pb} wpm)` : ''}</>}
+          <b>{s.word}</b> · {s.wpm} wpm {s.wpm < median ? `(${tr('{n} menos que tu mediana', { n: median - s.wpm })})` : ''}
+          {s.errors ? ` · ${tr('{n} errores', { n: s.errors })}${s.corrected ? `, ${tr('corregido')}` : ''}` : ` · ${tr('sin errores')}`}
+          {s.typed !== s.word && <> · {tr('escribiste')} <b className="rp-typed">{s.typed || '—'}</b></>}
+        </> : t === null ? <>{tr('subrayado fuerte: palabras lentas · tenue: rápidas · mediana {n} wpm', { n: median })}</>
+          : <>{tr('repitiendo · {a}s de {b}s', { a: Math.round(t / 100) / 10, b: Math.round(total / 100) / 10 })}{pb ? ` · ${tr('la marca ▏ es tu récord ({n} wpm)', { n: pb })}` : ''}</>}
       </p>
 
       {slow.length > 1 && (
         <div className="rp-slow">
-          <small>tus palabras más lentas</small>
+          <small>{tr('tus palabras más lentas')}</small>
           <div className="rp-chips">{slow.map(x => <span key={x.word} className="tag-chip">{x.word} · {x.wpm}</span>)}</div>
-          <button className="on" onClick={() => onDrillWords(slow.map(x => x.word))}>practicar estas palabras</button>
+          <button className="on" onClick={() => onDrillWords(slow.map(x => x.word))}>{tr('practicar estas palabras')}</button>
         </div>
       )}
     </div>

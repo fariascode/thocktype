@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { coachTip, slowBigrams, type Bigrams } from './coach'
 
 type Props = { bigrams: Bigrams; title: string; minN?: number; onDrill?: (pairs: string[]) => void }
@@ -11,7 +12,7 @@ export default function CoachCard({ bigrams, title, minN = 2, onDrill }: Props) 
   return (
     <div className="card coach">
       <small>{title}</small>
-      <p className="coach-tip">{coachTip(ins)}</p>
+      <p className="coach-tip">{coachTip(ins, t)}</p>
       {ins.length > 0 && (
         <ul className="coach-list">
           {ins.map(x => (
@@ -24,7 +25,7 @@ export default function CoachCard({ bigrams, title, minN = 2, onDrill }: Props) 
         </ul>
       )}
       {onDrill && ins.length > 0 && (
-        <div><button className="on" onClick={() => onDrill(ins.map(x => x.pair))}>practicar {ins.map(x => `«${x.pair}»`).join(' ')}</button></div>
+        <div><button className="on" onClick={() => onDrill(ins.map(x => x.pair))}>{t('practicar')} {ins.map(x => `«${x.pair}»`).join(' ')}</button></div>
       )}
     </div>
   )

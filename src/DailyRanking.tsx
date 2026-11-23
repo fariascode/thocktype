@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useEffect, useState } from 'react'
 import { loadRanking } from './ranking'
 import { rankEntries, type RankEntry } from './rankList'
@@ -15,9 +16,9 @@ export default function DailyRanking({ day, lang, uid, hasUsername, refresh, onO
 
   return (
     <div className="ranking">
-      {list === null && <p className="hint">cargando ranking…</p>}
-      {list === 'error' && <p className="hint">sin conexión: el ranking se verá cuando vuelvas a estar en línea</p>}
-      {Array.isArray(list) && !list.length && <p className="hint">nadie ha hecho el reto de hoy en este idioma. ¡sé el primero!</p>}
+      {list === null && <p className="hint">{t('cargando ranking…')}</p>}
+      {list === 'error' && <p className="hint">{t('sin conexión: el ranking se verá cuando vuelvas a estar en línea')}</p>}
+      {Array.isArray(list) && !list.length && <p className="hint">{t('nadie ha hecho el reto de hoy en este idioma. ¡sé el primero!')}</p>}
       {Array.isArray(list) && list.length > 0 && (
         <ol>
           {list.map(e => (
@@ -35,8 +36,8 @@ export default function DailyRanking({ day, lang, uid, hasUsername, refresh, onO
           ))}
         </ol>
       )}
-      {!uid && <p className="hint rk-note">inicia sesión para que tu intento oficial aparezca aquí</p>}
-      {uid && !hasUsername && <p className="hint rk-note">elige un @usuario en tu perfil para aparecer en el ranking</p>}
+      {!uid && <p className="hint rk-note">{t('inicia sesión para que tu intento oficial aparezca aquí')}</p>}
+      {uid && !hasUsername && <p className="hint rk-note">{t('elige un @usuario en tu perfil para aparecer en el ranking')}</p>}
     </div>
   )
 }

@@ -62,8 +62,8 @@ export function dailyStreak(all: Record<string, DailyEntry>, now = new Date()) {
   return n
 }
 
-export const shareText = (n: number, lang: Lang, e: DailyEntry) =>
-  `ThockType · reto #${n} (${lang})\n${e.wpm} wpm · ${e.acc}%\n${e.grid}\n${APP_URL}`
+export const shareText = (n: number, lang: Lang, e: DailyEntry, label = 'reto') =>
+  `ThockType · ${label} #${n} (${lang})\n${e.wpm} wpm · ${e.acc}%\n${e.grid}\n${APP_URL}`
 
 export function saveDailyAll(all: Record<string, DailyEntry>) {
   try { localStorage.setItem(KEY, JSON.stringify(all)) } catch { /* storage blocked: skip */ }

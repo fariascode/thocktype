@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
@@ -38,9 +39,9 @@ export default function AuthModal({ view, session, me, onView, onClose, onProfil
     setBusy(true); setMsg('')
     const { error } = await fn()
     setBusy(false)
-    if (error) setMsg(es(error.message))
+    if (error) setMsg(t(es(error.message)))
     else if (close) onClose()
-    else setMsg(ok)
+    else setMsg(t(ok))
   }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,11 +62,11 @@ export default function AuthModal({ view, session, me, onView, onClose, onProfil
 
   return (
     <div className="palette-backdrop" onMouseDown={onClose}>
-      <div className="auth card" role="dialog" aria-modal="true" aria-label={titles[view]}
+      <div className="auth card" role="dialog" aria-modal="true" aria-label={t(titles[view])}
         onMouseDown={e => e.stopPropagation()} onKeyDown={e => e.key === 'Escape' && onClose()}>
         <h2 className="auth-title">
-          {view === 'profile' && <button onClick={() => go('account')} aria-label="volver a tu cuenta">←</button>}
-          {titles[view]}
+          {view === 'profile' && <button onClick={() => go('account')} aria-label={t('volver a tu cuenta')}>←</button>}
+          {t(titles[view])}
         </h2>
 
         {view === 'profile' && session ? (
@@ -76,33 +77,33 @@ export default function AuthModal({ view, session, me, onView, onClose, onProfil
           <>
             {(view === 'login' || view === 'signup') && (
               <>
-                <button className="auth-google" onClick={google} disabled={busy}>continuar con Google</button>
-                <div className="auth-or"><span>o con tu correo</span></div>
+                <button className="auth-google" onClick={google} disabled={busy}>{t('continuar con Google')}</button>
+                <div className="auth-or"><span>{t('o con tu correo')}</span></div>
               </>
             )}
             <form onSubmit={submit}>
               {needsEmail && (
-                <label>correo
+                <label>{t('correo')}
                   <input type="email" required autoFocus autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />
                 </label>
               )}
               {needsPass && (
-                <label>contraseña
+                <label>{t('contraseña')}
                   <input type="password" required minLength={8} autoFocus={view === 'newpass'}
                     autoComplete={view === 'login' ? 'current-password' : 'new-password'}
                     value={password} onChange={e => setPassword(e.target.value)} />
                 </label>
               )}
               <button className="on" type="submit" disabled={busy}>
-                {busy ? '…' : { login: 'entrar', signup: 'crear cuenta', magic: 'enviar enlace', reset: 'enviar enlace', newpass: 'guardar', account: '', profile: '' }[view]}
+                {busy ? '…' : t({ login: 'entrar', signup: 'crear cuenta', magic: 'enviar enlace', reset: 'enviar enlace', newpass: 'guardar', account: '', profile: '' }[view])}
               </button>
             </form>
             <div className="auth-links">
-              {view !== 'login' && view !== 'newpass' && <button onClick={() => go('login')}>ya tengo cuenta</button>}
-              {view === 'login' && <button onClick={() => go('signup')}>crear cuenta</button>}
-              {view !== 'magic' && view !== 'newpass' && <button onClick={() => go('magic')}>entrar sin contraseña</button>}
-              {view === 'login' && <button onClick={() => go('reset')}>olvidé mi contraseña</button>}
-              <a className="auth-privacy" href="/privacidad.html">privacidad</a>
+              {view !== 'login' && view !== 'newpass' && <button onClick={() => go('login')}>{t('ya tengo cuenta')}</button>}
+              {view === 'login' && <button onClick={() => go('signup')}>{t('crear cuenta')}</button>}
+              {view !== 'magic' && view !== 'newpass' && <button onClick={() => go('magic')}>{t('entrar sin contraseña')}</button>}
+              {view === 'login' && <button onClick={() => go('reset')}>{t('olvidé mi contraseña')}</button>}
+              <a className="auth-privacy" href="/privacidad.html">{t('privacidad')}</a>
             </div>
           </>
         )}

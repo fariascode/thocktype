@@ -19,6 +19,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 - **Te dice qué practicar:** el coach mide el tiempo entre cada par de letras y te muestra cuáles te frenan, por ejemplo: «*qu* es 2.1× más lenta que tu promedio». Con un clic genera un test con esas combinaciones.
 - **Compites contra ti mismo, en vivo:** un cursor fantasma corre a tu récord (o a la velocidad que elijas) y el contador te dice cuántas letras le llevas.
 - **Reto diario:** el mismo texto para todos, un intento oficial al día y un ranking.
+- **En español e inglés:** la interfaz sale en el idioma de tu navegador y se cambia en Ajustes; el idioma de las palabras del test es independiente.
 - **Sin distracciones:** blanco y negro por defecto, sin anuncios, y todo se controla desde el teclado.
 
 ## Capturas

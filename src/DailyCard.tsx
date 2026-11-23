@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useState } from 'react'
 import { dailyStreak, loadDaily, shareText, type DailyEntry } from './daily'
 import { copyText } from './share'
@@ -13,26 +14,26 @@ export default function DailyCard({ n, lang, official, entry, rank }: Props) {
   const streak = dailyStreak(loadDaily())
   return (
     <div className="card daily">
-      <small>reto #{n} · {official ? 'intento oficial' : 'práctica · tu intento oficial de hoy fue este'}</small>
+      <small>{t('reto #{n}', { n })} · {t(official ? 'intento oficial' : 'práctica · tu intento oficial de hoy fue este')}</small>
       <div className="daily-row">
-        <div className="daily-grid" aria-label={`${entry.grid.split('■').length - 1} palabras correctas`}>
+        <div className="daily-grid" aria-label={t('{n} palabras correctas', { n: entry.grid.split('■').length - 1 })}>
           {entry.grid.split('\n').map((row, i) => (
             <div key={i}>{[...row].map((c, j) => <span key={j} className={c === '■' ? 'on' : ''} />)}</div>
           ))}
         </div>
         <div className="daily-stats">
           <div><small>wpm</small><b>{entry.wpm}</b></div>
-          <div><small>precisión</small><b>{entry.acc}%</b></div>
-          <div><small>racha de retos</small><b>{streak}</b></div>
+          <div><small>{t('precisión')}</small><b>{entry.acc}%</b></div>
+          <div><small>{t('racha de retos')}</small><b>{streak}</b></div>
         </div>
       </div>
       <div className="share">
-        <button onClick={async () => setCopied((await copyText(shareText(n, lang, entry))) ? 'copiado: pégalo donde quieras' : 'no se pudo copiar')}>⧉ copiar resultado del reto</button>
+        <button onClick={async () => setCopied(t((await copyText(shareText(n, lang, entry, t('reto')))) ? 'copiado: pégalo donde quieras' : 'no se pudo copiar'))}>⧉ {t('copiar resultado del reto')}</button>
         <span className="share-status" role="status">{copied}</span>
       </div>
-      <small>ranking de hoy</small>
+      <small>{t('ranking de hoy')}</small>
       <DailyRanking day={dayKey(new Date())} lang={lang} {...rank} />
-      <p className="hint" style={{ textAlign: 'left' }}>vuelve mañana para el reto #{n + 1}</p>
+      <p className="hint" style={{ textAlign: 'left' }}>{t('vuelve mañana para el reto #{n}', { n: n + 1 })}</p>
     </div>
   )
 }

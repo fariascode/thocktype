@@ -1,3 +1,4 @@
+import { t as tr } from './i18n'
 // Draws a shareable 1200x630 result card (the standard social preview size) in the brand's dark palette.
 export type CardData = {
   wpm: number; acc: number; raw: number; cons: number
@@ -41,7 +42,7 @@ export async function renderCard(d: CardData): Promise<Blob> {
   g.font = `500 168px ${mono}`
   g.fillStyle = C.text1
   g.fillText(String(d.wpm), 88, 372)
-  label('precisión', 560, 220)
+  label(tr('precisión'), 560, 220)
   g.font = `500 96px ${mono}`
   g.fillStyle = C.text1
   g.fillText(`${d.acc}%`, 556, 316)
@@ -49,7 +50,7 @@ export async function renderCard(d: CardData): Promise<Blob> {
   // secondary stats
   g.font = `400 24px ${mono}`
   g.fillStyle = C.text2
-  g.fillText(`raw ${d.raw}  ·  consistencia ${d.cons}%`, 560, 368)
+  g.fillText(`raw ${d.raw}  ·  ${tr('consistencia')} ${d.cons}%`, 560, 368)
 
   // sparkline of wpm per second
   if (d.samples.length > 1) {
@@ -74,7 +75,7 @@ export async function renderCard(d: CardData): Promise<Blob> {
   g.fillStyle = C.text3
   g.fillText(d.modeLabel, 96, 560)
   if (d.pb) {
-    const t = 'nuevo récord'
+    const t = tr('nuevo récord')
     g.font = `600 20px ${sans}`
     const w = g.measureText(t).width + 32
     g.fillStyle = C.text1

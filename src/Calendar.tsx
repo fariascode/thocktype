@@ -1,10 +1,12 @@
+import { t, uiLang } from './i18n'
 import { useEffect, useRef } from 'react'
 import { dailyCounts, dayKey, type Result } from './stats'
 
 const WEEKS = 26
 const LEVELS = [0, 1, 3, 6, 10] // tests per day for each ink level
 const level = (n: number) => LEVELS.filter(l => n >= l).length - 1
-const DAYS = ['l', '', 'x', '', 'v', '', 'd']
+// monday, wednesday, friday, sunday initials (the other rows stay blank)
+const DAYS = { es: ['l', '', 'x', '', 'v', '', 'd'], en: ['m', '', 'w', '', 'f', '', 's'] }
 
 // GitHub-style activity grid, one column per week (monday first), ink = tests that day
 export default function Calendar({ h }: { h: Result[] }) {
@@ -23,7 +25,7 @@ export default function Calendar({ h }: { h: Result[] }) {
   return (
     <div className="cal-wrap" ref={wrap}>
       <div className="cal">
-        {DAYS.map((d, i) => <span key={'d' + i} className="cal-day">{d}</span>)}
+        {DAYS[uiLang()].map((d, i) => <span key={'d' + i} className="cal-day">{d}</span>)}
         {cells.map(d => {
           const n = counts.get(dayKey(d)) ?? 0
           const future = d > today
@@ -33,7 +35,7 @@ export default function Calendar({ h }: { h: Result[] }) {
           )
         })}
       </div>
-      <div className="cal-legend">menos {LEVELS.map((_, i) => <span key={i} className={`cell l${i}`} />)} más</div>
+      <div className="cal-legend">{t('menos')} {LEVELS.map((_, i) => <span key={i} className={`cell l${i}`} />)} {t('más')}</div>
     </div>
   )
 }

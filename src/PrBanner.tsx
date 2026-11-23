@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useLayoutEffect, useRef } from 'react'
 import { prCelebrate } from './fx'
 
@@ -12,10 +13,10 @@ export default function PrBanner({ wpm, prev, mode }: { wpm: number; prev: numbe
         <svg className="pr-star" viewBox="0 0 24 24"><path d="M12 2.8l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 16.8l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg>
       </div>
       <div className="pr-text">
-        <small>{prev ? 'nuevo récord personal' : 'primer récord en este modo'}</small>
+        <small>{t(prev ? 'nuevo récord personal' : 'primer récord en este modo')}</small>
         {/* one span per character, so each digit can bounce in on its own */}
         <b aria-label={`${big} wpm`}>{[...big].map((ch, i) => <span key={i} className="ch">{ch}</span>)} <span className="unit">wpm</span></b>
-        <span className="pr-mode">{mode}{prev ? ` · antes ${prev} → ahora ${wpm}` : ''}</span>
+        <span className="pr-mode">{mode}{prev ? ` · ${t('antes {a} → ahora {b}', { a: prev, b: wpm })}` : ''}</span>
       </div>
     </div>
   )

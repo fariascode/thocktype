@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useEffect, useRef, useState } from 'react'
 import { loadBoard, type Board, type BoardRow } from './leaderboard'
 import { BASE_LANGS, CODE_LANGS, EXTRA_LANGS, LANGS, isCode, type Lang } from './words'
@@ -25,32 +26,32 @@ export default function LeaderboardPage({ uid, hasUsername, lang, onOpenProfile 
     <section className="result board">
       <div className="card">
         <div className="board-head">
-          <h2>ranking</h2>
-          {me && <button className="on" onClick={jumpToMe}>mi lugar · #{me.place}</button>}
+          <h2>{t('ranking')}</h2>
+          {me && <button className="on" onClick={jumpToMe}>{t('mi lugar')} · #{me.place}</button>}
         </div>
         <div className="board-filters">
           <div className="seg">{chip('value', 15, '15 s')}{chip('value', 30, '30 s')}{chip('value', 60, '60 s')}</div>
           <div className="seg">
-            {BASE_LANGS.map(l => <button key={l} className={(l === 'code' ? isCode(b.lang) : b.lang === l) ? 'on' : ''} onClick={() => setB({ ...b, lang: l })}>{LANGS[l]}</button>)}
+            {BASE_LANGS.map(l => <button key={l} className={(l === 'code' ? isCode(b.lang) : b.lang === l) ? 'on' : ''} onClick={() => setB({ ...b, lang: l })}>{t(LANGS[l])}</button>)}
           </div>
-          <select className={`code-select ${b.lang in EXTRA_LANGS ? 'on' : ''}`} value={b.lang in EXTRA_LANGS ? b.lang : ''} aria-label="más idiomas"
+          <select className={`code-select ${b.lang in EXTRA_LANGS ? 'on' : ''}`} value={b.lang in EXTRA_LANGS ? b.lang : ''} aria-label={t('más idiomas')}
             onChange={e => e.target.value && setB({ ...b, lang: e.target.value as Lang })}>
-            <option value="" disabled>más</option>
+            <option value="" disabled>{t('más')}</option>
             {Object.entries(EXTRA_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
           {isCode(b.lang) && (
-            <select className="code-select" value={b.lang} aria-label="lenguaje de programación" onChange={e => setB({ ...b, lang: e.target.value as Lang })}>
+            <select className="code-select" value={b.lang} aria-label={t('lenguaje de programación')} onChange={e => setB({ ...b, lang: e.target.value as Lang })}>
               {Object.entries(CODE_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
           )}
           {!isCode(b.lang) && <div className="seg">{chip('pool', 200, '200')}{chip('pool', null, '1k')}{chip('pool', 5000, '5k')}{chip('pool', 10000, '10k')}</div>}
-          <div className="seg">{chip('week', false, 'siempre')}{chip('week', true, 'esta semana')}</div>
+          <div className="seg">{chip('week', false, t('siempre'))}{chip('week', true, t('esta semana'))}</div>
         </div>
 
         <div className="ranking">
-          {rows === null && <p className="hint">cargando ranking…</p>}
-          {rows === 'error' && <p className="hint">sin conexión: el ranking se verá cuando vuelvas a estar en línea</p>}
-          {Array.isArray(rows) && !rows.length && <p className="hint">aún nadie en este ranking. ¡haz un test de {b.value} s y sé el primero!</p>}
+          {rows === null && <p className="hint">{t('cargando ranking…')}</p>}
+          {rows === 'error' && <p className="hint">{t('sin conexión: el ranking se verá cuando vuelvas a estar en línea')}</p>}
+          {Array.isArray(rows) && !rows.length && <p className="hint">{t('aún nadie en este ranking. ¡haz un test de {n} s y sé el primero!', { n: b.value })}</p>}
           {Array.isArray(rows) && rows.length > 0 && (
             <ol ref={list}>
               {rows.map((r, i) => (
@@ -64,15 +65,15 @@ export default function LeaderboardPage({ uid, hasUsername, lang, onOpenProfile 
                   </button>
                   <span className="rk-wpm">{r.wpm}<small> wpm</small></span>
                   <span className="rk-acc">{r.acc}%</span>
-                  <span className="rk-extra" title="raw · consistencia · fecha">raw {r.raw} · {r.cons}% · {new Date(r.date).toLocaleDateString()}</span>
+                  <span className="rk-extra" title={t('raw · consistencia · fecha')}>raw {r.raw} · {r.cons}% · {new Date(r.date).toLocaleDateString()}</span>
                 </li>
               ))}
             </ol>
           )}
-          {!uid && <p className="hint rk-note">inicia sesión y elige un @usuario para aparecer en el ranking</p>}
-          {uid && !hasUsername && <p className="hint rk-note">elige un @usuario en tu perfil para aparecer en el ranking</p>}
+          {!uid && <p className="hint rk-note">{t('inicia sesión y elige un @usuario para aparecer en el ranking')}</p>}
+          {uid && !hasUsername && <p className="hint rk-note">{t('elige un @usuario en tu perfil para aparecer en el ranking')}</p>}
         </div>
-        <p className="hint rk-note">cuentan los tests de tiempo sin puntuación, números, reglas ni «sin acentos». El servidor descarta resultados imposibles.</p>
+        <p className="hint rk-note">{t('cuentan los tests de tiempo sin puntuación, números, reglas ni «sin acentos». El servidor descarta resultados imposibles.')}</p>
       </div>
     </section>
   )

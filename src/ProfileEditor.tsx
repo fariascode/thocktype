@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { saveProfile, uploadAvatar, type Profile } from './profile'
@@ -38,29 +39,29 @@ export default function ProfileEditor({ session, me, onSaved }: Props) {
   return (
     <form onSubmit={save} className="profile-form">
       <div className="avatar-row">
-        {avatar ? <img className="avatar-lg" src={avatar} alt="tu foto" /> : <span className="avatar-lg avatar">{username[0] ?? '?'}</span>}
+        {avatar ? <img className="avatar-lg" src={avatar} alt={t('tu foto')} /> : <span className="avatar-lg avatar">{username[0] ?? '?'}</span>}
         <div className="avatar-actions">
-          <label className="file-btn">subir foto
+          <label className="file-btn">{t('subir foto')}
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={busy} onChange={e => onFile(e.target.files?.[0])} />
           </label>
-          {meta.avatar_url && avatar !== meta.avatar_url && <button type="button" onClick={() => setAvatar(meta.avatar_url!)}>usar la de Google</button>}
-          {avatar && <button type="button" onClick={() => setAvatar(null)}>quitar</button>}
+          {meta.avatar_url && avatar !== meta.avatar_url && <button type="button" onClick={() => setAvatar(meta.avatar_url!)}>{t('usar la de Google')}</button>}
+          {avatar && <button type="button" onClick={() => setAvatar(null)}>{t('quitar')}</button>}
         </div>
       </div>
-      <label>usuario
+      <label>{t('usuario')}
         <span className="prefixed"><span>@</span>
           <input required value={username} maxLength={20} autoComplete="username" spellCheck={false}
             onChange={e => setUsername(e.target.value.toLowerCase())} />
         </span>
       </label>
-      <label>nombre <input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></label>
-      <label>bio <textarea value={bio} maxLength={160} rows={2} onChange={e => setBio(e.target.value)} /></label>
+      <label>{t('nombre')} <input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></label>
+      <label>{t('bio')} <textarea value={bio} maxLength={160} rows={2} onChange={e => setBio(e.target.value)} /></label>
       <label className="check">
         <input type="checkbox" checked={isPublic} onChange={e => setIsPublic(e.target.checked)} />
-        perfil público (cualquiera con el enlace puede verlo)
+        {t('perfil público (cualquiera con el enlace puede verlo)')}
       </label>
-      <button className="on" type="submit" disabled={busy}>{busy ? '…' : 'guardar perfil'}</button>
-      <p className="auth-msg" role="status">{msg}</p>
+      <button className="on" type="submit" disabled={busy}>{busy ? '…' : t('guardar perfil')}</button>
+      <p className="auth-msg" role="status">{t(msg)}</p>
     </form>
   )
 }
