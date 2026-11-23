@@ -103,7 +103,7 @@ export default function AuthModal({ view, session, me, onView, onClose, onProfil
               {view === 'login' && <button onClick={() => go('signup')}>{t('crear cuenta')}</button>}
               {view !== 'magic' && view !== 'newpass' && <button onClick={() => go('magic')}>{t('entrar sin contraseña')}</button>}
               {view === 'login' && <button onClick={() => go('reset')}>{t('olvidé mi contraseña')}</button>}
-              <a className="auth-privacy" href="/privacidad.html">{t('privacidad')}</a>
+              <a className="auth-privacy" href={uiLang() === 'en' ? '/privacy.html' : '/privacidad.html'}>{t('privacidad')}</a>
             </div>
           </>
         )}

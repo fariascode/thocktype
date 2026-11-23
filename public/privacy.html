@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy · ThockType</title>
+  <meta name="description" content="What data ThockType keeps and why." />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="alternate" hreflang="es" href="https://thocktype.app/privacidad.html" />
+  <link rel="alternate" hreflang="en" href="https://thocktype.app/privacy.html" />
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #101113; color: #b6b7ba; font: 16px/1.65 Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    main { max-width: 680px; margin: 0 auto; padding: 56px 20px 80px; }
+    a { color: #ededed; }
+    h1 { color: #ededed; font-size: 30px; letter-spacing: -.03em; margin: 0 0 4px; }
+    h1 span { color: #696b70; font-weight: 400; }
+    h2 { color: #ededed; font-size: 18px; margin: 36px 0 8px; }
+    small { color: #696b70; }
+    ul { padding-left: 20px; }
+    li { margin: 4px 0; }
+    .top { display: flex; justify-content: space-between; margin-bottom: 32px; }
+    .top a { text-decoration: none; color: #696b70; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top"><a href="/">← back to ThockType</a><a href="/privacidad.html" hreflang="es">Español</a></div>
+    <h1>thock<span>type</span> · privacy</h1>
+    <small>Last updated: November 23, 2026</small>
+
+    <h2>Without an account</h2>
+    <p>Everything stays in your browser: your tests, settings, tags and key stats. Nothing is sent to our servers.</p>
+
+    <h2>With an account</h2>
+    <p>If you sign in, we keep in our database (Supabase) what's needed to sync your devices:</p>
+    <ul>
+      <li><b>Your email</b>, to identify you and send you sign-in, confirmation or password links.</li>
+      <li><b>If you sign in with Google:</b> your Google name, email and profile photo. We don't access anything else in your Google account.</li>
+      <li><b>Your results:</b> speed, accuracy, mode, language, tags and date of each test, and your daily challenge attempts.</li>
+      <li><b>Key stats:</b> how often you hit or missed each key, for the coach.</li>
+      <li><b>Your settings and setting presets</b>, and your <b>interface language</b> (so emails reach you in your language).</li>
+      <li><b>Your profile</b>, if you create one: username, name, photo and bio.</li>
+    </ul>
+
+    <h2>What other people see</h2>
+    <p>If your profile is <b>public</b>, anyone can see your username, name, photo, bio, results, and your place in the daily challenge ranking and the global leaderboard. If you make it <b>private</b>, nobody else sees your results and you don't appear on leaderboards. Your email is never shown.</p>
+    <p>If you send a <b>duel</b>, the link carries your result, a recording of your keystrokes and your profile name: whoever opens it can see them.</p>
+
+    <h2>Services we use</h2>
+    <ul>
+      <li><b>Supabase</b>: accounts and database. <b>Vercel</b>: app hosting. <b>Resend</b>: sending account emails.</li>
+      <li><b>Wikipedia</b>: in wiki mode, your browser asks Wikipedia directly for a random article.</li>
+      <li><b>Google Fonts</b>: optional fonts, except Cascadia Code, are downloaded from Google only if you pick them.</li>
+    </ul>
+
+    <h2>What we don't do</h2>
+    <ul>
+      <li>We don't sell or share your data.</li>
+      <li>No ads, no trackers.</li>
+    </ul>
+
+    <h2>Deleting your data</h2>
+    <p>You can delete local data by clearing this site's data in your browser. To delete your account and everything stored in the cloud, email <a href="mailto:hola@thocktype.app">hola@thocktype.app</a> or ask at <a href="https://github.com/fariascode/thocktype/issues">github.com/fariascode/thocktype/issues</a> and we'll remove it.</p>
+  </main>
+</body>
+</html>
