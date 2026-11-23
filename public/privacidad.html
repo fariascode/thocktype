@@ -6,6 +6,8 @@
   <title>Privacidad · ThockType</title>
   <meta name="description" content="Qué datos guarda ThockType y para qué." />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="alternate" hreflang="es" href="https://thocktype.app/privacidad.html" />
+  <link rel="alternate" hreflang="en" href="https://thocktype.app/privacy.html" />
   <style>
     :root { color-scheme: dark; }
     body { margin: 0; background: #101113; color: #b6b7ba; font: 16px/1.65 Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; }
@@ -17,40 +19,49 @@
     small { color: #696b70; }
     ul { padding-left: 20px; }
     li { margin: 4px 0; }
-    .back { display: inline-block; margin-bottom: 32px; text-decoration: none; color: #696b70; }
+    .top { display: flex; justify-content: space-between; margin-bottom: 32px; }
+    .top a { text-decoration: none; color: #696b70; }
   </style>
 </head>
 <body>
   <main>
-    <a class="back" href="/">← volver a ThockType</a>
+    <div class="top"><a href="/">← volver a ThockType</a><a href="/privacy.html" hreflang="en">English</a></div>
     <h1>thock<span>type</span> · privacidad</h1>
-    <small>Última actualización: 21 de noviembre de 2026</small>
+    <small>Última actualización: 23 de noviembre de 2026</small>
 
     <h2>Sin cuenta</h2>
-    <p>Todo se guarda solo en tu navegador: tus tests, ajustes y estadísticas de teclas. No se envía nada a ningún servidor.</p>
+    <p>Todo se guarda solo en tu navegador: tus tests, ajustes, etiquetas y estadísticas de teclas. No se envía nada a nuestros servidores.</p>
 
     <h2>Con cuenta</h2>
     <p>Si inicias sesión, guardamos en nuestra base de datos (Supabase) lo necesario para sincronizar tus dispositivos:</p>
     <ul>
-      <li><b>Tu correo</b>, para identificarte y enviarte enlaces de acceso o de cambio de contraseña.</li>
+      <li><b>Tu correo</b>, para identificarte y enviarte enlaces de acceso, confirmación o cambio de contraseña.</li>
       <li><b>Si entras con Google:</b> tu nombre, correo y foto de perfil de Google. No accedemos a nada más de tu cuenta de Google.</li>
-      <li><b>Tus resultados:</b> velocidad, precisión, modo, idioma y fecha de cada test, y tus intentos del reto diario.</li>
+      <li><b>Tus resultados:</b> velocidad, precisión, modo, idioma, etiquetas y fecha de cada test, y tus intentos del reto diario.</li>
       <li><b>Estadísticas de teclas:</b> cuántas veces acertaste o fallaste cada tecla, para el coach.</li>
+      <li><b>Tus ajustes y perfiles de ajustes</b>, y el <b>idioma de la interfaz</b> (para enviarte los correos en tu idioma).</li>
       <li><b>Tu perfil</b>, si lo creas: usuario, nombre, foto y bio.</li>
     </ul>
 
     <h2>Qué ven otras personas</h2>
-    <p>Si tu perfil es <b>público</b>, cualquiera puede ver tu usuario, nombre, foto, bio, resultados y tu posición en el ranking del reto diario. Si lo haces <b>privado</b>, nadie más ve tus resultados. Tu correo nunca se muestra.</p>
+    <p>Si tu perfil es <b>público</b>, cualquiera puede ver tu usuario, nombre, foto, bio, resultados, y tu posición en el ranking del reto diario y en el ranking global. Si lo haces <b>privado</b>, nadie más ve tus resultados ni apareces en los rankings. Tu correo nunca se muestra.</p>
+    <p>Si mandas un <b>duelo</b>, el enlace lleva tu resultado, la grabación de tus teclas y tu nombre de perfil: lo ve quien lo abra.</p>
+
+    <h2>Servicios que usamos</h2>
+    <ul>
+      <li><b>Supabase</b>: cuentas y base de datos. <b>Vercel</b>: alojamiento de la app. <b>Resend</b>: envío de los correos de la cuenta.</li>
+      <li><b>Wikipedia</b>: en el modo wiki, tu navegador pide un artículo aleatorio directamente a Wikipedia.</li>
+      <li><b>Google Fonts</b>: las fuentes opcionales, menos Cascadia Code, se descargan de Google solo si las eliges.</li>
+    </ul>
 
     <h2>Lo que no hacemos</h2>
     <ul>
       <li>No vendemos ni compartimos tus datos.</li>
       <li>No hay anuncios ni rastreadores.</li>
-      <li>Las fuentes de letra opcionales, menos Cascadia Code, se descargan de Google Fonts solo si las eliges.</li>
     </ul>
 
     <h2>Borrar tus datos</h2>
-    <p>Puedes borrar lo local limpiando los datos del sitio en tu navegador. Para borrar tu cuenta y todo lo guardado en la nube, pídelo en <a href="https://github.com/fariascode/thocktype/issues">github.com/fariascode/thocktype/issues</a> y lo eliminamos.</p>
+    <p>Puedes borrar lo local limpiando los datos del sitio en tu navegador. Para borrar tu cuenta y todo lo guardado en la nube, escríbenos a <a href="mailto:hola@thocktype.app">hola@thocktype.app</a> o pídelo en <a href="https://github.com/fariascode/thocktype/issues">github.com/fariascode/thocktype/issues</a> y lo eliminamos.</p>
   </main>
 </body>
 </html>
