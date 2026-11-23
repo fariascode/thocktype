@@ -5,6 +5,8 @@
 **Test de mecanografía minimalista, monocromático y en español.**
 Escribe rápido, escribe limpio, y entiende qué te frena.
 
+[English](README.md) · **Español**
+
 ### [→ Pruébala en thocktype.app](https://thocktype.app)
 
 ![ThockType: pantalla principal](docs/inicio.png)
@@ -121,7 +123,7 @@ Requiere Node 22.18 o superior: las pruebas corren los `.ts` directamente con No
 ```bash
 npm install
 npm run dev     # http://localhost:5280
-npm run check   # pruebas: cálculos, sincronización, niveles, rankings y contraste de los 22 temas
+npm run check   # pruebas: cálculos, sincronización, niveles, rankings, traducciones y contraste de los 22 temas
 npm run lint
 npm run build
 ```
@@ -138,9 +140,11 @@ src/
   level.ts           xp y niveles
   sync.ts            sincronización local ↔ nube
   appearance.ts      temas, fuentes y opciones visuales
+  i18n.ts            idioma de la interfaz (los textos en inglés están en src/i18n/en.ts)
   SettingsPanel.tsx  ajustes en pestañas
   *.test.ts          pruebas (npm run check)
 supabase/schema.sql  tablas, políticas de seguridad y almacenamiento de fotos
+supabase/emails/     plantillas de los correos de la cuenta (español e inglés)
 public/              íconos, manifest, service worker e imagen para compartir
 ```
 
@@ -162,4 +166,4 @@ public/              íconos, manifest, service worker e imagen para compartir
 - **Sin cuenta, nada sale de tu navegador:** tus tests, ajustes y estadísticas se guardan solo en tu navegador.
 - **Con cuenta, se suben tus tests, tus estadísticas de teclas y tus ajustes** para sincronizar tus dispositivos. Tus ajustes solo los puedes leer tú.
 - **Tu perfil puede ser privado:** en ese caso nadie más ve tus resultados.
-- No hay anuncios ni rastreadores. Las fuentes que no sean Cascadia Code se descargan de Google Fonts solo si las eliges.
+- No hay anuncios ni rastreadores. Las fuentes que no sean Cascadia Code se descargan de Google Fonts solo si las eliges. Detalles: [política de privacidad](https://thocktype.app/privacidad.html).
