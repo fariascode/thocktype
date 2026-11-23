@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.2",
+    "animejs": "^4.5.0",
     "chart.js": "^4.4.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
