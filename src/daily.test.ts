@@ -18,5 +18,5 @@ const e = { wpm: 80, acc: 97, grid: '■■' }
 const now = new Date(2026, 10, 19, 12)
 assert.equal(dailyStreak({ '2026-11-19|es': e, '2026-11-18|en': e, '2026-11-16|es': e }, now), 2)
 assert.equal(dailyStreak({}, now), 0)
-assert.equal(shareText(1, 'es', e), 'ThockType · reto #1 (es)\n80 wpm · 97%\n■■\nhttps://thocktype-alpha.vercel.app')
+assert.equal(shareText(1, 'es', e), 'ThockType · reto #1 (es)\n80 wpm · 97%\n■■\nhttps://thocktype.app')
 console.log('daily ok')
