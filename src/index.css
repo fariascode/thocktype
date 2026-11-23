@@ -451,6 +451,7 @@ button.on { animation: on-pop 260ms var(--spring); }
 /* result screen: sections arrive in sequence */
 .result { animation: none; }
 .result > * { animation: enter 420ms var(--ease) backwards; }
+.result-view > * { animation: none; } /* choreographed by anime.js (fx.ts) */
 .result > :nth-child(2) { animation-delay: 50ms; } .result > :nth-child(3) { animation-delay: 100ms; }
 .result > :nth-child(4) { animation-delay: 150ms; } .result > :nth-child(5) { animation-delay: 200ms; }
 .result > :nth-child(6) { animation-delay: 250ms; } .result > :nth-child(n+7) { animation-delay: 300ms; }
@@ -462,7 +463,6 @@ button.on { animation: on-pop 260ms var(--spring); }
   padding: 16px 20px; border-radius: var(--r-lg); border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
   background: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--accent) 16%, var(--surface)), var(--surface) 70%);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent), 0 10px 40px color-mix(in srgb, var(--accent) 18%, transparent);
-  animation: pr-in 620ms var(--spring) backwards;
 }
 @keyframes pr-in { from { opacity: 0; transform: translateY(10px) scale(.94); } }
 /* a light sweep crosses the banner once */
@@ -475,21 +475,15 @@ button.on { animation: on-pop 260ms var(--spring); }
 .pr-text { display: flex; flex-direction: column; gap: 2px; position: relative; }
 .pr-text small { color: var(--accent); letter-spacing: .08em; text-transform: uppercase; font-size: 11px; font-weight: 600; }
 .pr-text b { font-family: var(--mono); font-size: 34px; font-weight: 600; line-height: 1.1; color: var(--text-1); font-variant-numeric: tabular-nums; }
-.pr-text b span { font-size: 15px; color: var(--text-2); font-weight: 500; }
+.pr-text b .unit { font-size: 15px; color: var(--text-2); font-weight: 500; }
 .pr-mode { font-size: 13px; color: var(--text-2); }
 /* burst: small accent dots fly out from a medal-like core */
-.pr-burst { position: relative; width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--accent);
-  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 60%, transparent); animation: core 900ms var(--spring) both; }
-.pr-burst::before { content: '★'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--bg); font-size: 20px; }
-@keyframes core { 0% { transform: scale(0) rotate(-90deg); } 60% { transform: scale(1.12) rotate(8deg); } }
-.pr-burst i {
-  position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%;
-  background: var(--accent); opacity: 0; animation: fly 900ms calc(180ms + var(--d) * 60ms) var(--ease) forwards;
-}
-@keyframes fly {
-  0% { opacity: 1; transform: rotate(var(--a)) translateX(10px) scale(1); }
-  100% { opacity: 0; transform: rotate(var(--a)) translateX(calc(46px + var(--d) * 14px)) scale(.4); }
-}
+.pr-burst { position: relative; width: 44px; height: 44px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 35%, transparent); }
+.pr-star { width: 26px; height: 26px; overflow: visible; }
+.pr-star path { fill: var(--accent); stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; }
+.pr-burst .spark { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: var(--accent); pointer-events: none; }
+.pr-text b .ch { display: inline-block; }
 .big.is-pb b { color: var(--accent); text-shadow: 0 0 28px color-mix(in srgb, var(--accent) 35%, transparent); }
 
 /* ── Account level ────────────────────────────────────────────────────── */

@@ -17,6 +17,7 @@ import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
 import { levelOf, titleFor, totalXp, xpFor } from './level'
 import { reducedMotion, useCountUp, useLayoutMotion } from './motion'
+import { preloadFx, resultIntro } from './fx'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
 import Keymap from './Keymap'
@@ -475,7 +476,7 @@ export default function App() {
       const lineBreak = e.key === 'Enter' && test.breaks?.[i] !== undefined // code blocks: Enter ends the line
       if ((e.key.length !== 1 && !lineBreak) || e.ctrlKey) return
       e.preventDefault()
-      if (phase === 'idle') { c.start = performance.now(); setPhase('running') }
+      if (phase === 'idle') { c.start = performance.now(); setPhase('running'); preloadFx() } // animations ready by the result screen
       if (e.key === ' ' || lineBreak) {
         if (cur === '') return
         if (rules.brake && cur !== target) { if (s.sound) thock(true, s.soundKind, s.volume); return } // must finish the word correctly first
@@ -943,6 +944,8 @@ function CustomEditor({ initial, onUse, onCancel }: { initial: string; onUse: (t
 function ResultView({ r, theme, myName, onNext, onDrill, onDrillWords, rank }: {
   r: FullResult; myName?: string; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void; onDrillWords: (words: string[]) => void; rank: RankProps
 }) {
+  const view = useRef<HTMLElement>(null)
+  useLayoutEffect(() => { if (view.current) resultIntro(view.current) }, [r])
   const labels = useMemo(() => r.samples.map((_, i) => i + 1), [r])
   const series = useMemo(() => [
     { label: 'wpm', data: r.samples.map(x => x.wpm) },
@@ -954,7 +957,7 @@ function ResultView({ r, theme, myName, onNext, onDrill, onDrillWords, rank }: {
   const detail = (mode === 'time' ? `${r.duration}s` : mode === 'words' ? `${r.value} palabras · ${r.duration}s` : `${r.duration}s`)
     + (r.pool ? ` · top ${r.pool}` : '') + (r.plain ? ' · sin acentos' : '')
   return (
-    <section className="result result-view">
+    <section className="result result-view" ref={view}>
       {r.unsaved && r.failed === undefined && (
         <div className="failed" role="status"><b>práctica libre</b> · este test no se guardó en tu historial, récords ni nivel.</div>
       )}
