@@ -1,0 +1,6 @@
+Subject (asunto) de cada plantilla en Supabase → Authentication → Emails → Templates:
+
+confirmar-cuenta: {{ if and .Data.lang (eq .Data.lang "es") }}Confirma tu cuenta de ThockType{{ else }}Confirm your ThockType account{{ end }}
+enlace-magico: {{ if and .Data.lang (eq .Data.lang "es") }}Tu enlace para entrar a ThockType{{ else }}Your ThockType sign-in link{{ end }}
+cambiar-contrasena: {{ if and .Data.lang (eq .Data.lang "es") }}Cambia tu contraseña de ThockType{{ else }}Reset your ThockType password{{ end }}
+cambiar-correo: {{ if and .Data.lang (eq .Data.lang "es") }}Confirma tu nuevo correo en ThockType{{ else }}Confirm your new ThockType email{{ end }}
