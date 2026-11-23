@@ -2,6 +2,7 @@ import es from './data/es.ts'
 import en from './data/en.ts'
 import code from './data/code.ts'
 import quotes from './data/quotes.ts'
+import quotesExtra from './data/quotesExtra.ts'
 import codeLangs from './data/codeLangs.ts'
 import codeQuotes from './data/codeQuotes.ts'
 import codeBlocks from './data/codeBlocks.ts'
@@ -46,8 +47,7 @@ export function randomQuote(lang: Lang) {
     const text = pick(codeQuotes[lang])
     return { words: text.split(' '), by: LANGS[lang] }
   }
-  if (lang in EXTRA_LANGS) return { words: randomWords(lang, 30), by: `${LANGS[lang]} · palabras frecuentes` } // no quotes yet in these
-  const pool = quotes[isCode(lang) ? 'code' : (lang as 'es' | 'en')]
+  const pool = lang in EXTRA_LANGS ? quotesExtra[lang as keyof typeof quotesExtra] : quotes[isCode(lang) ? 'code' : (lang as 'es' | 'en')]
   const q = pool[Math.floor(Math.random() * pool.length)]
   return { words: q.text.split(' '), by: q.by }
 }
