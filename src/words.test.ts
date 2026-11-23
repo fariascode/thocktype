@@ -67,3 +67,18 @@ for (const [lang, list] of Object.entries(quotesExtra)) {
   assert.ok(list.some(x => x.text.split(' ').join(' ') === q.words.join(' ')), `${lang} cita mode draws from its quotes`)
 }
 console.log('extra quotes ok')
+
+import codeBlocks from './data/codeBlocks.ts'
+import codeBlocks2 from './data/codeBlocks2.ts'
+import { parseBlock as pb } from './codeBlock.ts'
+for (const [lang, { code }] of Object.entries(codeBlocks)) {
+  const all = [...code, ...(codeBlocks2[lang] ?? [])]
+  assert.ok(all.length >= 6, `${lang} has at least 6 blocks`)
+  for (const src of all) {
+    const b = pb(src)
+    assert.ok(b.words.length >= 5 && !b.words.some(w => /\s/.test(w)), `${lang}: block parses into words`)
+    assert.ok(src.split('\n').every(l => l.replace(/\t/g, '    ').length <= 90), `${lang}: lines fit the screen`)
+    assert.ok(!src.includes('’') && !src.includes('“'), `${lang}: keyboard quotes only`)
+  }
+}
+console.log('code blocks ok')
