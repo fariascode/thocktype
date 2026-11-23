@@ -1,4 +1,4 @@
-import { t } from './i18n'
+import { t, uiLang } from './i18n'
 import { useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
@@ -32,7 +32,7 @@ export default function AuthModal({ view, session, me, onView, onClose, onProfil
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
-  const redirect = { emailRedirectTo: location.origin }
+  const redirect = { emailRedirectTo: location.origin, data: { lang: uiLang() } } // emails pick their language from this
 
   const go = (v: AuthView) => { setMsg(''); onView(v) }
   const act = async (fn: () => Promise<{ error: { message: string } | null }>, ok: string, close = false) => {

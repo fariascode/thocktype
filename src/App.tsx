@@ -264,6 +264,10 @@ export default function App() {
 
   setUiLang(s.uiLang === 'auto' ? detectUiLang() : s.uiLang) // before any t() below renders
   const zen = s.mode === 'zen'
+  const ui = s.uiLang === 'auto' ? detectUiLang() : s.uiLang
+  useEffect(() => { // emails (confirm, magic link, password) are sent in the language saved on the account
+    if (session && session.user.user_metadata?.lang !== ui) supabase.auth.updateUser({ data: { lang: ui } }).catch(() => {})
+  }, [session, ui])
   const dictation = s.mode === 'dictation'
   const spokenLang = textLang(s) // language of wiki articles and dictation
 
