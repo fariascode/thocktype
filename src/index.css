@@ -648,6 +648,18 @@ button.on { animation: on-pop 260ms var(--spring); }
 :root[data-tape='on'] .words.block { height: calc(1.7em * var(--lines, 3)); }
 :root[data-tape='on'] .words.block .inner { flex-wrap: wrap; width: auto; }
 
+/* first visit: welcome strip and sign-up nudge */
+.welcome { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-bottom: 18px; padding: 10px 12px 10px 16px;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: color-mix(in srgb, var(--surface) 80%, transparent);
+  font-size: 13px; color: var(--text-2); animation: enter 420ms var(--ease) backwards; }
+.welcome b { color: var(--text-1); font-weight: 600; }
+.welcome kbd { font-size: 11px; }
+.welcome button { margin-left: auto; min-height: 26px; padding: 2px 8px; }
+.signup-nudge { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 14px; border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.signup-nudge > div { flex: 1 1 260px; display: flex; flex-direction: column; gap: 2px; }
+.signup-nudge b { color: var(--text-1); font-size: 15px; }
+.signup-nudge span { color: var(--text-2); font-size: 13px; }
+
 /* theme switch: the old page fades into the new one */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
 

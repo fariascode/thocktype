@@ -85,6 +85,10 @@ const DEFAULTS: Settings = {
   highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, tags: [], activeTags: [], codeLang: 'code', timeWarn: false, presets: [], v: 2,
 }
 const SKEY = 'thocktype.settings'
+// one-time hints, remembered per device
+const seenHint = (k: string) => { try { return !!localStorage.getItem('thocktype.hint.' + k) } catch { return true } }
+const markHint = (k: string) => { try { localStorage.setItem('thocktype.hint.' + k, '1') } catch { /* storage blocked */ } }
+
 // fills in options added after the copy was saved (local or from the cloud)
 function normalize(saved: Partial<Settings> & { v?: number }): Settings {
   // v1 saved JetBrains Mono as the default, not as a choice: move those to the new signature font
@@ -206,6 +210,10 @@ export default function App() {
   const [palette, setPalette] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [tagsOpen, setTagsOpen] = useState(false)
+  // first visit: a welcome strip until the first finished test; a nudge to sign up on the first results
+  const [welcome, setWelcome] = useState(() => !seenHint('welcome') && loadHistory().length === 0)
+  const [nudge, setNudge] = useState(() => !seenHint('signup'))
+  const closeWelcome = () => { markHint('welcome'); setWelcome(false) }
   const headerRef = useRef<HTMLElement>(null)
   const logo = useRef<HTMLHeadingElement>(null)
   useLayoutEffect(() => { if (logo.current) logoIntro(logo.current) }, [])
@@ -401,6 +409,7 @@ export default function App() {
     }
     saveResult(r)
     setHistory(h => [...h, r])
+    if (welcome) { markHint('welcome'); setWelcome(false) } // you've got the hang of it
     const merged = mergeKeys(keyStats, { hits, errs })
     saveKeys(merged)
     setKeyStats(merged)
@@ -418,7 +427,7 @@ export default function App() {
     if (s.sound && r.wpm > pb) chime()
     setResult({ ...r, vs: duel ? { name: duel.name, wpm: duel.wpm, acc: duel.acc } : undefined, log, targets: zen ? [] : words, samples, chars: charStats(targets, done), hits, errs, prevPb: pb, by: test.by, bigrams, daily: dailyInfo, xpBefore: totalXp(history) })
     setPhase('done')
-  }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync, history, duel])
+  }, [s, pb, words, zen, test.by, keyStats, daily, uid, applySync, history, duel, welcome])
 
   // 1s tick: sample speed, count the clock
   useEffect(() => {
@@ -728,7 +737,9 @@ export default function App() {
           </div>
           <History h={history} theme={s.theme} keys={keyStats} bigrams={loadBigrams()} onDrill={drill => restart({ mode: 'practice', drill })} />
         </> : phase === 'done' && result ? (
-        <ResultView r={result} theme={s.theme} myName={me?.display_name || me?.username || undefined} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} rank={rank}
+        <ResultView r={result} theme={s.theme}
+          signup={!session && nudge && history.length <= 5 ? { open: () => setAuth('signup'), dismiss: () => { markHint('signup'); setNudge(false) } } : undefined}
+          myName={me?.display_name || me?.username || undefined} onNext={() => restart()} onDrill={drill => restart({ mode: 'practice', drill })} rank={rank}
           onDrillWords={list => { // practice test made only of your slowest words, shuffled
             restart({ mode: 'practice', drill: [] })
             setTest({ words: Array.from({ length: PRACTICE_WORDS }, () => list[Math.floor(Math.random() * list.length)]) })
@@ -737,6 +748,14 @@ export default function App() {
         <CustomEditor initial={s.custom} onUse={text => restart({ mode: 'custom', custom: text })} onCancel={() => setEditing(false)} />
       ) : (
         <>
+          {welcome && phase !== 'running' && (
+            <div className="welcome" role="note">
+              <b>bienvenido a thocktype</b>
+              <span>{COARSE ? 'toca el texto y empieza a escribir' : 'empieza a escribir: el tiempo corre con la primera tecla'}</span>
+              {!COARSE && <span><kbd>tab</kbd> reinicia · <kbd>ctrl k</kbd> abre todos los comandos · <kbd>esc</kbd> vuelve</span>}
+              <button onClick={closeWelcome} aria-label="cerrar bienvenida">✕</button>
+            </div>
+          )}
           <div className={`timer ${s.mode === 'time' && phase === 'running' && s.duration - clock <= 5 ? 'warn' : ''}`}>
             {phase === 'running'
               ? <>
@@ -884,7 +903,7 @@ function StatusBar({ s, set, restart, edit, weak, today, sayChunk }: {
             {BASE_LANGS.map(l => opt(l === s.lang, LANGS[l], () => restart({ lang: l })))}
             <select className={`code-select more-langs ${s.lang in EXTRA_LANGS ? 'on' : ''}`} value={s.lang in EXTRA_LANGS ? s.lang : ''} aria-label="más idiomas"
               onChange={e => e.target.value && restart({ lang: e.target.value as Lang })}>
-              <option value="" disabled>más ▾</option>
+              <option value="" disabled>más</option>
               {Object.entries(EXTRA_LANGS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
             </select>
           </span>
@@ -947,8 +966,8 @@ function CustomEditor({ initial, onUse, onCancel }: { initial: string; onUse: (t
   )
 }
 
-function ResultView({ r, theme, myName, onNext, onDrill, onDrillWords, rank }: {
-  r: FullResult; myName?: string; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void; onDrillWords: (words: string[]) => void; rank: RankProps
+function ResultView({ r, theme, myName, signup, onNext, onDrill, onDrillWords, rank }: {
+  r: FullResult; myName?: string; signup?: { open: () => void; dismiss: () => void }; theme: string; onNext: () => void; onDrill: (pairs: string[]) => void; onDrillWords: (words: string[]) => void; rank: RankProps
 }) {
   const view = useRef<HTMLElement>(null)
   useLayoutEffect(() => { if (view.current) resultIntro(view.current) }, [r])
@@ -985,6 +1004,13 @@ function ResultView({ r, theme, myName, onNext, onDrill, onDrillWords, rank }: {
         <div><small>modo</small>{MODES[mode]} · {LANGS[r.lang as Lang]} · {detail}{r.punct ? ' @' : ''}{r.numbers ? ' #' : ''}{r.rules?.length ? ` · ${r.rules.map(k => RULES[k as keyof Rules][0]).join(', ')}` : ''}{r.tags?.length ? ` · ${r.tags.map(t => '#' + t).join(' ')}` : ''}</div>
       </div>
       {r.xpBefore !== undefined && <XpCard before={r.xpBefore} gained={xpFor(r)} />}
+      {signup && (
+        <div className="card signup-nudge">
+          <div><b>guarda tu progreso</b><span>crea una cuenta gratis: tus tests se sincronizan entre dispositivos y entras al ranking</span></div>
+          <button className="on" onClick={signup.open}>crear cuenta</button>
+          <button onClick={signup.dismiss}>ahora no</button>
+        </div>
+      )}
       {r.vs && (
         <div className={`card duel-result ${r.wpm > r.vs.wpm ? 'won' : ''}`} role="status">
           <small>⚔ duelo contra {r.vs.name ?? 'tu rival'}</small>
