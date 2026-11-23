@@ -44,3 +44,25 @@ export function prCelebrate(root: HTMLElement) {
     }
   })
 }
+
+// logo intro, once per session: "thocktype" gets typed letter by letter, each key with a small press, then a caret blinks out
+export function logoIntro(logo: HTMLElement) {
+  let seen = false
+  try { seen = !!sessionStorage.getItem('thocktype.intro'); sessionStorage.setItem('thocktype.intro', '1') } catch { /* storage blocked */ }
+  if (seen) return
+  const letters = [...logo.querySelectorAll<HTMLElement>('.lg')]
+  const caret = logo.querySelector<HTMLElement>('.lg-caret')
+  return run(letters, ({ createTimeline, stagger, spring }) => {
+    const tl = createTimeline()
+    tl.add(letters, { opacity: [0, 1], translateY: ['-0.18em', '0em'], scale: [0.86, 1], delay: stagger(55), ease: spring({ stiffness: 260, damping: 14 }) })
+    if (caret) tl.add(caret, { opacity: [0, 1, 0, 1, 0], duration: 900, ease: 'steps(4)' }, '-=150')
+  })
+}
+
+// hover: a soft wave runs through the letters
+export function logoWave(logo: HTMLElement) {
+  if (reducedMotion()) return
+  preloadFx().then(({ animate, stagger }) => animate(logo.querySelectorAll('.lg'), {
+    translateY: [0, '-0.12em', 0], delay: stagger(30), duration: 420, ease: 'inOutSine',
+  })).catch(() => {})
+}

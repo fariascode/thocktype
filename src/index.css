@@ -239,8 +239,12 @@ button:disabled { opacity: .4; cursor: default; transform: none; }
 /* ── Header ───────────────────────────────────────────────────────────── */
 header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 h1 { font-size: 28px; font-weight: 700; letter-spacing: -.04em; cursor: pointer; user-select: none; }
-h1 span { color: var(--text-3); font-weight: 400; transition: color var(--t) var(--ease); }
-h1:hover span { color: var(--text-2); }
+h1 { display: inline-flex; align-items: baseline; position: relative; }
+h1 .lg { display: inline-block; }
+h1 .lg-type { color: var(--text-3); font-weight: 400; transition: color var(--t) var(--ease); }
+h1:hover .lg-type { color: var(--text-2); }
+/* the caret that blinks out after the intro */
+h1 .lg-caret { width: 2px; height: .9em; margin-left: 3px; align-self: center; border-radius: 2px; background: var(--accent); opacity: 0; }
 nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 /* header: [logo + sections]  ……  [your status · as plain text] | [three identical round actions] */
 .hdr-left, .hdr-right { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }

@@ -108,7 +108,7 @@ Ajustes ⚙ en siete pestañas, con **buscador** (escribe "cinta" o "pitido" y t
 
 - **Interfaz:** [React 19](https://react.dev), TypeScript y [Vite](https://vite.dev).
 - **Gráficas:** [Chart.js](https://www.chartjs.org), cargado solo cuando hace falta.
-- **Animaciones coreografiadas:** [anime.js](https://animejs.com) (resultado y récord personal), también cargada solo al empezar un test.
+- **Animaciones coreografiadas:** [anime.js](https://animejs.com) (resultado, récord personal y logo que se teclea al abrir), cargada aparte para no pesar en la carga inicial.
 - **Cuentas, datos y fotos:** [Supabase](https://supabase.com) (Postgres con Row Level Security, Auth y Storage).
 - **Sin librerías de UI:** CSS propio con variables por tema. Sonidos sintetizados con Web Audio y un service worker hecho a mano.
 - **Publicación:** [Vercel](https://vercel.com). Cada push a `main` se publica solo.
