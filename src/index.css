@@ -75,6 +75,8 @@
 :root[data-typed-effect='hide'] .word.done { opacity: 0; transition: opacity 400ms var(--ease); }
 /* tape: a single line that slides left; the caret stays at the chosen margin */
 :root[data-tape='on'] .words { height: 1.7em; }
+/* edges fade out, so the eye stays on the caret instead of on hard cut-offs */
+:root[data-tape='on'] .words:not(.block) { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 82%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 82%, transparent); }
 :root[data-tape='on'] .inner { flex-wrap: nowrap; width: max-content; }
 /* on-screen keyboard during the test */
 .keymap { display: flex; flex-direction: column; gap: 5px; align-items: center; margin-top: 18px; }

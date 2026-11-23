@@ -572,7 +572,7 @@ export default function App() {
     const still = reducedMotion()
     if (s.tape === 'on' && !test.breaks) { // tape: one line sliding left (code blocks keep their lines)
       const lead = (box.parentElement!.clientWidth * Number(s.tapeMargin)) / 100
-      g.tix = Math.min(0, lead - p.x); g.tiy = 0
+      g.tix = lead - p.x; g.tiy = 0 // the caret sits at the margin from the first letter, so the eyes never move
       // same speed for text and caret, so the caret stays perfectly still while the line glides under it
       g.tauC = g.tauI = still || !s.smoothScroll ? 0 : 70
     } else {
