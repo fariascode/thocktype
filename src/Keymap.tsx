@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // On-screen keyboard during the test: "siguiente" lights the key to press next, "reacción" flashes what you pressed
 const ROWS = ['qwertyuiop', 'asdfghjklñ', 'zxcvbnm,.']
 
@@ -16,7 +17,7 @@ export default function Keymap({ mode, next, pressed }: Props) {
           })}
         </div>
       ))}
-      <div className="heat-row"><span className={`key space ${mode === 'next' && want === ' ' ? 'want' : ''}`}>espacio</span></div>
+      <div className="heat-row"><span className={`key space ${mode === 'next' && want === ' ' ? 'want' : ''}`}>{t('espacio')}</span></div>
     </div>
   )
 }

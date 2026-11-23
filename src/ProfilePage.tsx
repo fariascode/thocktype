@@ -1,3 +1,4 @@
+import { t, uiLang } from './i18n'
 import { useEffect, useState } from 'react'
 import { loadPublicProfile, type PublicProfile } from './profile'
 import { weeklyTop } from './leaderboard'
@@ -25,12 +26,12 @@ export default function ProfilePage({ username, theme, isMe }: Props) {
     weeklyTop(username).then(b => alive && setBadges(b)).catch(() => {})
     return () => { alive = false }
   }, [username])
-  if (data === 'loading') return <p className="hint">cargando perfil…</p>
-  if (data === 'error') return <p className="hint">no se pudo cargar el perfil. Revisa tu conexión.</p>
+  if (data === 'loading') return <p className="hint">{t('cargando perfil…')}</p>
+  if (data === 'error') return <p className="hint">{t('no se pudo cargar el perfil. Revisa tu conexión.')}</p>
   if (!data) return <p className="hint">@{username} no existe o su perfil es privado.</p>
 
   const { profile: p, history, keys, bigrams } = data
-  const joined = new Date(p.created_at).toLocaleDateString('es', { month: 'long', year: 'numeric' })
+  const joined = new Date(p.created_at).toLocaleDateString(uiLang(), { month: 'long', year: 'numeric' })
   const url = `${APP_URL}/u/${p.username}`
   return (
     <section className="result profile">
@@ -40,20 +41,20 @@ export default function ProfilePage({ username, theme, isMe }: Props) {
           : <span className="avatar-xl avatar">{(p.username ?? '?')[0]}</span>}
         <div className="profile-id">
           <h2>{p.display_name || `@${p.username}`}</h2>
-          <p className="profile-handle">@{p.username} · se unió en {joined}{isMe && !p.is_public && ' · privado: solo tú lo ves'}</p>
+          <p className="profile-handle">@{p.username} · {t('se unió en {date}', { date: joined })}{isMe && !p.is_public && ` · ${t('privado: solo tú lo ves')}`}</p>
           {p.bio && <p className="profile-bio">{p.bio}</p>}
           {badges.length > 0 && (
             <div className="badges">
               {badges.map(b => (
-                <span key={b.lang + b.value} className="badge" title="top 10 de la semana en el ranking">
-                  🏆 #{b.place} · {b.value} s {({ es: 'español', en: 'english', code: 'código' } as Record<string, string>)[b.lang]} · esta semana
+                <span key={b.lang + b.value} className="badge" title={t('top 10 de la semana en el ranking')}>
+                  🏆 #{b.place} · {b.value} s {t(({ es: 'español', en: 'english', code: 'código' } as Record<string, string>)[b.lang])} · {t('esta semana')}
                 </span>
               ))}
             </div>
           )}
         </div>
         <button onClick={async () => { setCopied(await copyText(url)); setTimeout(() => setCopied(false), 2000) }}>
-          {copied ? 'enlace copiado' : '⧉ copiar enlace'}
+          {copied ? t('enlace copiado') : `⧉ ${t('copiar enlace')}`}
         </button>
       </div>
       <History h={history} theme={theme} keys={keys} bigrams={bigrams} />

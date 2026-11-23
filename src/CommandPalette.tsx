@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useEffect, useRef, useState } from 'react'
 import { fuzzyFilter } from './fuzzy'
 
@@ -28,7 +29,7 @@ export default function CommandPalette({ commands, onClose }: Props) {
   return (
     <div className="palette-backdrop" onMouseDown={onClose}>
       <div className="palette" role="dialog" aria-label="comandos" onMouseDown={e => e.stopPropagation()}>
-        <input autoFocus value={q} placeholder="busca un comando…" aria-label="buscar comando"
+        <input autoFocus value={q} placeholder={t('busca un comando…')} aria-label={t('buscar comando')}
           role="combobox" aria-expanded="true" aria-controls="palette-list" aria-activedescendant={shown[active] ? `cmd-${shown[active].id}` : undefined}
           onChange={e => { setQ(e.target.value); setSel(0) }} onKeyDown={onKey} />
         <ul id="palette-list" role="listbox" ref={list}>
@@ -38,9 +39,9 @@ export default function CommandPalette({ commands, onClose }: Props) {
               <span>{c.label}</span><small>{c.group}</small>
             </li>
           ))}
-          {!shown.length && <li className="empty">sin resultados</li>}
+          {!shown.length && <li className="empty">{t('sin resultados')}</li>}
         </ul>
-        <div className="palette-foot"><kbd>↑↓</kbd> mover <kbd>enter</kbd> ejecutar <kbd>esc</kbd> cerrar</div>
+        <div className="palette-foot"><kbd>↑↓</kbd> {t('mover')} <kbd>enter</kbd> {t('ejecutar')} <kbd>esc</kbd> {t('cerrar')}</div>
       </div>
     </div>
   )

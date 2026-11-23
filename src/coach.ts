@@ -34,11 +34,13 @@ export function slowBigrams(b: Bigrams, minN = 2, top = 3): Insight[] {
     .slice(0, top)
 }
 
-export function coachTip(ins: Insight[]): string {
-  if (!ins.length) return 'ritmo parejo: ninguna combinación de letras te está frenando'
+// tr: the interface translator (t from i18n); the default just fills in the values
+const fill = (s: string, v: Record<string, string | number> = {}) => Object.entries(v).reduce((a, [k, x]) => a.split(`{${k}}`).join(String(x)), s)
+export function coachTip(ins: Insight[], tr: typeof fill = fill): string {
+  if (!ins.length) return tr('ritmo parejo: ninguna combinación de letras te está frenando')
   const [w] = ins
   const pct = Math.round((w.ratio - 1) * 100)
-  return `«${w.pair}» te cuesta un ${pct}% más que tu promedio. Practicarla suelta los dedos para esa transición.`
+  return tr('«{pair}» te cuesta un {pct}% más que tu promedio. Practicarla suelta los dedos para esa transición.', { pair: w.pair, pct })
 }
 
 const KEY = 'thocktype.bigrams'

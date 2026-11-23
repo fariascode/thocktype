@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useEffect, useRef, useState } from 'react'
 
 const MAX_TAGS = 20
@@ -32,28 +33,28 @@ export default function TagPicker({ tags, active, open, onOpen, onChange }: Prop
   return (
     <div className="tags" ref={box}>
       {active.map(t => <span key={t} className="tag-chip">#{t}</span>)}
-      <button className="tag-btn" onClick={() => onOpen(!open)} aria-expanded={open} title="etiqueta tus tests para comparar situaciones">
-        {active.length ? '＃' : '＃ etiquetas'}
+      <button className="tag-btn" onClick={() => onOpen(!open)} aria-expanded={open} title={t('etiqueta tus tests para comparar situaciones')}>
+        {active.length ? '＃' : `＃ ${t('etiquetas')}`}
       </button>
       {open && (
-        <div className="tag-pop card" role="dialog" aria-label="etiquetas" onKeyDown={e => e.key === 'Escape' && onOpen(false)}>
-          <small>etiquetas activas · se guardan en tus próximos tests</small>
+        <div className="tag-pop card" role="dialog" aria-label={t('etiquetas')} onKeyDown={e => e.key === 'Escape' && onOpen(false)}>
+          <small>{t('etiquetas activas · se guardan en tus próximos tests')}</small>
           {tags.length > 0 && (
             <ul className="tag-list">
-              {tags.map(t => (
-                <li key={t}>
-                  <button role="switch" aria-checked={active.includes(t)} className={active.includes(t) ? 'on' : ''} onClick={() => toggle(t)}>#{t}</button>
-                  <button className="tag-del" onClick={() => remove(t)} aria-label={`borrar etiqueta ${t}`}>✕</button>
+              {tags.map(tag => (
+                <li key={tag}>
+                  <button role="switch" aria-checked={active.includes(tag)} className={active.includes(tag) ? 'on' : ''} onClick={() => toggle(tag)}>#{tag}</button>
+                  <button className="tag-del" onClick={() => remove(tag)} aria-label={t('borrar etiqueta {tag}', { tag })}>✕</button>
                 </li>
               ))}
             </ul>
           )}
           <form className="set-row" onSubmit={add}>
-            <input className="set-input" autoFocus placeholder="nueva, p. ej. teclado nuevo" maxLength={20} aria-label="nueva etiqueta"
+            <input className="set-input" autoFocus placeholder={t('nueva, p. ej. teclado nuevo')} maxLength={20} aria-label={t('nueva etiqueta')}
               value={name} onChange={e => setName(e.target.value)} />
-            <button className="on" type="submit" disabled={!name.trim() || (tags.length >= MAX_TAGS && !tags.includes(name.trim().toLowerCase()))}>crear</button>
+            <button className="on" type="submit" disabled={!name.trim() || (tags.length >= MAX_TAGS && !tags.includes(name.trim().toLowerCase()))}>{t('crear')}</button>
           </form>
-          <small className="set-help">compara cómo rindes con cada etiqueta en tu historial</small>
+          <small className="set-help">{t('compara cómo rindes con cada etiqueta en tu historial')}</small>
         </div>
       )}
     </div>

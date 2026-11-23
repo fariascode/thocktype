@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { useEffect, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
@@ -31,7 +32,7 @@ export default function AccountMenu({ session, me, syncState, anchor, stats, onC
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     // the avatar button toggles the menu itself, so a press on it isn't an "outside" click
-    const out = (e: MouseEvent) => { const t = e.target as Element; if (!box.current?.contains(t) && !t.closest?.('.account-btn')) onClose() }
+    const out = (e: MouseEvent) => { const el = e.target as Element; if (!box.current?.contains(el) && !el.closest?.('.account-btn')) onClose() }
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('mousedown', out)
     document.addEventListener('keydown', esc)
@@ -44,40 +45,40 @@ export default function AccountMenu({ session, me, syncState, anchor, stats, onC
   const pos = anchor ? { top: anchor.bottom + 10, right: Math.max(12, window.innerWidth - anchor.right) } : { top: 70, right: 16 }
 
   return (
-    <div className="acct-menu card" ref={box} role="menu" aria-label="tu cuenta" style={pos}>
+    <div className="acct-menu card" ref={box} role="menu" aria-label={t('tu cuenta')} style={pos}>
       <div className="acct-head">
         {me?.avatar_url
           ? <img className="acct-avatar" src={me.avatar_url} alt="" referrerPolicy="no-referrer" />
           : <span className="acct-avatar avatar">{(me?.username ?? session.user.email ?? '?')[0]}</span>}
         <div className="acct-id">
-          <b>{me?.display_name || (me?.username ? `@${me.username}` : 'tu cuenta')}</b>
+          <b>{me?.display_name || (me?.username ? `@${me.username}` : t('tu cuenta'))}</b>
           <span className="acct-handle">
-            {me?.username ? `@${me.username}` : 'sin usuario todavía'}
-            {me?.username && <span className="acct-badge">{me.is_public ? 'público' : 'privado'}</span>}
+            {me?.username ? `@${me.username}` : t('sin usuario todavía')}
+            {me?.username && <span className="acct-badge">{t(me.is_public ? 'público' : 'privado')}</span>}
           </span>
           <span className="acct-email">{session.user.email}</span>
         </div>
       </div>
 
       <div className="acct-stats">
-        <div className="acct-level"><small>nivel</small><b>{stats.level}</b><span>{stats.title}</span><LevelBar progress={stats.progress} /></div>
-        <div><small>tests</small><b>{stats.tests}</b></div>
-        <div><small>mejor</small><b>{stats.best}</b><span>wpm</span></div>
-        <div><small>racha</small><b>{stats.streak}</b><span>días</span></div>
+        <div className="acct-level"><small>{t('nivel')}</small><b>{stats.level}</b><span>{t(stats.title)}</span><LevelBar progress={stats.progress} /></div>
+        <div><small>{t('tests')}</small><b>{stats.tests}</b></div>
+        <div><small>{t('mejor')}</small><b>{stats.best}</b><span>wpm</span></div>
+        <div><small>{t('racha')}</small><b>{stats.streak}</b><span>{t('días')}</span></div>
       </div>
 
-      {SYNC[syncState] && <div className={`acct-sync ${syncState}`} role="status"><span className="dot" />{SYNC[syncState]}</div>}
+      {SYNC[syncState] && <div className={`acct-sync ${syncState}`} role="status"><span className="dot" />{t(SYNC[syncState])}</div>}
 
       <div className="acct-items">
-        <button role="menuitem" onClick={go(onEdit)}><Icon d={I.edit} />{me?.username ? 'editar perfil' : 'crear mi perfil'}</button>
+        <button role="menuitem" onClick={go(onEdit)}><Icon d={I.edit} />{t(me?.username ? 'editar perfil' : 'crear mi perfil')}</button>
         {me?.username && <>
-          <button role="menuitem" onClick={go(() => onOpenProfile(me.username!))}><Icon d={I.profile} />ver mi perfil<span className="acct-hint">/u/{me.username}</span></button>
-          <button role="menuitem" onClick={copyLink}><Icon d={I.link} />{copied ? 'enlace copiado' : 'copiar enlace de mi perfil'}</button>
+          <button role="menuitem" onClick={go(() => onOpenProfile(me.username!))}><Icon d={I.profile} />{t('ver mi perfil')}<span className="acct-hint">/u/{me.username}</span></button>
+          <button role="menuitem" onClick={copyLink}><Icon d={I.link} />{t(copied ? 'enlace copiado' : 'copiar enlace de mi perfil')}</button>
         </>}
-        <button role="menuitem" onClick={go(onHistory)}><Icon d={I.history} />historial y récords</button>
-        <button role="menuitem" onClick={go(onSettings)}><Icon d={I.settings} />ajustes</button>
+        <button role="menuitem" onClick={go(onHistory)}><Icon d={I.history} />{t('historial y récords')}</button>
+        <button role="menuitem" onClick={go(onSettings)}><Icon d={I.settings} />{t('ajustes')}</button>
         <hr />
-        <button role="menuitem" className="acct-out" onClick={go(() => supabase.auth.signOut())}><Icon d={I.logout} />cerrar sesión</button>
+        <button role="menuitem" className="acct-out" onClick={go(() => supabase.auth.signOut())}><Icon d={I.logout} />{t('cerrar sesión')}</button>
       </div>
     </div>
   )

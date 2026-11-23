@@ -1,3 +1,4 @@
+import { t } from './i18n'
 // Keybr-inspired weak-key map: darker key = higher error rate on that key
 const ROWS = ['qwertyuiop', 'asdfghjklñ', 'zxcvbnm,.']
 
@@ -23,7 +24,7 @@ export default function Heatmap({ hits, errs }: Props) {
           })}
         </div>
       ))}
-      <p className="hint">{worst.length ? <>teclas a practicar: <b>{worst.join(' ')}</b></> : 'sin teclas débiles en este test'}</p>
+      <p className="hint">{worst.length ? <>{t('teclas a practicar')}: <b>{worst.join(' ')}</b></> : t('sin teclas débiles en este test')}</p>
     </div>
   )
 }
