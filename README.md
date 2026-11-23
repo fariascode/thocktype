@@ -5,7 +5,7 @@
 **Test de mecanografía minimalista, monocromático y en español.**
 Escribe rápido, escribe limpio, y entiende qué te frena.
 
-### [→ Pruébala en thocktype-alpha.vercel.app](https://thocktype-alpha.vercel.app)
+### [→ Pruébala en thocktype.app](https://thocktype.app)
 
 ![ThockType: pantalla principal](docs/inicio.png)
 
