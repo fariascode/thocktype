@@ -1,6 +1,6 @@
 // ThockType service worker: works offline after the first visit.
 // Bump VERSION when this file's caching rules change; built assets are content-hashed, so they need no bump.
-const VERSION = 'v2'
+const VERSION = 'v3'
 const CACHE = `thocktype-${VERSION}`
 const SHELL = ['/', '/manifest.webmanifest', '/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png']
 
@@ -44,6 +44,9 @@ self.addEventListener('fetch', e => {
     )
     return
   }
+
+  // Vercel's analytics script and beacons must always hit the network
+  if (url.pathname.startsWith('/_vercel/')) return
 
   // hashed build assets and icons never change under the same URL: cache first
   if (url.origin === location.origin) {
