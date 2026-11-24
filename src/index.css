@@ -657,6 +657,8 @@ button.on { animation: on-pop 260ms var(--spring); }
 .welcome b { color: var(--text-1); font-weight: 600; }
 .welcome kbd { font-size: 11px; }
 .welcome button { margin-left: auto; min-height: 26px; padding: 2px 8px; }
+/* phones: the close button sits in the corner instead of taking a row of its own */
+@media (max-width: 600px) { .welcome { position: relative; padding-right: 44px; } .welcome button { position: absolute; top: 8px; right: 8px; } }
 .signup-nudge { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 14px; border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
 .signup-nudge > div { flex: 1 1 260px; display: flex; flex-direction: column; gap: 2px; }
 .signup-nudge b { color: var(--text-1); font-size: 15px; }

@@ -58,7 +58,7 @@ const en: Record<string, string> = {
   'reinicia': 'restarts', 'abre todos los comandos': 'opens every command', 'vuelve': 'goes back', 'cerrar bienvenida': 'close welcome',
   'velocidad de tu última palabra': 'speed of your last word', 'ráfaga {n}': 'burst {n}',
   'frente a quien te retó': 'versus whoever challenged you', 'frente a un fantasma a {n} wpm': 'versus a ghost at {n} wpm',
-  '{n} letras': '{n} letters', 'rival': 'rival', 'alguien': 'someone',
+  '{n} letras': '{n} letters', '{n} letra': '{n} letter', 'rival': 'rival', 'alguien': 'someone',
   'duelo · {name} hizo {wpm} wpm · {acc}% · ¿le ganas?': 'duel · {name} did {wpm} wpm · {acc}% · can you beat it?',
   'salir': 'leave', 'descargando palabras…': 'downloading words…', 'reintentar': 'retry',
   'buscando un artículo en Wikipedia…': 'finding a Wikipedia article…',
