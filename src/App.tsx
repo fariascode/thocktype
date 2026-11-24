@@ -80,9 +80,14 @@ const RULES: Record<keyof Rules, [label: string, help: string]> = {
 }
 // the daily challenge is the same fair test for everyone, and zen has nothing to be wrong about
 const activeRules = (s: Settings): Rules => (s.mode === 'daily' || s.mode === 'zen' ? NO_RULES : s.rules)
+// a first visit types in the browser's language when there's a word list for it, English otherwise
+const browserLang = (): Lang => {
+  const l = (typeof navigator !== 'undefined' ? navigator.language : '').slice(0, 2).toLowerCase()
+  return l === 'es' || l === 'en' || l in EXTRA_LANGS ? (l as Lang) : 'en'
+}
 const DEFAULTS: Settings = {
-  lang: 'es', mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
-  custom: 'escribe aquí tu propio texto para practicar', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [],
+  lang: browserLang(), mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
+  custom: detectUiLang() === 'es' ? 'escribe aquí tu propio texto para practicar' : 'type your own text here to practice', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [],
   ghostSource: 'pb', ghostWpm: 80, liveAcc: false, liveBurst: false, keymap: 'off', ghostStyle: 'line', liveColor: 'dim',
   highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, tags: [], activeTags: [], codeLang: 'code', timeWarn: false, presets: [], uiLang: 'auto', v: 2,
 }
@@ -772,7 +777,7 @@ export default function App() {
                 {s.liveAcc && <span className="live">{liveAcc}%</span>}
                 {s.liveBurst && burst > 0 && <span className="live" title={t('velocidad de tu última palabra')}>{t('ráfaga {n}', { n: burst })}</span>}
                 {(pace > 0 || duel) && clock > 0 && <span className={`live delta ${ghostDelta >= 0 ? 'ahead' : 'behind'}`} title={duel ? t('frente a quien te retó') : t('frente a un fantasma a {n} wpm', { n: pace })}>
-                  {ghostDelta >= 0 ? '▲' : '▼'} {t('{n} letras', { n: Math.abs(ghostDelta) })}{duel ? ` vs ${duel.name ?? t('rival')}` : ''}
+                  {ghostDelta >= 0 ? '▲' : '▼'} {t(Math.abs(ghostDelta) === 1 ? '{n} letra' : '{n} letras', { n: Math.abs(ghostDelta) })}{duel ? ` vs ${duel.name ?? t('rival')}` : ''}
                 </span>}
                 {ruleTags}
               </>
