@@ -204,5 +204,15 @@ const en: Record<string, string> = {
   // footer
   'enlaces': 'links', 'contacto': 'contact', 'cambiar tema': 'change theme', 'versión publicada · ver el cambio en GitHub': 'published version · see the change on GitHub',
   'velocidad de cada palabra': 'speed of each word',
+  // settings: themes and backup
+  'originales': 'originals', 'populares': 'popular', 'tema al azar': 'random theme', 'sorpréndeme': 'surprise me',
+  'distinto en cada visita': 'new one every visit', 'al abrir ThockType se elige un tema al azar': 'a random theme is picked each time you open ThockType',
+  'copia de seguridad': 'backup', 'copiado': 'copied', 'copiar mis ajustes': 'copy my settings', 'importar': 'import',
+  '¿seguro? toca otra vez': 'sure? tap again', 'restablecer todo': 'reset everything', 'pega aquí tus ajustes copiados': 'paste your copied settings here',
+  'ajustes para importar': 'settings to import', 'ajustes aplicados': 'settings applied', 'ajustes restablecidos': 'settings reset',
+  'copia tus ajustes para pasarlos a otro navegador. Restablecer no borra tus perfiles, etiquetas ni resultados.': "copy your settings to move them to another browser. Resetting doesn't delete your presets, tags or results.",
+  'eso no parece una copia de ajustes de ThockType': "that doesn't look like a ThockType settings copy",
+  'no encontré ningún ajuste que se pueda usar': "I couldn't find any usable settings in it",
+  'medianoche': 'midnight', 'bosque': 'forest', 'neón': 'neon', 'café': 'coffee', 'arena': 'sand', 'menta': 'mint',
 }
 export default en

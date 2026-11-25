@@ -76,13 +76,13 @@ Ajustes ⚙ en siete pestañas, con **buscador** (escribe "cinta" o "pitido" y t
 
 | Pestaña | Opciones |
 |---|---|
-| **tema** | 22 temas, todos con contraste WCAG verificado por pruebas automáticas:<br>• *sistema*, que sigue el modo claro u oscuro de tu dispositivo<br>• 5 monocromáticos<br>• diseños propios: lila, lavanda, sakura, matcha, ámbar y océano<br>• Catppuccin, Rosé Pine, Nord, Gruvbox, Tokyo Night, Everforest, Dracula, Monokai y Solarized |
+| **tema** | 34 temas, todos con contraste WCAG verificado por pruebas automáticas, como tarjetas pintadas con sus propios colores (pasa el mouse por una para verla en toda la página):<br>• *sistema*, que sigue el modo claro u oscuro de tu dispositivo<br>• 5 monocromáticos<br>• 12 propios: lila, lavanda, sakura, matcha, ámbar, océano, medianoche, bosque, neón, café, arena y menta<br>• Catppuccin (Mocha y Latte), Rosé Pine, Nord, Gruvbox, Tokyo Night, Everforest, Dracula, Monokai, Solarized, One Dark, Ayu, Kanagawa, Night Owl y GitHub Dark<br>• 🎲 *sorpréndeme*, o un tema distinto en cada visita |
 | **texto** | 10 fuentes (Cascadia Code es la insignia) o una **fuente instalada** en tu equipo. Además: tamaño, 2 a 4 líneas visibles y ancho |
 | **cursor** | Estilo (línea, bloque, subrayado o contorno), movimiento (suave, rápido o instantáneo) y fantasma con su propio estilo |
 | **vista** | **Modo cinta** (una sola línea que se desliza), resaltar la letra o la palabra, palabras escritas normales, atenuadas u ocultas, **teclado en pantalla** que marca la siguiente tecla o reacciona a lo que presionas, y cambio de línea suave |
 | **en vivo** | Progreso como número, barra u oculto, qué números mostrar y su color, **modo enfoque** y gráficas desde cero |
 | **sonido** | Cuatro sonidos sintetizados (thock, click, máquina y suave), volumen y **aviso de tiempo** en los últimos 5 segundos (el contador también late) |
-| **perfiles** | Guarda combinaciones de ajustes con nombre (hasta 12) y cámbialas con un clic o desde `ctrl + k` |
+| **perfiles** | Guarda combinaciones de ajustes con nombre (hasta 12) y cámbialas con un clic o desde `ctrl + k`. **Copia de seguridad:** copia tus ajustes, pégalos en otro navegador o restablece todo (tus perfiles, etiquetas y resultados se quedan) |
 
 ### En cualquier lugar
 - **Cuentas** con Google, un enlace por correo, o correo y contraseña.
@@ -124,7 +124,7 @@ Requiere Node 22.18 o superior: las pruebas corren los `.ts` directamente con No
 ```bash
 npm install
 npm run dev     # http://localhost:5280
-npm run check   # pruebas: cálculos, sincronización, niveles, rankings, traducciones y contraste de los 22 temas
+npm run check   # pruebas: cálculos, sincronización, niveles, rankings, traducciones y contraste de los 34 temas
 npm run lint
 npm run build
 ```

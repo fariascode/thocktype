@@ -40,9 +40,10 @@ import { addPendingStats, syncAll, syncUp, type Synced } from './sync'
 import { getMyProfile, type Profile } from './profile'
 import { markChanged, pushSettings, syncSettings } from './settingsSync'
 import ProfilePage from './ProfilePage'
-import { GHOST_SOURCES, KEYMAPS, applyAppearance, isLight, type Appearance, type GhostSource, type Keymap as KeymapMode, type Caret, type CaretMotion, type Font, type Lines, type Progress, type SoundKind, type Width, type Size, type Theme } from './appearance'
+import { GHOST_SOURCES, KEYMAPS, THEMES, applyAppearance, isLight, type Appearance, type GhostSource, type Keymap as KeymapMode, type Caret, type CaretMotion, type Font, type Lines, type Progress, type SoundKind, type Width, type Size, type Theme } from './appearance'
 import SettingsPanel, { openOnTab } from './SettingsPanel'
 import SiteFooter from './SiteFooter'
+import { parseSettings } from './settingsIO'
 import Ring from './Ring'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
@@ -71,6 +72,7 @@ type Settings = {
   timeWarn: boolean // beep during the last 5 seconds of a timed test
   presets: Preset[]
   uiLang: UiLang | 'auto' // interface language; 'auto' follows the browser
+  themeShuffle: boolean // a random theme on every visit
   v: number // settings format version, for one-time migrations
 }
 type Rules = { noBack: boolean; blind: boolean; brake: boolean; sudden: boolean }
@@ -92,7 +94,7 @@ const DEFAULTS: Settings = {
   lang: browserLang(), mode: 'time', duration: 30, count: 25, punct: false, numbers: false, pool: 200, plain: false,
   custom: detectUiLang() === 'es' ? 'escribe aquí tu propio texto para practicar' : 'type your own text here to practice', theme: 'dark', size: 'm', font: 'cascadia', caret: 'line', lines: '3', width: 'normal', caretMotion: 'smooth', focus: false, progress: 'number', soundKind: 'thock', volume: 0.7, sound: false, live: true, ghost: true, drill: [],
   ghostSource: 'pb', ghostWpm: 80, liveAcc: false, liveBurst: false, keymap: 'off', ghostStyle: 'line', liveColor: 'dim',
-  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, tags: [], activeTags: [], codeLang: 'code', timeWarn: false, presets: [], uiLang: 'auto', v: 2,
+  highlight: 'letter', typedEffect: 'normal', tape: 'off', tapeMargin: '40', smoothScroll: true, graphZero: true, localFont: '', rules: NO_RULES, save: true, tags: [], activeTags: [], codeLang: 'code', timeWarn: false, presets: [], uiLang: 'auto', themeShuffle: false, v: 2,
 }
 const SKEY = 'thocktype.settings'
 // one-time hints, remembered per device
@@ -187,7 +189,12 @@ function charPos(word: HTMLElement, ci: number, sel = '.c') {
 }
 
 export default function App() {
-  const [s, setS] = useState(loadSettings)
+  const [s, setS] = useState(() => {
+    const saved = loadSettings()
+    if (!saved.themeShuffle) return saved
+    const pool = (Object.keys(THEMES) as Theme[]).filter(th => th !== 'auto' && th !== saved.theme)
+    return { ...saved, theme: pool[Math.floor(Math.random() * pool.length)] }
+  })
   const [history, setHistory] = useState(loadHistory)
   const [keyStats, setKeyStats] = useState(loadKeys)
   const [daily, setDaily] = useState(loadDaily)
@@ -867,7 +874,10 @@ export default function App() {
         presets={s.presets.map(p => p.name)}
         onSavePreset={name => update({ ...s, presets: [...s.presets.filter(p => p.name !== name), presetOf(name, s)] })}
         onApplyPreset={name => { const p = s.presets.find(x => x.name === name); if (p) restart(presetData(p.data)) }}
-        onDeletePreset={name => update({ ...s, presets: s.presets.filter(p => p.name !== name) })} onPreviewSound={(k, v) => thock(false, k, v)} onClose={() => setSettingsOpen(false)} />}
+        onDeletePreset={name => update({ ...s, presets: s.presets.filter(p => p.name !== name) })} onPreviewSound={(k, v) => thock(false, k, v)} onClose={() => setSettingsOpen(false)}
+        onExport={() => JSON.stringify(presetData(s))}
+        onImport={text => { const r = parseSettings(text, DEFAULTS, NOT_IN_PRESET); if (!r.ok) return r.error; update(normalize({ ...s, ...r.values })); return null }}
+        onReset={() => update({ ...DEFAULTS, presets: s.presets, tags: s.tags, activeTags: s.activeTags, custom: s.custom, uiLang: s.uiLang })} />}
       {palette && <CommandPalette commands={commands()} onClose={() => setPalette(false)} />}
     </main>
   )
