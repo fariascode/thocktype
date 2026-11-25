@@ -67,6 +67,7 @@ Escribe rápido, escribe limpio, y entiende qué te frena.
 - **Ranking global** en `/ranking`: 15, 30 y 60 s, por idioma y lista, de siempre o de la semana, con botón "mi lugar". El servidor decide qué resultados cuentan (duración exacta, velocidad y precisión posibles, sin tests superpuestos) y se puede excluir a tramposos desde Supabase. Quien queda en el top 10 de la semana lleva una insignia 🏆 en su perfil.
 - **Duelo por link:** al terminar un test, "⚔ retar a alguien" crea un link con el mismo texto y la grabación de tu test. Quien lo abre corre contra **tu fantasma real** (con tus pausas y errores), ve en vivo cuántas letras te lleva y al final puede mandarte la revancha. Sin cuenta y sin servidor: todo viaja en el link.
 - **Reto diario:** un intento oficial al día, resultado para compartir en cuadrícula ■□ y **ranking del día** con tu posición.
+- **Amigos** en `/amigos`: busca gente por @usuario o nombre, agrégala con un clic (sin solicitudes que aceptar) y ve su mejor velocidad y su último test.
 - **Perfiles públicos** en `/u/usuario`: foto, bio, nivel, récords, calendario y coach. Se pueden hacer privados.
 - **Compartir** tu resultado como imagen o como texto.
 
@@ -151,7 +152,7 @@ public/              íconos, manifest, service worker e imagen para compartir
 ### Tu propia base de datos
 
 1. Crea un proyecto en [Supabase](https://supabase.com).
-2. En **SQL Editor**, pega todo [`supabase/schema.sql`](supabase/schema.sql) y presiona **Run**; después haz lo mismo con [`supabase/leaderboard.sql`](supabase/leaderboard.sql).
+2. En **SQL Editor**, pega todo [`supabase/schema.sql`](supabase/schema.sql) y presiona **Run**; después haz lo mismo con [`supabase/leaderboard.sql`](supabase/leaderboard.sql) y [`supabase/friends.sql`](supabase/friends.sql).
 3. En **Authentication → Providers**, activa *Email* y, si quieres, *Google*.
 4. En **Authentication → URL Configuration**, agrega la dirección de tu sitio y `http://localhost:5280`.
 5. En [`src/config.ts`](src/config.ts), cambia `APP_URL`, `SUPABASE_URL` y `SUPABASE_KEY`. Usa la **clave publicable**: es segura en el navegador porque cada tabla está protegida con Row Level Security. Nunca uses la clave secreta.

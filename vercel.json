@@ -2,5 +2,5 @@
   "redirects": [
     { "source": "/:path*", "has": [{ "type": "host", "value": "thocktype-alpha.vercel.app" }], "destination": "https://thocktype.app/:path*", "permanent": true }
   ],
-  "rewrites": [{ "source": "/u/:name", "destination": "/" }, { "source": "/ranking", "destination": "/" }]
+  "rewrites": [{ "source": "/u/:name", "destination": "/" }, { "source": "/ranking", "destination": "/" }, { "source": "/amigos", "destination": "/" }]
 }

@@ -67,6 +67,7 @@ Type fast, type clean, and find out what's slowing you down.
 - **Global leaderboard** at `/ranking`: 15, 30 and 60 s, per language and list, all-time or this week, with a "my place" button. The server decides which results count (exact duration, possible speed and accuracy, no overlapping tests) and cheaters can be excluded from Supabase. The weekly top 10 get a 🏆 badge on their profile.
 - **Duel by link:** after a test, "⚔ challenge someone" makes a link with the same text and a recording of your test. Whoever opens it races **your real ghost** (with your pauses and mistakes), sees live how far ahead they are, and can send you a rematch. No account, no server: it all travels in the link.
 - **Daily challenge:** one official attempt a day, a shareable ■□ grid result and a **daily leaderboard** with your place.
+- **Friends** at `/amigos`: find people by @username or name, add them in one click (no requests to accept) and see their best speed and last test.
 - **Public profiles** at `/u/username`: photo, bio, level, records, calendar and coach. They can be made private.
 - **Share** your result as an image or as text.
 
@@ -151,7 +152,7 @@ public/              icons, manifest, service worker and share image
 ### Your own database
 
 1. Create a project at [Supabase](https://supabase.com).
-2. In **SQL Editor**, paste all of [`supabase/schema.sql`](supabase/schema.sql) and press **Run**; then do the same with [`supabase/leaderboard.sql`](supabase/leaderboard.sql).
+2. In **SQL Editor**, paste all of [`supabase/schema.sql`](supabase/schema.sql) and press **Run**; then do the same with [`supabase/leaderboard.sql`](supabase/leaderboard.sql) and [`supabase/friends.sql`](supabase/friends.sql).
 3. In **Authentication → Providers**, turn on *Email* and, if you want, *Google*.
 4. In **Authentication → URL Configuration**, add your site's address and `http://localhost:5280`.
 5. In [`src/config.ts`](src/config.ts), change `APP_URL`, `SUPABASE_URL` and `SUPABASE_KEY`. Use the **publishable key**: it's safe in the browser because every table is protected with Row Level Security. Never use the secret key.

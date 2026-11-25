@@ -9,6 +9,7 @@ import { chime, thock, tick } from './sound'
 import TagPicker from './TagPicker'
 import WordReplay from './WordReplay'
 import LeaderboardPage from './LeaderboardPage'
+import FriendsPage from './FriendsPage'
 import { stateAt, type LogEntry } from './replay'
 import { randomArticle } from './wiki'
 import { canSpeak, speak, stopSpeaking } from './speech'
@@ -213,6 +214,7 @@ export default function App() {
   const go = useCallback((p: string) => { if (location.pathname !== p) window.history.pushState(null, '', p); setPath(p) }, [])
   const profileName = path.match(PROFILE_RE)?.[1]
   const onBoard = path === '/ranking' || path === '/ranking/'
+  const onFriends = path === '/amigos' || path === '/amigos/'
   const [editing, setEditing] = useState(false)
   const [palette, setPalette] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -466,7 +468,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (((e.ctrlKey || e.metaKey) && k === 'k') || (e.ctrlKey && e.shiftKey && k === 'p')) { e.preventDefault(); setPalette(p => !p); return }
-      if (palette || auth || settingsOpen || tagsOpen || profileName || onBoard) return // dialogs handle their own keys; profiles aren't for typing
+      if (palette || auth || settingsOpen || tagsOpen || profileName || onBoard || onFriends) return // dialogs handle their own keys; profiles aren't for typing
       // typing in a form (login, editor…) must not drive the test; the hidden touch input is the exception
       const el = e.target
       if (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !el.classList.contains('touch-input'))) return
@@ -543,7 +545,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [typed, words, test, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, onBoard, dictation, sayChunk, s, zen, finite, restart, finish])
+  }, [typed, words, test, phase, view, editing, palette, auth, settingsOpen, tagsOpen, profileName, onBoard, onFriends, dictation, sayChunk, s, zen, finite, restart, finish])
 
   // touch keyboards: a hidden input whose changes are replayed as keydown events,
   // so phones go through exactly the same typing logic as physical keyboards
@@ -651,6 +653,7 @@ export default function App() {
     add('ver', 'historial', () => { go('/'); setView('history') })
     add('ver', 'ranking del reto', () => { go('/'); setView('history') })
     add('ver', 'ranking global · 15, 30 y 60 s', () => go('/ranking'))
+    add('ver', 'amigos · buscar usuarios', () => go('/amigos'))
     for (const [k, l] of Object.entries(UI_LANGS)) add('preferencias', `${t('idioma de la interfaz')}: ${l}`, () => setS({ ...s, uiLang: k as UiLang }))
     if (me?.username) add('ver', 'mi perfil', () => go(`/u/${me.username}`))
     add('ver', 'test', () => restart())
@@ -712,9 +715,10 @@ export default function App() {
           </h1>
           <nav className="hdr-nav" data-pill aria-label={t('secciones')}>
             <span className="seg-pill" aria-hidden />
-            <button className={view === 'test' && !profileName && !onBoard ? 'on' : ''} onClick={() => restart()}>{t('test')}</button>
-            <button className={view === 'history' && !profileName && !onBoard ? 'on' : ''} onClick={() => { go('/'); setView('history') }}>{t('historial')}</button>
+            <button className={view === 'test' && !profileName && !onBoard && !onFriends ? 'on' : ''} onClick={() => restart()}>{t('test')}</button>
+            <button className={view === 'history' && !profileName && !onBoard && !onFriends ? 'on' : ''} onClick={() => { go('/'); setView('history') }}>{t('historial')}</button>
             <button className={onBoard ? 'on' : ''} onClick={() => go('/ranking')}>{t('ranking')}</button>
+            <button className={onFriends ? 'on' : ''} onClick={() => go('/amigos')}>{t('amigos')}</button>
           </nav>
         </div>
         <div className="hdr-right">
@@ -741,8 +745,9 @@ export default function App() {
         </div>
       </header>
 
-      {onBoard ? <LeaderboardPage uid={uid} hasUsername={!!me?.username} lang={tl(s)} onOpenProfile={name => go(`/u/${name}`)} />
-        : profileName ? <ProfilePage username={profileName} theme={s.theme} isMe={me?.username === profileName} />
+      {onFriends ? <FriendsPage uid={uid} onOpenProfile={name => go(`/u/${name}`)} onSignIn={() => setAuth('login')} />
+        : onBoard ? <LeaderboardPage uid={uid} hasUsername={!!me?.username} lang={tl(s)} onOpenProfile={name => go(`/u/${name}`)} />
+        : profileName ? <ProfilePage username={profileName} theme={s.theme} isMe={me?.username === profileName} uid={uid} onSignIn={() => setAuth('login')} />
         : view === 'history' ? <>
           <div className="card">
             <small>{t('reto #{n}', { n: challengeNumber() })} · {t('ranking de hoy')} · {LANGS[s.lang]}</small>
@@ -844,7 +849,7 @@ export default function App() {
         </>
       )}
 
-      {!profileName && !onBoard && view === 'test' && phase !== 'done' && !editing && (
+      {!profileName && !onBoard && !onFriends && view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={update} sayChunk={sayChunk} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
       {auth === 'account' && session && (

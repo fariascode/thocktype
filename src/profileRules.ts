@@ -16,3 +16,6 @@ export function suggestUsername(from: string): string {
     .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 20)
   return base.length >= 3 ? base : `${base}_typer`.slice(0, 20)
 }
+
+// user search text: PostgREST filter syntax treats , ( ) % * \ as operators, so keep only letters, digits, _ and spaces
+export const cleanQuery = (q: string) => q.normalize('NFC').replace(/[^\p{L}\p{N}_ ]/gu, '').trim().slice(0, 30)
