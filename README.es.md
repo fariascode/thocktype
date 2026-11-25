@@ -167,3 +167,7 @@ public/              íconos, manifest, service worker e imagen para compartir
 - **Con cuenta, se suben tus tests, tus estadísticas de teclas y tus ajustes** para sincronizar tus dispositivos. Tus ajustes solo los puedes leer tú.
 - **Tu perfil puede ser privado:** en ese caso nadie más ve tus resultados.
 - Sin anuncios ni rastreadores entre sitios; solo un conteo de visitas anónimo y sin cookies. Las fuentes que no sean Cascadia Code se descargan de Google Fonts solo si las eliges. Detalles: [política de privacidad](https://thocktype.app/privacidad.html).
+
+## Licencia
+
+[MIT](LICENSE). Las listas de palabras de `src/data/freq/` mantienen su propia licencia, CC BY-SA 4.0 (ver Créditos).
