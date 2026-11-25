@@ -23,17 +23,17 @@
   --t-fast: 120ms; --t: 180ms;
   --spring: cubic-bezier(.34, 1.4, .64, 1); /* slight overshoot for things that pop in */
 }
-:root[data-theme='paper'] {
+:root[data-theme='paper'], [data-preview='paper'] {
   --bg: #ece8df; --surface: #f4f1ea; --surface-2: #faf8f3; --border: #d6cfc2;
   --text-1: #2b2825; --text-2: #5d5851; --text-3: #898278; --dim: #898278;
   --shadow: 0 1px 2px rgb(60 40 20 / .05), 0 8px 24px rgb(60 40 20 / .06);
 }
-:root[data-theme='ink'] {
+:root[data-theme='ink'], [data-preview='ink'] {
   --bg: #000000; --surface: #0b0b0c; --surface-2: #141416; --border: #27282b;
   --text-1: #f4f4f4; --text-2: #a8a9ad; --text-3: #5f6166; --dim: #5f6166;
 }
 /* accessibility: maximum contrast, visible borders */
-:root[data-theme='contrast'] {
+:root[data-theme='contrast'], [data-preview='contrast'] {
   --bg: #000000; --surface: #000000; --surface-2: #121212; --border: #ffffff;
   --text-1: #ffffff; --text-2: #ffffff; --text-3: #c4c4c4; --dim: #c4c4c4; --shadow: none;
 }
@@ -94,7 +94,13 @@ header { transition: opacity var(--t) var(--ease); }
 :root[data-focus='on'] main.running header { opacity: 0; pointer-events: none; }
 .progress-bar { height: 2px; border-radius: 2px; background: color-mix(in srgb, var(--text-3) 25%, transparent); overflow: hidden; margin-bottom: 10px; }
 .progress-bar > span { display: block; height: 100%; background: var(--accent); transform-origin: 0 50%; transition: transform 1000ms linear; }
-:root[data-theme='light'] {
+/* preview cards: accent and error colors follow each card's own text colors unless its theme sets them */
+[data-preview] { --accent: var(--text-1); --err: var(--text-2); }
+[data-preview='dark'] {
+  --bg: #101113; --surface: #17181b; --surface-2: #1e1f22; --border: #343538;
+  --text-1: #ededed; --text-2: #b6b7ba; --text-3: #696b70; --accent: #ededed; --err: #b6b7ba;
+}
+:root[data-theme='light'], [data-preview='light'] {
   --bg: #f3f3f1;
   --surface: #fafaf9;
   --surface-2: #ffffff;
@@ -108,101 +114,172 @@ header { transition: opacity var(--t) var(--ease); }
 
 /* ── Color themes ─────────────────────────────────────────────────────
    lila / lavanda are ThockType's own; the rest follow well-known open palettes (all MIT licensed) */
-:root[data-theme='lila'] {
+:root[data-theme='lila'], [data-preview='lila'] {
   --bg: #16131e; --surface: #1e1a29; --surface-2: #272136; --border: #3a3350;
   --text-1: #ece6fb; --text-2: #b8aed4; --text-3: #6f6589; --dim: #6f6589;
   --accent: #c9a7ff; --err: #f29bb6;
 }
-:root[data-theme='lavanda'] {
+:root[data-theme='lavanda'], [data-preview='lavanda'] {
   --bg: #f3effa; --surface: #faf8fe; --surface-2: #ffffff; --border: #dcd2ef;
   --text-1: #2a2140; --text-2: #5a4e78; --text-3: #8e84a8; --dim: #8e84a8;
   --accent: #7c55c9; --err: #ba4167;
   --shadow: 0 1px 2px rgb(60 30 110 / .05), 0 8px 24px rgb(60 30 110 / .07);
 }
 /* Catppuccin Mocha — mantle, base, surface0, surface1, text, subtext0, overlay0, mauve, red */
-:root[data-theme='catppuccin'] {
+:root[data-theme='catppuccin'], [data-preview='catppuccin'] {
   --bg: #181825; --surface: #1e1e2e; --surface-2: #313244; --border: #45475a;
   --text-1: #cdd6f4; --text-2: #a6adc8; --text-3: #6c7086; --dim: #6c7086;
   --accent: #cba6f7; --err: #f38ba8;
 }
 /* Rosé Pine — base, surface, overlay, highlight-med, text, subtle, muted, iris, love */
-:root[data-theme='rosepine'] {
+:root[data-theme='rosepine'], [data-preview='rosepine'] {
   --bg: #191724; --surface: #1f1d2e; --surface-2: #26233a; --border: #403d52;
   --text-1: #e0def4; --text-2: #908caa; --text-3: #6e6a86; --dim: #6e6a86;
   --accent: #c4a7e7; --err: #eb6f92;
 }
 /* Nord — polar night, snow storm, frost, aurora red */
-:root[data-theme='nord'] {
+:root[data-theme='nord'], [data-preview='nord'] {
   --bg: #2e3440; --surface: #3b4252; --surface-2: #434c5e; --border: #4c566a;
   --text-1: #eceff4; --text-2: #d8dee9; --text-3: #7b88a1; --dim: #7b88a1;
   --accent: #88c0d0; --err: #d08a91;
 }
 /* Gruvbox dark — bg, bg0_s, bg1, bg2, fg, fg2, gray, yellow, red */
-:root[data-theme='gruvbox'] {
+:root[data-theme='gruvbox'], [data-preview='gruvbox'] {
   --bg: #282828; --surface: #32302f; --surface-2: #3c3836; --border: #504945;
   --text-1: #ebdbb2; --text-2: #d5c4a1; --text-3: #928374; --dim: #928374;
   --accent: #fabd2f; --err: #fb5642;
 }
 /* Tokyo Night — bg, bg_dark highlight, storm, terminal black, fg, fg_dark, comment, blue, red */
-:root[data-theme='tokyonight'] {
+:root[data-theme='tokyonight'], [data-preview='tokyonight'] {
   --bg: #1a1b26; --surface: #1f2335; --surface-2: #24283b; --border: #3b4261;
   --text-1: #c0caf5; --text-2: #a9b1d6; --text-3: #5e678f; --dim: #5e678f;
   --accent: #7aa2f7; --err: #f7768e;
 }
 /* Everforest dark (medium) — bg0, bg1, bg2, bg3, fg, grey2, grey0, green, red */
-:root[data-theme='everforest'] {
+:root[data-theme='everforest'], [data-preview='everforest'] {
   --bg: #2d353b; --surface: #343f44; --surface-2: #3d484d; --border: #475258;
   --text-1: #d3c6aa; --text-2: #9da9a0; --text-3: #7a8478; --dim: #7a8478;
   --accent: #a7c080; --err: #e67e80;
 }
 
 /* Dracula */
-:root[data-theme='dracula'] {
+:root[data-theme='dracula'], [data-preview='dracula'] {
   --bg: #282a36; --surface: #2f3241; --surface-2: #383a4c; --border: #44475a;
   --text-1: #f8f8f2; --text-2: #c5c8d6; --text-3: #7b7f9e; --dim: #7b7f9e;
   --accent: #bd93f9; --err: #ff6e6e;
 }
 /* Monokai */
-:root[data-theme='monokai'] {
+:root[data-theme='monokai'], [data-preview='monokai'] {
   --bg: #272822; --surface: #2f302a; --surface-2: #3a3b33; --border: #49483e;
   --text-1: #f8f8f2; --text-2: #cfcfc2; --text-3: #8a8a7a; --dim: #8a8a7a;
   --accent: #a6e22e; --err: #ff5c93;
 }
 /* Solarized dark */
-:root[data-theme='solarized'] {
+:root[data-theme='solarized'], [data-preview='solarized'] {
   --bg: #002b36; --surface: #073642; --surface-2: #0d3f4c; --border: #1f5562;
   --text-1: #eee8d5; --text-2: #b3bcbc; --text-3: #6f8a91; --dim: #6f8a91;
   --accent: #b58900; --err: #f47b78;
 }
 /* Solarized light */
-:root[data-theme='solarlight'] {
+:root[data-theme='solarlight'], [data-preview='solarlight'] {
   --bg: #fdf6e3; --surface: #f7efd8; --surface-2: #fffaf0; --border: #e3dcc6;
   --text-1: #073642; --text-2: #586e75; --text-3: #7a8b8d; --dim: #7a8b8d;
   --accent: #2076b4; --err: #b8312f;
 }
 /* sakura: cherry-blossom light (ThockType original) */
-:root[data-theme='sakura'] {
+:root[data-theme='sakura'], [data-preview='sakura'] {
   --bg: #fbf1f3; --surface: #f7e6ea; --surface-2: #fff8f9; --border: #ecd3da;
   --text-1: #3b2a30; --text-2: #7a5c66; --text-3: #a07b87; --dim: #a07b87;
   --accent: #c2456b; --err: #b03a2e;
 }
 /* matcha: green tea dark (ThockType original) */
-:root[data-theme='matcha'] {
+:root[data-theme='matcha'], [data-preview='matcha'] {
   --bg: #1b201a; --surface: #22281f; --surface-2: #2b3227; --border: #3a4434;
   --text-1: #e8efdf; --text-2: #b5c2a8; --text-3: #6e7d63; --dim: #6e7d63;
   --accent: #9fd36a; --err: #f08a7a;
 }
 /* ámbar: retro amber terminal (ThockType original) */
-:root[data-theme='ambar'] {
+:root[data-theme='ambar'], [data-preview='ambar'] {
   --bg: #0f0c05; --surface: #17130a; --surface-2: #1f1a0e; --border: #352c16;
   --text-1: #ffcc66; --text-2: #d9a441; --text-3: #8a6a2a; --dim: #8a6a2a;
   --accent: #ffb000; --err: #ff7a4d;
 }
 /* océano: deep sea blue (ThockType original) */
-:root[data-theme='oceano'] {
+:root[data-theme='oceano'], [data-preview='oceano'] {
   --bg: #0d1b2a; --surface: #12243a; --surface-2: #183049; --border: #24405e;
   --text-1: #e6f1ff; --text-2: #a9c1dd; --text-3: #5f7d9c; --dim: #5f7d9c;
   --accent: #5ec8f2; --err: #ff8a8a;
+}
+
+/* more ThockType originals */
+:root[data-theme='medianoche'], [data-preview='medianoche'] {
+  --bg: #0b1020; --surface: #111832; --surface-2: #18213f; --border: #273257;
+  --text-1: #e8ecf8; --text-2: #aab3d0; --text-3: #6a7598; --dim: #6a7598;
+  --accent: #8fb4ff; --err: #ff8fa3;
+}
+:root[data-theme='bosque'], [data-preview='bosque'] {
+  --bg: #0f1a14; --surface: #15231b; --surface-2: #1c2e23; --border: #2c4334;
+  --text-1: #e3f1e6; --text-2: #a9c4b0; --text-3: #66846f; --dim: #66846f;
+  --accent: #6fdc9b; --err: #ff9b85;
+}
+:root[data-theme='neon'], [data-preview='neon'] {
+  --bg: #150b24; --surface: #1d1033; --surface-2: #261543; --border: #3a2363;
+  --text-1: #f6ecff; --text-2: #c7b2e6; --text-3: #846cab; --dim: #846cab;
+  --accent: #ff4fd8; --err: #ffd166;
+}
+:root[data-theme='cafe'], [data-preview='cafe'] {
+  --bg: #1a1410; --surface: #221a15; --surface-2: #2b221b; --border: #3e3128;
+  --text-1: #f2e6d8; --text-2: #cbb59d; --text-3: #8a745f; --dim: #8a745f;
+  --accent: #e0a96d; --err: #ff8a70;
+}
+:root[data-theme='arena'], [data-preview='arena'] {
+  --bg: #f4ede1; --surface: #faf5ec; --surface-2: #fffdf8; --border: #e2d6c2;
+  --text-1: #2e2418; --text-2: #65553f; --text-3: #8f7f67; --dim: #8f7f67;
+  --accent: #b5562c; --err: #b3261e;
+  --shadow: 0 1px 2px rgb(80 50 20 / .05), 0 8px 24px rgb(80 50 20 / .06);
+}
+:root[data-theme='menta'], [data-preview='menta'] {
+  --bg: #eef6f2; --surface: #f6fbf8; --surface-2: #ffffff; --border: #cfe3d8;
+  --text-1: #17302a; --text-2: #3f6157; --text-3: #6f8a81; --dim: #6f8a81;
+  --accent: #1f8a64; --err: #c0392b;
+  --shadow: 0 1px 2px rgb(20 70 50 / .05), 0 8px 24px rgb(20 70 50 / .06);
+}
+/* One Dark (Atom, MIT) */
+:root[data-theme='onedark'], [data-preview='onedark'] {
+  --bg: #282c34; --surface: #2c313a; --surface-2: #333842; --border: #3e4451;
+  --text-1: #dcdfe4; --text-2: #abb2bf; --text-3: #7f848e; --dim: #7f848e;
+  --accent: #61afef; --err: #ef7f88;
+}
+/* Ayu Dark (MIT) */
+:root[data-theme='ayu'], [data-preview='ayu'] {
+  --bg: #0b0e14; --surface: #0f131a; --surface-2: #131721; --border: #1f2430;
+  --text-1: #e6e1cf; --text-2: #bfbdb6; --text-3: #6c7380; --dim: #6c7380;
+  --accent: #e6b450; --err: #f07178;
+}
+/* Kanagawa (MIT) — sumiInk, fujiWhite, oldWhite, fujiGray, crystalBlue, peachRed */
+:root[data-theme='kanagawa'], [data-preview='kanagawa'] {
+  --bg: #1f1f28; --surface: #2a2a37; --surface-2: #363646; --border: #54546d;
+  --text-1: #dcd7ba; --text-2: #c8c093; --text-3: #727169; --dim: #727169;
+  --accent: #7e9cd8; --err: #ff5d62;
+}
+/* Night Owl (MIT) */
+:root[data-theme='nightowl'], [data-preview='nightowl'] {
+  --bg: #011627; --surface: #0b2942; --surface-2: #13344f; --border: #1d3b53;
+  --text-1: #d6deeb; --text-2: #a6b5cc; --text-3: #637777; --dim: #637777;
+  --accent: #82aaff; --err: #ef5350;
+}
+/* Catppuccin Latte (MIT) */
+:root[data-theme='latte'], [data-preview='latte'] {
+  --bg: #eff1f5; --surface: #e6e9ef; --surface-2: #ffffff; --border: #ccd0da;
+  --text-1: #3c3f58; --text-2: #5c5f77; --text-3: #7c7f93; --dim: #7c7f93;
+  --accent: #8839ef; --err: #d20f39;
+  --shadow: 0 1px 2px rgb(76 79 105 / .05), 0 8px 24px rgb(76 79 105 / .07);
+}
+/* GitHub Dark (Primer, MIT) */
+:root[data-theme='githubdark'], [data-preview='githubdark'] {
+  --bg: #0d1117; --surface: #161b22; --surface-2: #1c2128; --border: #30363d;
+  --text-1: #e6edf3; --text-2: #9da7b3; --text-3: #6e7681; --dim: #6e7681;
+  --accent: #58a6ff; --err: #f85149;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────── */
@@ -839,7 +916,7 @@ button.on { animation: on-pop 260ms var(--spring); }
 .set-num { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-3); }
 .set-num input { width: 72px; font-family: var(--mono); }
 /* capped so "enorme" doesn't push the options off screen; the page behind shows the real size */
-.settings-preview {
+.settings-preview { flex: none;
   font-family: var(--type-font); font-size: min(var(--type-size), 24px); line-height: 1.6; color: var(--text-3);
   background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md); padding: 8px 14px;
   white-space: nowrap; overflow: hidden;
@@ -991,3 +1068,20 @@ button.on { animation: on-pop 260ms var(--spring); }
 .set-toggle.on:active .switch::after { transform: translateX(12px); }
 .set-toggle.on .switch { box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 35%, transparent); }
 @media (prefers-reduced-motion: reduce) { .rp-bar { animation: none; } .ring-arc { transition: none; } }
+
+/* settings: theme cards painted in their own theme (index.css gives [data-preview] each theme's colors) */
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+.theme-card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 0; padding: 12px 12px 10px; text-align: left;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text-3);
+  transition: transform var(--t) var(--spring), border-color var(--t) var(--ease), box-shadow var(--t) var(--ease); }
+.theme-card:hover { transform: translateY(-2px); border-color: var(--text-3); background: var(--bg); }
+.theme-card.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 18px color-mix(in srgb, var(--accent) 30%, transparent); }
+.tc-sample { font-family: var(--type-font, var(--mono)); font-size: 15px; letter-spacing: .01em; display: inline-flex; align-items: center; }
+.tc-ok { color: var(--text-1); }
+.tc-caret { width: 2px; height: 1.05em; margin: 0 1px; border-radius: 2px; background: var(--accent); }
+.tc-bad { color: var(--bg); background: var(--err); border-radius: 3px; }
+.tc-name { font-size: 12px; color: var(--text-2); }
+.theme-card.on .tc-name::after { content: ' ✓'; color: var(--accent); }
+.set-import { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+.set-import textarea { flex: 1; min-width: 0; resize: vertical; font-family: var(--mono); font-size: 12px; }
+button.danger { border-color: var(--err); color: var(--err); }

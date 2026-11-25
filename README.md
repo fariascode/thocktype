@@ -76,13 +76,13 @@ Settings ⚙ in seven tabs, with **search** (type "tape" or "beep" and it takes 
 
 | Tab | Options |
 |---|---|
-| **theme** | 22 themes, all with WCAG contrast checked by automated tests:<br>• *system*, which follows your device's light or dark mode<br>• 5 monochrome themes<br>• our own designs: lilac, lavender, sakura, matcha, amber and ocean<br>• Catppuccin, Rosé Pine, Nord, Gruvbox, Tokyo Night, Everforest, Dracula, Monokai and Solarized |
+| **theme** | 34 themes, all with WCAG contrast checked by automated tests, shown as cards painted in their own colors (hover one to preview it on the whole page):<br>• *system*, which follows your device's light or dark mode<br>• 5 monochrome themes<br>• 12 of our own: lilac, lavender, sakura, matcha, amber, ocean, midnight, forest, neon, coffee, sand and mint<br>• Catppuccin (Mocha and Latte), Rosé Pine, Nord, Gruvbox, Tokyo Night, Everforest, Dracula, Monokai, Solarized, One Dark, Ayu, Kanagawa, Night Owl and GitHub Dark<br>• 🎲 *surprise me*, or a new theme on every visit |
 | **text** | 10 fonts (Cascadia Code is the signature one) or a **font installed** on your computer. Also: size, 2 to 4 visible lines and width |
 | **caret** | Style (line, block, underline or outline), motion (smooth, fast or instant) and a ghost with its own style |
 | **view** | **Tape mode** (a single sliding line), highlight the letter or the word, typed words normal, dimmed or hidden, an **on-screen keyboard** that marks the next key or reacts to what you press, and smooth line changes |
 | **live** | Progress as a number, a bar or hidden, which numbers to show and their color, **focus mode** and charts that start at zero |
 | **sound** | Four synthesized sounds (thock, click, typewriter and soft), volume and a **time warning** in the last 5 seconds (the counter pulses too) |
-| **presets** | Save named combinations of settings (up to 12) and switch with one click or from `ctrl + k` |
+| **presets** | Save named combinations of settings (up to 12) and switch with one click or from `ctrl + k`. **Backup:** copy your settings, paste them in another browser, or reset everything (your presets, tags and results stay) |
 
 ### Anywhere
 - **Accounts** with Google, an email link, or email and password.
@@ -124,7 +124,7 @@ Needs Node 22.18 or newer: the tests run the `.ts` files directly with Node.
 ```bash
 npm install
 npm run dev     # http://localhost:5280
-npm run check   # tests: calculations, sync, levels, leaderboards, translations and contrast of all 22 themes
+npm run check   # tests: calculations, sync, levels, leaderboards, translations and contrast of all 34 themes
 npm run lint
 npm run build
 ```

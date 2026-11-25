@@ -3,10 +3,13 @@ export const THEMES = {
   auto: 'sistema',
   dark: 'carbón', light: 'claro', paper: 'papel', ink: 'tinta', contrast: 'contraste',
   lila: 'lila', lavanda: 'lavanda', sakura: 'sakura', matcha: 'matcha', ambar: 'ámbar', oceano: 'océano',
+  medianoche: 'medianoche', bosque: 'bosque', neon: 'neón', cafe: 'café', arena: 'arena', menta: 'menta',
   catppuccin: 'catppuccin', rosepine: 'rosé pine', nord: 'nord', gruvbox: 'gruvbox', tokyonight: 'tokyo night',
   everforest: 'everforest', dracula: 'dracula', monokai: 'monokai', solarized: 'solarized', solarlight: 'solarized claro',
+  onedark: 'one dark', ayu: 'ayu', kanagawa: 'kanagawa', nightowl: 'night owl', latte: 'catppuccin latte', githubdark: 'github dark',
 } as const
 export const MONO_THEMES = ['auto', 'dark', 'light', 'paper', 'ink', 'contrast'] as const
+export const ORIGINAL_THEMES = ['lila', 'lavanda', 'sakura', 'matcha', 'ambar', 'oceano', 'medianoche', 'bosque', 'neon', 'cafe', 'arena', 'menta'] as const
 export const SIZES = { s: 'chico', m: 'normal', l: 'grande', xl: 'enorme' } as const
 export const FONTS = {
   cascadia: 'Cascadia Code', jetbrains: 'JetBrains Mono', plex: 'IBM Plex Mono', space: 'Space Mono', fira: 'Fira Code',
@@ -47,7 +50,7 @@ export type Appearance = {
 // "sistema" follows the device's light/dark setting
 const prefersDark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true
 export const resolveTheme = (t: Theme): Exclude<Theme, 'auto'> => (t === 'auto' ? (prefersDark() ? 'dark' : 'light') : t)
-const LIGHT: Theme[] = ['light', 'paper', 'lavanda', 'sakura', 'solarlight']
+const LIGHT: Theme[] = ['light', 'paper', 'lavanda', 'sakura', 'solarlight', 'arena', 'menta', 'latte']
 export const isLight = (t: Theme) => LIGHT.includes(resolveTheme(t))
 
 // Google Fonts families, downloaded only when chosen (Cascadia Code, the signature font, ships with the page)
@@ -86,6 +89,9 @@ export const SWATCH: Record<Theme, [string, string]> = {
   rosepine: ['#191724', '#c4a7e7'], nord: ['#2e3440', '#88c0d0'], gruvbox: ['#282828', '#fabd2f'],
   tokyonight: ['#1a1b26', '#7aa2f7'], everforest: ['#2d353b', '#a7c080'], dracula: ['#282a36', '#bd93f9'],
   monokai: ['#272822', '#a6e22e'], solarized: ['#002b36', '#b58900'], solarlight: ['#fdf6e3', '#2076b4'],
+  medianoche: ['#0b1020', '#8fb4ff'], bosque: ['#0f1a14', '#6fdc9b'], neon: ['#150b24', '#ff4fd8'], cafe: ['#1a1410', '#e0a96d'],
+  arena: ['#f4ede1', '#b5562c'], menta: ['#eef6f2', '#1f8a64'], onedark: ['#282c34', '#61afef'], ayu: ['#0b0e14', '#e6b450'],
+  kanagawa: ['#1f1f28', '#7e9cd8'], nightowl: ['#011627', '#82aaff'], latte: ['#eff1f5', '#8839ef'], githubdark: ['#0d1117', '#58a6ff'],
 }
 export const FONT_FAMILY: Record<Font, string> = {
   cascadia: "'Cascadia Code', monospace", jetbrains: "'JetBrains Mono', monospace", plex: "'IBM Plex Mono', monospace", space: "'Space Mono', monospace",

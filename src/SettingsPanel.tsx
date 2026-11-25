@@ -1,9 +1,10 @@
 import { UI_LANGS, t, type UiLang } from './i18n'
 import { useEffect, useRef, useState } from 'react'
 import { useLayoutMotion } from './motion'
+import { copyText } from './share'
 import {
   CARETS, CARET_MOTION, FONTS, FONT_FAMILY, GHOST_SOURCES, HIGHLIGHTS, KEYMAPS, LINES, LIVE_COLORS, MONO_THEMES, PROGRESS, SIZES,
-  SOUNDS, TAPE, TAPE_MARGINS, TYPED_EFFECTS, WIDTHS, SWATCH, THEMES, loadFont,
+  ORIGINAL_THEMES, SOUNDS, TAPE, TAPE_MARGINS, TYPED_EFFECTS, WIDTHS, THEMES, loadFont, resolveTheme,
   type Appearance, type Font, type GhostSource, type Keymap, type Progress, type SoundKind, type Theme,
 } from './appearance'
 
@@ -13,18 +14,22 @@ export type Prefs = Appearance & {
   synced: boolean // signed in: settings follow the account
   uiLang: UiLang | 'auto'
   timeWarn: boolean
+  themeShuffle: boolean // a different theme on every visit
 }
 type Flag = { [K in keyof Prefs]: Prefs[K] extends boolean ? K : never }[keyof Prefs]
 type Props = {
   a: Prefs; onChange: (next: Partial<Prefs>) => void; onClose: () => void; onPreviewSound: (k: SoundKind, volume: number) => void
   presets: string[]; onSavePreset: (name: string) => void; onApplyPreset: (name: string) => void; onDeletePreset: (name: string) => void
+  onExport: () => string; onImport: (text: string) => string | null; onReset: () => void // import returns an error message, or null when applied
 }
 const MAX_PRESETS = 12
 
 // search index: [tab, label shown on the section, extra words people may type]
 const INDEX: [Tab, string, string][] = [
   ['tema', 'monocromáticos', 'tema sistema automático claro oscuro carbón papel tinta contraste blanco negro'],
-  ['tema', 'de color', 'tema colores lila lavanda sakura matcha ámbar océano catppuccin rosé pine nord gruvbox tokyo night everforest dracula monokai solarized'],
+  ['tema', 'originales', 'tema colores lila lavanda sakura matcha ámbar océano medianoche bosque neón café arena menta'],
+  ['tema', 'populares', 'tema colores catppuccin latte rosé pine nord gruvbox tokyo night everforest dracula monokai solarized one dark ayu kanagawa night owl github'],
+  ['tema', 'tema al azar', 'aleatorio dado sorpresa cada visita cambiar'],
   ['texto', 'fuente', 'tipografía letra cascadia jetbrains plex space fira source geist roboto ubuntu inconsolata local instalada'],
   ['texto', 'tamaño del texto', 'letra grande chico enorme zoom'],
   ['texto', 'líneas', 'renglones visibles 2 3 4'],
@@ -47,6 +52,7 @@ const INDEX: [Tab, string, string][] = [
   ['sonido', 'aviso de tiempo', 'últimos segundos alarma pitido final'],
   ['perfiles', 'guardar los ajustes actuales', 'perfil preset configuración guardar'],
   ['perfiles', 'tus perfiles', 'perfil preset aplicar borrar'],
+  ['perfiles', 'copia de seguridad', 'exportar importar copiar pegar restablecer reiniciar valores por defecto backup'],
 ]
 const fold = (t: string) => t.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 // every word you type must appear somewhere in the label, the tab name or the extra words
@@ -57,18 +63,39 @@ const search = (q: string) => {
 
 const TABS = { tema: 'tema', texto: 'texto', cursor: 'cursor', vista: 'vista', vivo: 'en vivo', sonido: 'sonido', perfiles: 'perfiles' } as const
 type Tab = keyof typeof TABS
-const COLOR_THEMES = (Object.keys(THEMES) as Theme[]).filter(t => !(MONO_THEMES as readonly Theme[]).includes(t))
-const swatch = (th: Theme) => (
-  <span className="swatch-label">
-    <span className="swatch" style={{ background: SWATCH[th][0], color: SWATCH[th][1] }}>Aa</span>{t(THEMES[th])}
-  </span>
-)
+const ALL_THEMES = Object.keys(THEMES) as Theme[]
+const POPULAR_THEMES = ALL_THEMES.filter(th => !(MONO_THEMES as readonly Theme[]).includes(th) && !(ORIGINAL_THEMES as readonly Theme[]).includes(th))
 let lastTab: Tab = 'tema' // reopening the panel returns to the tab you were on
 // eslint-disable-next-line react-refresh/only-export-components -- a plain setter, fast refresh doesn't need to track it
 export const openOnTab = (to: Tab) => { lastTab = to } // e.g. the theme name in the footer opens the theme tab
 
 // Changes apply instantly (to the preview and to the page behind), and are saved per device
-export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, presets, onSavePreset, onApplyPreset, onDeletePreset }: Props) {
+export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, presets, onSavePreset, onApplyPreset, onDeletePreset, onExport, onImport, onReset }: Props) {
+  // hovering a theme card previews it on the whole page; leaving (or closing the panel) puts yours back
+  const peek = (th: Theme) => { document.documentElement.dataset.theme = resolveTheme(th) }
+  const unpeek = () => { document.documentElement.dataset.theme = resolveTheme(a.theme) }
+  const themeNow = useRef(a.theme)
+  themeNow.current = a.theme
+  useEffect(() => () => { document.documentElement.dataset.theme = resolveTheme(themeNow.current) }, [])
+  const themeCard = (th: Theme) => (
+    <button key={th} role="radio" aria-checked={a.theme === th} className={`theme-card ${a.theme === th ? 'on' : ''}`} data-preview={resolveTheme(th)}
+      onClick={() => onChange({ theme: th })} onMouseEnter={() => peek(th)} onMouseLeave={unpeek} onFocus={() => peek(th)} onBlur={unpeek}>
+      <span className="tc-sample" aria-hidden><span className="tc-ok">thock</span><span className="tc-caret" /><span className="tc-bad">t</span>ype</span>
+      <span className="tc-name">{t(THEMES[th])}</span>
+    </button>
+  )
+  const surprise = () => {
+    const pool = ALL_THEMES.filter(th => th !== 'auto' && th !== a.theme)
+    onChange({ theme: pool[Math.floor(Math.random() * pool.length)] })
+  }
+  // backup: copy, paste back, or reset (asks twice)
+  const [copied, setCopied] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importText, setImportText] = useState('')
+  const [ioMsg, setIoMsg] = useState('')
+  const [confirmReset, setConfirmReset] = useState(false)
+  const exportIt = async () => { setCopied(await copyText(onExport())); setTimeout(() => setCopied(false), 2000) }
+  const importIt = () => { const err = onImport(importText); setIoMsg(err ?? 'ajustes aplicados'); if (!err) { setImportText(''); setImporting(false) } }
   const [presetName, setPresetName] = useState('')
   const [query, setQuery] = useState('')
   // jump to the tab of a search result and briefly highlight that option
@@ -154,8 +181,17 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, pr
         <div className="set-page" key={tab} role="tabpanel">
           {tab === 'tema' && <>
             <section><small>{t('idioma de la interfaz')}</small>{group('uiLang', { auto: 'automático', ...UI_LANGS })}</section>
-            <section className="themes"><small>{t('monocromáticos')}</small>{group('theme', THEMES, v => swatch(v as Theme), MONO_THEMES)}</section>
-            <section className="themes"><small>{t('de color')}</small>{group('theme', THEMES, v => swatch(v as Theme), COLOR_THEMES)}</section>
+            <section><small>{t('tema al azar')}</small>
+              <div className="set-options">
+                <button onClick={surprise}>🎲 {t('sorpréndeme')}</button>
+                {flag('themeShuffle', 'distinto en cada visita', 'al abrir ThockType se elige un tema al azar')}
+              </div>
+            </section>
+            {([['monocromáticos', MONO_THEMES], ['originales', ORIGINAL_THEMES], ['populares', POPULAR_THEMES]] as const).map(([label, list]) => (
+              <section key={label}><small>{t(label)} · {list.length}</small>
+                <div className="theme-grid" role="radiogroup" aria-label={t(label)}>{list.map(th => themeCard(th as Theme))}</div>
+              </section>
+            ))}
           </>}
           {tab === 'texto' && <>
             <section className="fonts"><small>{t('fuente')}</small>{group('font', FONTS, f => <span style={{ fontFamily: FONT_FAMILY[f as Font] }}>{FONTS[f as Font]}</span>)}</section>
@@ -231,6 +267,24 @@ export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, pr
                   ))}
                 </ul>
               ) : <p className="set-help">{t('aún no tienes perfiles')}</p>}
+            </section>
+            <section><small>{t('copia de seguridad')}</small>
+              <div className="set-options">
+                <button onClick={exportIt}>{copied ? `✓ ${t('copiado')}` : `⧉ ${t('copiar mis ajustes')}`}</button>
+                <button className={importing ? 'on' : ''} onClick={() => { setImporting(!importing); setIoMsg('') }}>{t('importar')}</button>
+                <button className={confirmReset ? 'danger' : ''} onBlur={() => setConfirmReset(false)}
+                  onClick={() => { if (confirmReset) { onReset(); setConfirmReset(false); setIoMsg('ajustes restablecidos') } else setConfirmReset(true) }}>
+                  {t(confirmReset ? '¿seguro? toca otra vez' : 'restablecer todo')}
+                </button>
+              </div>
+              {importing && (
+                <div className="set-import">
+                  <textarea className="set-input" rows={3} placeholder={t('pega aquí tus ajustes copiados')} aria-label={t('ajustes para importar')}
+                    value={importText} onChange={e => setImportText(e.target.value)} autoFocus />
+                  <button className="on" disabled={!importText.trim()} onClick={importIt}>{t('aplicar')}</button>
+                </div>
+              )}
+              <small className="set-help" role="status">{ioMsg ? t(ioMsg) : t('copia tus ajustes para pasarlos a otro navegador. Restablecer no borra tus perfiles, etiquetas ni resultados.')}</small>
             </section>
           </>}
           {tab === 'sonido' && <>
