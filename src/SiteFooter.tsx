@@ -21,7 +21,7 @@ export default function SiteFooter({ theme, onTheme }: { theme: Theme; onTheme: 
     <footer className="site-foot fade">
       <nav aria-label={t('enlaces')}>
         <a href={REPO} {...ext}>{ICONS.code}github</a>
-        <a href="https://x.com/fariascode" {...ext}>{ICONS.x}x</a>
+        <a href="https://x.com/farcode_" {...ext}>{ICONS.x}x</a>
         <a href="mailto:hola@thocktype.app">{ICONS.mail}{t('contacto')}</a>
         <a href="https://ko-fi.com/farcode" {...ext}>{ICONS.heart}{t('apoyar')}</a>
         <a href={uiLang() === 'en' ? '/privacy.html' : '/privacidad.html'}>{ICONS.lock}{t('privacidad')}</a>
