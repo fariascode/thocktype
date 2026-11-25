@@ -841,6 +841,7 @@ export default function App() {
           <p className="hint fade">
             {COARSE ? <button onClick={() => restart()}>↻ {t('reiniciar')}</button> : <><kbd>tab</kbd> {t('reiniciar')}</>}
             <a className="hint-link" href={uiLang() === 'en' ? '/privacy.html' : '/privacidad.html'}>{t('privacidad')}</a>
+            <a className="hint-link" href="https://ko-fi.com/farcode" target="_blank" rel="noopener">♥ {t('apoyar')}</a>
           </p>
         </>
       )}
