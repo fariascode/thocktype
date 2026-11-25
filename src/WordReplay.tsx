@@ -55,6 +55,7 @@ export default function WordReplay({ log, targets, pb, onDrillWords }: Props) {
   const shown = targets.slice(0, Math.max(finalCount, stats.length)) // same words as the test; pending ones stay dim during the replay
   const play = () => { if (t === null || t >= total) setT(0); setPicked(null); setPlaying(true) }
   const s = picked !== null ? stats[picked] : null
+  const top = Math.max(1, ...stats.map(x => x.wpm))
 
   return (
     <div className="card replay">
@@ -69,6 +70,15 @@ export default function WordReplay({ log, targets, pb, onDrillWords }: Props) {
             onChange={e => { setPlaying(false); setT(Number(e.target.value)) }} />
           {t !== null && <button onClick={() => { setPlaying(false); setT(null) }} aria-label={tr('ver el test terminado')}>✕</button>}
         </div>
+      </div>
+
+      {/* one bar per word: height = speed, a tick at your median, the fastest word glows; tap a bar for its detail */}
+      <div className="rp-bars" role="group" aria-label={tr('velocidad de cada palabra')} style={{ '--med': `${(median / top) * 100}%` } as React.CSSProperties}>
+        {stats.map((st, wi) => (
+          <button key={wi} className={`rp-bar ${st.wpm === top ? 'top' : ''} ${st.wpm < median * 0.7 ? 'slow' : ''} ${picked === wi ? 'picked' : ''} ${wi === cur && t !== null ? 'now' : ''}`}
+            style={{ '--h': `${Math.max(6, (st.wpm / top) * 100)}%`, '--i': wi } as React.CSSProperties}
+            onClick={() => setPicked(picked === wi ? null : wi)} aria-label={`${st.word} · ${st.wpm} wpm`} title={`${st.word} · ${st.wpm} wpm`} />
+        ))}
       </div>
 
       <div className="rp-words" ref={box}>
