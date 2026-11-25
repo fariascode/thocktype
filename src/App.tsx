@@ -43,6 +43,7 @@ import ProfilePage from './ProfilePage'
 import { GHOST_SOURCES, KEYMAPS, applyAppearance, isLight, type Appearance, type GhostSource, type Keymap as KeymapMode, type Caret, type CaretMotion, type Font, type Lines, type Progress, type SoundKind, type Width, type Size, type Theme } from './appearance'
 import SettingsPanel, { openOnTab } from './SettingsPanel'
 import SiteFooter from './SiteFooter'
+import Ring from './Ring'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -1014,7 +1015,7 @@ function ResultView({ r, theme, myName, signup, onNext, onDrill, onDrillWords, r
       {newPb && <PrBanner wpm={r.wpm} prev={r.prevPb} mode={modeName} />}
       <div className={`big ${newPb ? 'is-pb' : ''}`}>
         <div><small>wpm</small><b>{shownWpm}</b></div>
-        <div><small>{t('precisión')}</small><b>{shownAcc}%</b></div>
+        <div className="acc-stat"><Ring value={r.acc} label={`${r.acc}% ${t('precisión')}`} /><div><small>{t('precisión')}</small><b>{shownAcc}%</b></div></div>
       </div>
       {r.samples.length > 1 && <div className="card"><small>{t('velocidad por segundo')}</small><Chart key={theme} labels={labels} series={series} /></div>}
       <div className="small">

@@ -960,3 +960,34 @@ button.on { animation: on-pop 260ms var(--spring); }
 .site-foot svg { width: 13px; height: 13px; flex: none; }
 .site-foot .ver { font-family: var(--mono); font-size: 11px; }
 @media (max-width: 700px) { .site-foot { justify-content: center; } .site-foot nav, .site-foot .foot-meta { justify-content: center; } }
+
+/* accuracy ring on the result */
+.acc-stat { display: flex; align-items: center; gap: 14px; }
+.ring { flex: none; overflow: visible; }
+.ring-track { fill: none; stroke: color-mix(in srgb, var(--text-3) 25%, transparent); stroke-width: 7; }
+.ring-arc { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1100ms var(--ease);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 35%, transparent)); }
+.ring-tick { stroke: var(--text-3); stroke-width: 1.5; stroke-linecap: round; opacity: .6; }
+@media (max-width: 700px) { .ring { width: 64px; height: 64px; } }
+
+/* speed of every word as bars: grow in one after another, median as a dashed line, fastest glows */
+.rp-bars { position: relative; display: flex; align-items: flex-end; gap: 3px; height: 64px; margin: 4px 0 14px; padding-top: 4px; }
+.rp-bars::before { content: ''; position: absolute; left: 0; right: 0; bottom: var(--med); border-top: 1px dashed color-mix(in srgb, var(--text-3) 70%, transparent); pointer-events: none; }
+.rp-bar { flex: 1 1 0; min-width: 3px; max-width: 40px; height: var(--h); min-height: 0; padding: 0; border: 0; border-radius: 3px 3px 1px 1px;
+  background: color-mix(in srgb, var(--text-2) 55%, transparent); transform-origin: 50% 100%;
+  animation: bar-in 520ms var(--spring) calc(var(--i) * 18ms) backwards; transition: background-color var(--t) var(--ease), opacity var(--t) var(--ease); }
+.rp-bar:hover, .rp-bar.picked, .rp-bar.now { background: var(--text-1); }
+.rp-bar.slow { opacity: .45; }
+.rp-bar.top { background: var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent); }
+@keyframes bar-in { from { transform: scaleY(0); } }
+
+/* progress toward a level, and the test's progress bar: in segments instead of one continuous line */
+.big-bar, .progress-bar, .acct-level .lv-bar { -webkit-mask: repeating-linear-gradient(90deg, #000 0 calc(5% - 2px), transparent calc(5% - 2px) 5%); mask: repeating-linear-gradient(90deg, #000 0 calc(5% - 2px), transparent calc(5% - 2px) 5%); border-radius: 0; }
+.progress-bar { height: 3px; }
+.big-bar > span { box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent); }
+
+/* settings switches: the knob stretches while pressed and the "on" track glows softly */
+.set-toggle:active .switch::after { width: 18px; }
+.set-toggle.on:active .switch::after { transform: translateX(12px); }
+.set-toggle.on .switch { box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 35%, transparent); }
+@media (prefers-reduced-motion: reduce) { .rp-bar { animation: none; } .ring-arc { transition: none; } }

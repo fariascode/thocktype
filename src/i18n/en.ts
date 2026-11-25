@@ -203,5 +203,6 @@ const en: Record<string, string> = {
   '@{u} no existe o su perfil es privado.': "@{u} doesn't exist or their profile is private.",
   // footer
   'enlaces': 'links', 'contacto': 'contact', 'cambiar tema': 'change theme', 'versión publicada · ver el cambio en GitHub': 'published version · see the change on GitHub',
+  'velocidad de cada palabra': 'speed of each word',
 }
 export default en
