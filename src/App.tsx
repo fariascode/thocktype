@@ -840,8 +840,6 @@ export default function App() {
           {test.by && <p className="by fade">— {test.url ? <a href={test.url} target="_blank" rel="noreferrer">{test.by}</a> : test.by}</p>}
           <p className="hint fade">
             {COARSE ? <button onClick={() => restart()}>↻ {t('reiniciar')}</button> : <><kbd>tab</kbd> {t('reiniciar')}</>}
-            <a className="hint-link" href={uiLang() === 'en' ? '/privacy.html' : '/privacidad.html'}>{t('privacidad')}</a>
-            <a className="hint-link" href="https://ko-fi.com/farcode" target="_blank" rel="noopener">♥ {t('apoyar')}</a>
           </p>
         </>
       )}
@@ -960,6 +958,11 @@ function StatusBar({ s, set, restart, edit, weak, today, sayChunk }: {
         {opt(s.ghost, 'fantasma', () => set({ ...s, ghost: !s.ghost }), 'un segundo cursor corre a tu ritmo elegido (ajustes → cursor)')}
         {opt(false, isLight(s.theme) ? '◑ oscuro' : '◐ claro', () => set({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))}
       </div>
+      </div>
+      {/* small print, out of the way of the test */}
+      <div className="status-links">
+        <a href={uiLang() === 'en' ? '/privacy.html' : '/privacidad.html'}>{t('privacidad')}</a>
+        <a href="https://ko-fi.com/farcode" target="_blank" rel="noopener">♥ {t('apoyar')}</a>
       </div>
     </footer>
   )
