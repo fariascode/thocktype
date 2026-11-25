@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 const css = readFileSync(new URL('./index.css', import.meta.url), 'utf8')
 const base = Object.fromEntries([...css.match(/^:root \{([\s\S]*?)\n\}/m)![1].matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)].map(m => [m[1], m[2]]))
 const themes: Record<string, Record<string, string>> = { dark: base }
-for (const m of css.matchAll(/:root\[data-theme='(\w+)'\] \{([\s\S]*?)\}/g))
+for (const m of css.matchAll(/:root\[data-theme='(\w+)'\](?:, \[data-preview='\w+'\])? \{([\s\S]*?)\}/g))
   themes[m[1]] = { ...base, ...Object.fromEntries([...m[2].matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)].map(x => [x[1], x[2]])) }
 
 const lum = (hex: string) => {
