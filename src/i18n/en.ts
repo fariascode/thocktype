@@ -3,7 +3,7 @@ const en: Record<string, string> = {
   // ── navigation and header
   'test': 'test', 'historial': 'history', 'ranking': 'leaderboard', 'secciones': 'sections', 'ajustes': 'settings',
   'comandos': 'commands', 'comandos · ctrl k': 'commands · ctrl k', 'paleta de comandos': 'command palette',
-  'iniciar sesión': 'sign in', 'tu cuenta': 'your account', 'privacidad': 'privacy',
+  'iniciar sesión': 'sign in', 'tu cuenta': 'your account', 'privacidad': 'privacy', 'apoyar': 'support',
   'reto #{n}': 'challenge #{n}', 'racha {n}d': 'streak {n}d', 'días seguidos practicando': 'days in a row practicing',
   'el reto de hoy: el mismo texto para todos': "today's challenge: the same text for everyone",
   'ranking de hoy': "today's ranking", 'idioma de la interfaz': 'interface language',

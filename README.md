@@ -166,6 +166,7 @@ public/              icons, manifest, service worker and share image
 - **Without an account, nothing leaves your browser:** your tests, settings and stats are stored only in your browser.
 - **With an account, your tests, key stats and settings are uploaded** to sync your devices. Only you can read your settings.
 - **Your profile can be private:** then nobody else sees your results.
+- **Support the project:** [ko-fi.com/farcode](https://ko-fi.com/farcode). ThockType is free and has no ads.
 - No ads, nothing that follows you across sites, and only anonymous, cookieless visit counts. Fonts other than Cascadia Code are downloaded from Google Fonts only if you pick them. Full details: [privacy policy](https://thocktype.app/privacy.html).
 
 ## License
