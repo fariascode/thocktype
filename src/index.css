@@ -266,9 +266,9 @@ button.hdr-stat:hover { color: var(--text-1); background: none; }
 .icon-btn { width: 34px; height: 34px; min-height: 34px; padding: 0; display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
 .icon-btn:hover { color: var(--text-1); }
 .icon-btn .avatar { width: 28px; height: 28px; }
-/* phones: two rows, [logo · actions] then [sections · today's challenge], so the test shows up without scrolling */
+/* phones: two rows, [logo · today's challenge · actions] then [sections], so the test shows up without scrolling */
 @media (max-width: 700px) {
-  header { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'logo actions' 'nav stats'; gap: 12px 10px; }
+  header { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: 'logo stats actions' 'nav nav nav'; gap: 12px 10px; }
   .hdr-left, .hdr-right { display: contents; }
   header h1 { grid-area: logo; }
   .hdr-nav { grid-area: nav; justify-self: start; }
@@ -746,11 +746,11 @@ button.on { animation: on-pop 260ms var(--spring); }
 .auth h2 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
 .auth form { display: flex; flex-direction: column; gap: 12px; }
 .auth label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-3); }
-.auth input {
+.auth input, .people-search {
   background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); border-radius: var(--r-sm);
   font: inherit; font-size: 16px; padding: 10px 12px; transition: border-color var(--t) var(--ease);
 }
-.auth input:focus { outline: none; border-color: var(--text-2); }
+.auth input:focus, .people-search:focus { outline: none; border-color: var(--text-2); }
 .auth-google { border-color: var(--border); background: var(--surface-2); color: var(--text-1); min-height: 42px; }
 .auth-or { display: flex; align-items: center; gap: 10px; color: var(--text-3); font-size: 12px; }
 .auth-or::before, .auth-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
@@ -942,3 +942,15 @@ button.on { animation: on-pop 260ms var(--spring); }
 .pb-slot.empty { opacity: .6; }
 .pb-acc { font-family: var(--mono); font-size: 14px; color: var(--text-1); }
 .pb-meta { font-size: 11px; color: var(--text-3); line-height: 1.35; }
+
+/* friends: search people and your list */
+.friends { display: grid; gap: 16px; }
+.friends h2 { font-size: 18px; margin-bottom: 12px; }
+.people-search { width: 100%; max-width: 420px; margin-bottom: 8px; }
+.people { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.people li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 12px; padding: 8px 10px; border-radius: var(--r-sm, 8px); cursor: pointer; }
+.people li:hover, .people li:focus-visible { background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+.people .avatar { width: 32px; height: 32px; }
+.people-id { display: flex; flex-direction: column; min-width: 0; }
+.people-id b { color: var(--text-1); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.people-id small { color: var(--text-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

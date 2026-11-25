@@ -190,5 +190,16 @@ const en: Record<string, string> = {
   'repitiendo · {a}s de {b}s': 'replaying · {a}s of {b}s', 'la marca ▏ es tu récord ({n} wpm)': 'the ▏ mark is your record ({n} wpm)',
   'tus palabras más lentas': 'your slowest words', 'practicar estas palabras': 'practice these words',
   '{n} xp para nivel {m}': '{n} xp to level {m}', 'menos': 'less', 'nuevo récord': 'new record',
+  // friends
+  'amigos': 'friends', 'amigo': 'friend', 'agregar amigo': 'add friend', 'agregar': 'add', 'buscar usuarios': 'find people',
+  'amigos · buscar usuarios': 'friends · find people', '@usuario o nombre': '@username or name',
+  'no se pudo buscar. Revisa tu conexión.': "couldn't search. Check your connection.",
+  'nadie con ese nombre. Solo aparecen perfiles públicos con @usuario.': 'nobody by that name. Only public profiles with a @username show up.',
+  'para agregar amigos y ver sus récords': "to add friends and see their records",
+  'no se pudo cargar tu lista. Revisa tu conexión.': "couldn't load your list. Check your connection.",
+  'cargando…': 'loading…', 'aún no tienes amigos agregados: búscalos arriba por su @usuario.': "you haven't added any friends yet: find them above by their @username.",
+  'sin tests de tiempo': 'no time tests', '{n} tests': '{n} tests', 'último {d}': 'last {d}',
+  'quitar a @{u} de amigos': 'remove @{u} from friends', 'agregar a @{u}': 'add @{u}',
+  '@{u} no existe o su perfil es privado.': "@{u} doesn't exist or their profile is private.",
 }
 export default en

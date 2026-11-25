@@ -5,10 +5,11 @@ import { weeklyTop } from './leaderboard'
 import { copyText } from './share'
 import { APP_URL } from './config'
 import History from './History'
+import { addFriend, isFriend, removeFriend } from './friends'
 
-type Props = { username: string; theme: string; isMe: boolean }
+type Props = { username: string; theme: string; isMe: boolean; uid?: string; onSignIn: () => void }
 
-export default function ProfilePage({ username, theme, isMe }: Props) {
+export default function ProfilePage({ username, theme, isMe, uid, onSignIn }: Props) {
   const [data, setData] = useState<PublicProfile | null | 'loading' | 'error'>('loading')
   const [copied, setCopied] = useState(false)
 
@@ -26,9 +27,23 @@ export default function ProfilePage({ username, theme, isMe }: Props) {
     weeklyTop(username).then(b => alive && setBadges(b)).catch(() => {})
     return () => { alive = false }
   }, [username])
+  // friend button: null while unknown
+  const [friend, setFriend] = useState<boolean | null>(null)
+  const pid = data && typeof data === 'object' ? data.profile.id : null
+  useEffect(() => {
+    setFriend(null)
+    if (uid && pid && !isMe) isFriend(uid, pid).then(setFriend).catch(() => {})
+  }, [uid, pid, isMe])
+  const toggleFriend = async () => {
+    if (!uid) return onSignIn()
+    if (!pid || friend === null) return
+    const was = friend
+    setFriend(!was)
+    try { await (was ? removeFriend(uid, pid) : addFriend(pid)) } catch { setFriend(was) }
+  }
   if (data === 'loading') return <p className="hint">{t('cargando perfil…')}</p>
   if (data === 'error') return <p className="hint">{t('no se pudo cargar el perfil. Revisa tu conexión.')}</p>
-  if (!data) return <p className="hint">@{username} no existe o su perfil es privado.</p>
+  if (!data) return <p className="hint">{t('@{u} no existe o su perfil es privado.', { u: username })}</p>
 
   const { profile: p, history, keys, bigrams } = data
   const joined = new Date(p.created_at).toLocaleDateString(uiLang(), { month: 'long', year: 'numeric' })
@@ -53,6 +68,11 @@ export default function ProfilePage({ username, theme, isMe }: Props) {
             </div>
           )}
         </div>
+        {!isMe && (
+          <button className={friend ? '' : 'on'} onClick={toggleFriend} disabled={!!uid && friend === null}>
+            {friend ? `✓ ${t('amigo')}` : `+ ${t('agregar amigo')}`}
+          </button>
+        )}
         <button onClick={async () => { setCopied(await copyText(url)); setTimeout(() => setCopied(false), 2000) }}>
           {copied ? t('enlace copiado') : `⧉ ${t('copiar enlace')}`}
         </button>

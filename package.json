@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check": "node src/stats.test.ts && node src/words.test.ts && node src/inputDiff.test.ts && node src/coach.test.ts && node src/daily.test.ts && node src/fuzzy.test.ts && node src/syncData.test.ts && node src/profileRules.test.ts && node src/themes.test.ts && node src/rankList.test.ts && node src/level.test.ts && node src/replay.test.ts && node src/duel.test.ts && node src/wiki.test.ts && node src/codeBlock.test.ts && node src/i18n.test.ts"
+    "check": "node src/stats.test.ts && node src/words.test.ts && node src/inputDiff.test.ts && node src/coach.test.ts && node src/daily.test.ts && node src/fuzzy.test.ts && node src/syncData.test.ts && node src/profileRules.test.ts && node src/themes.test.ts && node src/rankList.test.ts && node src/level.test.ts && node src/replay.test.ts && node src/duel.test.ts && node src/wiki.test.ts && node src/codeBlock.test.ts && node src/i18n.test.ts && node src/friends.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.2",
