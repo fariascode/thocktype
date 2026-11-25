@@ -18,7 +18,7 @@ import PrBanner from './PrBanner'
 import { LevelChip, XpCard } from './LevelUi'
 import { levelOf, titleFor, totalXp, xpFor } from './level'
 import { reducedMotion, useCountUp, useLayoutMotion } from './motion'
-import { UI_LANGS, detectUiLang, setUiLang, t, uiLang, type UiLang } from './i18n'
+import { UI_LANGS, detectUiLang, setUiLang, t, type UiLang } from './i18n'
 import { logoIntro, logoWave, preloadFx, resultIntro } from './fx'
 import Chart from './Chart'
 import Heatmap from './Heatmap'
@@ -41,7 +41,8 @@ import { getMyProfile, type Profile } from './profile'
 import { markChanged, pushSettings, syncSettings } from './settingsSync'
 import ProfilePage from './ProfilePage'
 import { GHOST_SOURCES, KEYMAPS, applyAppearance, isLight, type Appearance, type GhostSource, type Keymap as KeymapMode, type Caret, type CaretMotion, type Font, type Lines, type Progress, type SoundKind, type Width, type Size, type Theme } from './appearance'
-import SettingsPanel from './SettingsPanel'
+import SettingsPanel, { openOnTab } from './SettingsPanel'
+import SiteFooter from './SiteFooter'
 import { challengeNumber, dailyWords, grid, loadDaily, officialFor, saveOfficial, type DailyEntry } from './daily'
 import { addBigram, loadBigrams, mergeBigrams, saveBigrams, type Bigrams } from './coach'
 
@@ -852,6 +853,7 @@ export default function App() {
       {!profileName && !onBoard && !onFriends && view === 'test' && phase !== 'done' && !editing && (
         <StatusBar s={s} set={update} sayChunk={sayChunk} restart={restart} edit={() => setEditing(true)} weak={weakKeys(keyStats)} today={todayDaily} />
       )}
+      {phase !== 'running' && <SiteFooter theme={s.theme} onTheme={() => { openOnTab('tema'); setSettingsOpen(true) }} />}
       {auth === 'account' && session && (
         <AccountMenu session={session} me={me} syncState={syncState} anchor={acctAnchor}
           stats={{ ...(l => ({ level: l.level, progress: l.progress }))(levelOf(xp)), title: titleFor(levelOf(xp).level), tests: history.length, best: Math.max(0, ...history.map(r => r.wpm)), streak: days }}
@@ -963,11 +965,6 @@ function StatusBar({ s, set, restart, edit, weak, today, sayChunk }: {
         {opt(s.ghost, 'fantasma', () => set({ ...s, ghost: !s.ghost }), 'un segundo cursor corre a tu ritmo elegido (ajustes → cursor)')}
         {opt(false, isLight(s.theme) ? '◑ oscuro' : '◐ claro', () => set({ ...s, theme: isLight(s.theme) ? 'dark' : 'light' }))}
       </div>
-      </div>
-      {/* small print, out of the way of the test */}
-      <div className="status-links">
-        <a href={uiLang() === 'en' ? '/privacy.html' : '/privacidad.html'}>{t('privacidad')}</a>
-        <a href="https://ko-fi.com/farcode" target="_blank" rel="noopener">♥ {t('apoyar')}</a>
       </div>
     </footer>
   )

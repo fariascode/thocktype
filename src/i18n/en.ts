@@ -201,5 +201,7 @@ const en: Record<string, string> = {
   'sin tests de tiempo': 'no time tests', '{n} tests': '{n} tests', 'último {d}': 'last {d}',
   'quitar a @{u} de amigos': 'remove @{u} from friends', 'agregar a @{u}': 'add @{u}',
   '@{u} no existe o su perfil es privado.': "@{u} doesn't exist or their profile is private.",
+  // footer
+  'enlaces': 'links', 'contacto': 'contact', 'cambiar tema': 'change theme', 'versión publicada · ver el cambio en GitHub': 'published version · see the change on GitHub',
 }
 export default en

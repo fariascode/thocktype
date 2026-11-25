@@ -523,9 +523,6 @@ button.on { animation: on-pop 260ms var(--spring); }
 .hint-link { margin-left: 16px; }
 .auth-privacy { align-self: center; padding: 6px 10px; }
 .hint-link:hover, .auth-privacy:hover { color: var(--text-1); }
-.status-links { display: flex; justify-content: center; gap: 16px; padding: 0 10px 2px; font-size: 11px; }
-.status-links a { color: var(--text-3); text-decoration: none; }
-.status-links a:hover { color: var(--text-1); }
 
 /* tags above the words and their popover */
 .timer { position: relative; }
@@ -954,3 +951,12 @@ button.on { animation: on-pop 260ms var(--spring); }
 .people-id { display: flex; flex-direction: column; min-width: 0; }
 .people-id b { color: var(--text-1); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .people-id small { color: var(--text-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* site footer: links on the left, what's running on the right; quiet until you look for it */
+.site-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding: 2px 4px; font-size: 12px; color: var(--text-3); animation: enter 420ms var(--ease) backwards; }
+.site-foot nav, .site-foot .foot-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
+.site-foot a, .site-foot button { display: inline-flex; align-items: center; gap: 6px; color: var(--text-3); text-decoration: none; font: inherit; font-size: 12px; padding: 0; min-height: 0; border: 0; background: none; transition: color var(--t) var(--ease); }
+.site-foot a:hover, .site-foot button:hover { color: var(--text-1); background: none; }
+.site-foot svg { width: 13px; height: 13px; flex: none; }
+.site-foot .ver { font-family: var(--mono); font-size: 11px; }
+@media (max-width: 700px) { .site-foot { justify-content: center; } .site-foot nav, .site-foot .foot-meta { justify-content: center; } }
