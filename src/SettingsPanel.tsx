@@ -64,6 +64,8 @@ const swatch = (th: Theme) => (
   </span>
 )
 let lastTab: Tab = 'tema' // reopening the panel returns to the tab you were on
+// eslint-disable-next-line react-refresh/only-export-components -- a plain setter, fast refresh doesn't need to track it
+export const openOnTab = (to: Tab) => { lastTab = to } // e.g. the theme name in the footer opens the theme tab
 
 // Changes apply instantly (to the preview and to the page behind), and are saved per device
 export default function SettingsPanel({ a, onChange, onClose, onPreviewSound, presets, onSavePreset, onApplyPreset, onDeletePreset }: Props) {
